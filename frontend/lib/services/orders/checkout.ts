@@ -250,6 +250,13 @@ type PreparedLegalConsent = {
 
 const CHECKOUT_LEGAL_CONSENT_REPLAY_GRACE_MS = 30_000;
 
+function normalizeOptionalRecipientText(
+  raw: string | null | undefined
+): string | null {
+  const normalized = raw?.trim() ?? '';
+  return normalized.length > 0 ? normalized : null;
+}
+
 function requireLegalConsentVersion(
   raw: string | undefined,
   field: 'termsVersion' | 'privacyVersion'
@@ -274,6 +281,63 @@ function isWithinLegalConsentReplayGraceWindow(createdAt: Date): boolean {
   return (
     Date.now() - createdAt.getTime() <= CHECKOUT_LEGAL_CONSENT_REPLAY_GRACE_MS
   );
+}
+
+function resolveRequestedCheckoutLegalConsentHashRefs(args: {
+  legalConsent: CheckoutLegalConsentInput | null | undefined;
+}): PreparedLegalConsent['hashRefs'] {
+  if (args.legalConsent == null) {
+    throw new InvalidPayloadError(
+      'Explicit legal consent is required before checkout.',
+      {
+        code: 'LEGAL_CONSENT_REQUIRED',
+      }
+    );
+  }
+
+  if (!args.legalConsent.termsAccepted) {
+    throw new InvalidPayloadError('Terms must be accepted before checkout.', {
+      code: 'TERMS_NOT_ACCEPTED',
+    });
+  }
+
+  if (!args.legalConsent.privacyAccepted) {
+    throw new InvalidPayloadError('Privacy policy must be accepted.', {
+      code: 'PRIVACY_NOT_ACCEPTED',
+    });
+  }
+
+  return {
+    termsAccepted: true,
+    privacyAccepted: true,
+    termsVersion: requireLegalConsentVersion(
+      args.legalConsent.termsVersion,
+      'termsVersion'
+    ),
+    privacyVersion: requireLegalConsentVersion(
+      args.legalConsent.privacyVersion,
+      'privacyVersion'
+    ),
+  };
+}
+
+function buildPreparedLegalConsentSnapshot(args: {
+  hashRefs: PreparedLegalConsent['hashRefs'];
+  locale: string | null | undefined;
+  country: string | null | undefined;
+}): PreparedLegalConsent['snapshot'] {
+  return {
+    termsAccepted: true,
+    privacyAccepted: true,
+    termsVersion: args.hashRefs.termsVersion,
+    privacyVersion: args.hashRefs.privacyVersion,
+    consentedAt: new Date(),
+    source: 'checkout_explicit',
+    locale: normVariant(args.locale).toLowerCase() || null,
+    country: normalizeCountryCode(
+      args.country ?? resolveStandardStorefrontShippingCountry()
+    ),
+  };
 }
 
 function normalizeCountryCode(raw: string | null | undefined): string | null {
@@ -560,8 +624,8 @@ async function prepareCheckoutShipping(args: {
     recipient: {
       fullName: args.shipping.recipient.fullName,
       phone: args.shipping.recipient.phone,
-      email: args.shipping.recipient.email ?? null,
-      comment: args.shipping.recipient.comment ?? null,
+      email: normalizeOptionalRecipientText(args.shipping.recipient.email),
+      comment: normalizeOptionalRecipientText(args.shipping.recipient.comment),
     },
   };
 
@@ -575,8 +639,10 @@ async function prepareCheckoutShipping(args: {
       recipient: {
         fullName: args.shipping.recipient.fullName.trim(),
         phone: args.shipping.recipient.phone.trim(),
-        email: args.shipping.recipient.email?.trim() ?? null,
-        comment: args.shipping.recipient.comment?.trim() ?? null,
+        email: normalizeOptionalRecipientText(args.shipping.recipient.email),
+        comment: normalizeOptionalRecipientText(
+          args.shipping.recipient.comment
+        ),
       },
     },
     orderSummary: {
@@ -596,41 +662,10 @@ function resolveCheckoutLegalConsent(args: {
   locale: string | null | undefined;
   country: string | null | undefined;
 }): PreparedLegalConsent {
-  if (args.legalConsent == null) {
-    throw new InvalidPayloadError(
-      'Explicit legal consent is required before checkout.',
-      {
-        code: 'LEGAL_CONSENT_REQUIRED',
-      }
-    );
-  }
-
-  const termsAccepted = args.legalConsent.termsAccepted;
-  const privacyAccepted = args.legalConsent.privacyAccepted;
-
-  if (!termsAccepted) {
-    throw new InvalidPayloadError('Terms must be accepted before checkout.', {
-      code: 'TERMS_NOT_ACCEPTED',
-    });
-  }
-
-  if (!privacyAccepted) {
-    throw new InvalidPayloadError('Privacy policy must be accepted.', {
-      code: 'PRIVACY_NOT_ACCEPTED',
-    });
-  }
-
-  const termsVersion = requireLegalConsentVersion(
-    args.legalConsent.termsVersion,
-    'termsVersion'
-  );
-  const privacyVersion = requireLegalConsentVersion(
-    args.legalConsent.privacyVersion,
-    'privacyVersion'
-  );
+  const hashRefs = resolveRequestedCheckoutLegalConsentHashRefs(args);
   const canonicalLegalVersions = getShopLegalVersions();
 
-  if (termsVersion !== canonicalLegalVersions.termsVersion) {
+  if (hashRefs.termsVersion !== canonicalLegalVersions.termsVersion) {
     throw new InvalidPayloadError(
       'Terms version is outdated. Refresh and try again.',
       {
@@ -639,7 +674,7 @@ function resolveCheckoutLegalConsent(args: {
     );
   }
 
-  if (privacyVersion !== canonicalLegalVersions.privacyVersion) {
+  if (hashRefs.privacyVersion !== canonicalLegalVersions.privacyVersion) {
     throw new InvalidPayloadError(
       'Privacy version is outdated. Refresh and try again.',
       {
@@ -648,30 +683,13 @@ function resolveCheckoutLegalConsent(args: {
     );
   }
 
-  const consentedAt = new Date();
-  const source = 'checkout_explicit';
-  const normalizedLocale = normVariant(args.locale).toLowerCase() || null;
-  const normalizedCountry = normalizeCountryCode(
-    args.country ?? resolveStandardStorefrontShippingCountry()
-  );
-
   return {
-    hashRefs: {
-      termsAccepted: true,
-      privacyAccepted: true,
-      termsVersion,
-      privacyVersion,
-    },
-    snapshot: {
-      termsAccepted: true,
-      privacyAccepted: true,
-      termsVersion,
-      privacyVersion,
-      consentedAt,
-      source,
-      locale: normalizedLocale,
-      country: normalizedCountry,
-    },
+    hashRefs,
+    snapshot: buildPreparedLegalConsentSnapshot({
+      hashRefs,
+      locale: args.locale,
+      country: args.country,
+    }),
   };
 }
 
@@ -923,6 +941,24 @@ export async function createOrderWithItems({
     shippingQuoteFingerprint,
     requireShippingQuoteFingerprint,
   });
+  const requestedLegalConsentHashRefs =
+    resolveRequestedCheckoutLegalConsentHashRefs({
+      legalConsent,
+    });
+  const requestedLegalConsentSnapshot = buildPreparedLegalConsentSnapshot({
+    hashRefs: requestedLegalConsentHashRefs,
+    locale,
+    country: country ?? null,
+  });
+  const requestHash = hashIdempotencyRequest({
+    items: normalizedItems,
+    currency,
+    locale: locale ?? null,
+    paymentProvider,
+    paymentMethod: resolvedPaymentMethod,
+    shipping: preparedShipping.hashRefs,
+    legalConsent: requestedLegalConsentHashRefs,
+  });
 
   async function assertIdempotencyCompatible(existing: OrderSummaryWithMinor) {
     const [row] = await db
@@ -977,7 +1013,7 @@ export async function createOrderWithItems({
       if (canRepairMissingLegalConsent) {
         await ensureOrderLegalConsentSnapshot({
           orderId: row.id,
-          snapshot: preparedLegalConsent.snapshot,
+          snapshot: requestedLegalConsentSnapshot,
         });
 
         [existingLegalConsentRow] = await db
@@ -1040,19 +1076,19 @@ export async function createOrderWithItems({
 
     if (
       existingLegalHashRefs.termsAccepted !==
-        preparedLegalConsent.hashRefs.termsAccepted ||
+        requestedLegalConsentHashRefs.termsAccepted ||
       existingLegalHashRefs.privacyAccepted !==
-        preparedLegalConsent.hashRefs.privacyAccepted ||
+        requestedLegalConsentHashRefs.privacyAccepted ||
       existingLegalHashRefs.termsVersion !==
-        preparedLegalConsent.hashRefs.termsVersion ||
+        requestedLegalConsentHashRefs.termsVersion ||
       existingLegalHashRefs.privacyVersion !==
-        preparedLegalConsent.hashRefs.privacyVersion
+        requestedLegalConsentHashRefs.privacyVersion
     ) {
       throw new IdempotencyConflictError(
         'Idempotency key already used with different legal consent.',
         {
           existing: existingLegalHashRefs,
-          requested: preparedLegalConsent.hashRefs,
+          requested: requestedLegalConsentHashRefs,
         }
       );
     }
@@ -1289,22 +1325,6 @@ export async function createOrderWithItems({
     }
   }
 
-  const preparedLegalConsent = resolveCheckoutLegalConsent({
-    legalConsent,
-    locale,
-    country: country ?? null,
-  });
-
-  const requestHash = hashIdempotencyRequest({
-    items: normalizedItems,
-    currency,
-    locale: locale ?? null,
-    paymentProvider,
-    paymentMethod: resolvedPaymentMethod,
-    shipping: preparedShipping.hashRefs,
-    legalConsent: preparedLegalConsent.hashRefs,
-  });
-
   const existing = await getOrderByIdempotencyKey(db, idempotencyKey);
   if (existing) {
     await assertIdempotencyCompatible(existing);
@@ -1321,6 +1341,12 @@ export async function createOrderWithItems({
       totalCents: requireTotalCents(existing),
     };
   }
+
+  const preparedLegalConsent = resolveCheckoutLegalConsent({
+    legalConsent,
+    locale,
+    country: country ?? null,
+  });
 
   const itemsSubtotalCents = sumLineTotals(
     pricedItems.map(i => i.lineTotalCents)

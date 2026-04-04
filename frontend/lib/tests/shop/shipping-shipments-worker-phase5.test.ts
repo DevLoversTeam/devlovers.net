@@ -1557,6 +1557,11 @@ describe.sequential('shipping shipments worker phase 5', () => {
         trackingNumber: '20450000333333',
       });
 
+      // This intentionally intercepts a fragile SQL/queryChunks pattern in the
+      // markSucceeded CTE flow to simulate the race where shipment success
+      // persists but the downstream order update is reported as blocked. If the
+      // update shipping_shipments/provider_ref/tracking_number or CTE shape
+      // changes, this interception likely needs updating too.
       executeSpy.mockImplementation((async (query: unknown) => {
         const sqlText = Array.isArray(
           (query as { queryChunks?: unknown[] })?.queryChunks

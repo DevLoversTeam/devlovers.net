@@ -597,4 +597,77 @@ describe('checkout shipping phase 3', () => {
       await cleanupSeedData(seed, createdOrderIds);
     }
   }, 60_000);
+
+  it('treats blank optional shipping recipient fields as replay-equivalent nulls', async () => {
+    const seed = await seedCheckoutShippingData();
+    const createdOrderIds: string[] = [];
+
+    try {
+      const idem = crypto.randomUUID();
+      const first = await createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'uk-UA',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: createTestLegalConsent(),
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRefA,
+          },
+          recipient: {
+            fullName: 'Alice',
+            phone: '+380501112233',
+            email: '',
+            comment: '   ',
+          },
+        },
+      });
+      createdOrderIds.push(first.order.id);
+
+      const replay = await createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'uk-UA',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: createTestLegalConsent(),
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRefA,
+          },
+          recipient: {
+            fullName: 'Alice',
+            phone: '+380501112233',
+            email: '   ',
+            comment: '',
+          },
+        },
+      });
+
+      expect(replay.isNew).toBe(false);
+      expect(replay.order.id).toBe(first.order.id);
+
+      const [shippingRow] = await db
+        .select({ shippingAddress: orderShipping.shippingAddress })
+        .from(orderShipping)
+        .where(eq(orderShipping.orderId, first.order.id))
+        .limit(1);
+
+      expect((shippingRow?.shippingAddress as any)?.recipient).toMatchObject({
+        fullName: 'Alice',
+        phone: '+380501112233',
+        email: null,
+        comment: null,
+      });
+    } finally {
+      await cleanupSeedData(seed, createdOrderIds);
+    }
+  }, 60_000);
 });

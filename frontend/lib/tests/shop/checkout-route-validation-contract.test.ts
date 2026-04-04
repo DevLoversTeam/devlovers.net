@@ -373,23 +373,29 @@ describe('checkout route validation/business error contract', () => {
     });
   });
 
-  it('returns 422 INSUFFICIENT_STOCK for business-code stock errors outside the typed stock exception path', async () => {
-    createOrderWithItemsMock.mockRejectedValueOnce(
-      Object.assign(new Error('Insufficient stock.'), {
-        code: 'OUT_OF_STOCK',
-      })
-    );
+  it.each([
+    ['OUT_OF_STOCK', 'checkout_business_out_of_stock_0001'],
+    ['INSUFFICIENT_STOCK', 'checkout_business_insufficient_stock_0001'],
+  ] as const)(
+    'returns 422 INSUFFICIENT_STOCK for business-code stock error %s outside the typed stock exception path',
+    async (code, idempotencyKey) => {
+      createOrderWithItemsMock.mockRejectedValueOnce(
+        Object.assign(new Error('Insufficient stock.'), {
+          code,
+        })
+      );
 
-    const response = await POST(
-      makeValidationCheckoutReq({
-        idempotencyKey: 'checkout_business_out_of_stock_0001',
-      })
-    );
+      const response = await POST(
+        makeValidationCheckoutReq({
+          idempotencyKey,
+        })
+      );
 
-    expect(response.status).toBe(422);
-    const json = await response.json();
-    expect(json.code).toBe('INSUFFICIENT_STOCK');
-  });
+      expect(response.status).toBe(422);
+      const json = await response.json();
+      expect(json.code).toBe('INSUFFICIENT_STOCK');
+    }
+  );
 });
 
 function makeRouteCheckoutReq(params: {

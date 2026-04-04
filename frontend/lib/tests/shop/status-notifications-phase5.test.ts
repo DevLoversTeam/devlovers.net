@@ -379,7 +379,7 @@ describe.sequential('status notifications phase 5', () => {
       });
 
       expect(firstProjectorRun.scanned).toBeGreaterThanOrEqual(1);
-      expect(secondProjectorRun.scanned).toBeGreaterThanOrEqual(0);
+      expect(secondProjectorRun.inserted).toBe(0);
 
       const rows = await db
         .select({
@@ -481,7 +481,7 @@ describe.sequential('status notifications phase 5', () => {
       });
 
       expect(firstProjectorRun.scanned).toBeGreaterThanOrEqual(1);
-      expect(secondProjectorRun.scanned).toBeGreaterThanOrEqual(0);
+      expect(secondProjectorRun.inserted).toBe(0);
 
       const rows = await db
         .select({
@@ -583,7 +583,7 @@ describe.sequential('status notifications phase 5', () => {
       });
 
       expect(firstProjectorRun.scanned).toBeGreaterThanOrEqual(1);
-      expect(secondProjectorRun.scanned).toBeGreaterThanOrEqual(0);
+      expect(secondProjectorRun.inserted).toBe(0);
 
       const rows = await db
         .select({
@@ -762,7 +762,7 @@ describe.sequential('status notifications phase 5', () => {
       });
 
       expect(firstProjectorRun.scanned).toBeGreaterThanOrEqual(0);
-      expect(secondProjectorRun.scanned).toBeGreaterThanOrEqual(0);
+      expect(secondProjectorRun.inserted).toBe(0);
 
       const events = await db
         .select({

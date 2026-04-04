@@ -181,6 +181,8 @@ async function runNotificationWorkerUntilSent(orderId: string, maxRuns = 20) {
   return loadOrderOutboxRow(orderId);
 }
 
+// Test-only cleanup keyed to the current raw table/column names for orphaned
+// order_created artifacts. Update this SQL if the notification schema changes.
 async function cleanupOrphanOrderCreatedArtifacts() {
   await db.execute(sql`
     delete from notification_outbox
@@ -309,7 +311,7 @@ describe.sequential('checkout order-created notification phase 5', () => {
       });
 
       expect(firstProjectorRun.scanned).toBeGreaterThanOrEqual(1);
-      expect(secondProjectorRun.scanned).toBeGreaterThanOrEqual(0);
+      expect(secondProjectorRun.inserted).toBe(0);
 
       const rows = await db
         .select({

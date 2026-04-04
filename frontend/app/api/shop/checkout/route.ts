@@ -1851,6 +1851,7 @@ export async function POST(request: NextRequest) {
 
     if (
       error instanceof InsufficientStockError ||
+      getErrorCode(error) === 'INSUFFICIENT_STOCK' ||
       getErrorCode(error) === 'OUT_OF_STOCK'
     ) {
       return errorResponse(

@@ -379,6 +379,38 @@ describe.sequential('admin shipping edit service', () => {
         totalAmountMinor: 1000,
       });
 
+      const [shippingRow] = await db
+        .select({
+          shippingAddress: orderShipping.shippingAddress,
+        })
+        .from(orderShipping)
+        .where(eq(orderShipping.orderId, seed.orderId))
+        .limit(1);
+
+      expect(shippingRow?.shippingAddress).toMatchObject({
+        provider: 'nova_poshta',
+        methodCode: 'NP_WAREHOUSE',
+        quote: {
+          currency: 'UAH',
+          amountMinor: 100,
+          quoteFingerprint: `quote_${seed.orderId}`,
+        },
+        selection: {
+          cityRef: seed.cityRef,
+          warehouseRef: seed.warehouseRef,
+          warehouseName: 'Warehouse 12',
+          warehouseAddress: 'Khreshchatyk 1',
+          addressLine1: null,
+          addressLine2: null,
+        },
+        recipient: {
+          fullName: 'Ivan Petrenko',
+          phone: '+380501112233',
+          email: 'ivan@example.com',
+          comment: 'Call me before delivery',
+        },
+      });
+
       const auditRows = await db
         .select({
           action: adminAuditLog.action,

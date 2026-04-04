@@ -10,7 +10,7 @@ import {
   products,
 } from '@/db/schema/shop';
 import { getShopLegalVersions } from '@/lib/env/shop-legal';
-import { InvalidPayloadError } from '@/lib/services/errors';
+import { IdempotencyConflictError } from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
 import { toDbMoney } from '@/lib/shop/money';
 
@@ -221,7 +221,7 @@ describe('checkout legal consent phase 4', () => {
     }
   }, 30_000);
 
-  it('idempotent replay cannot bypass canonical legal version pinning', async () => {
+  it('idempotent replay rejects different legal consent against the persisted order contract', async () => {
     const { productId } = await seedProduct();
     let orderId: string | null = null;
     const idempotencyKey = crypto.randomUUID();
@@ -266,7 +266,7 @@ describe('checkout legal consent phase 4', () => {
             privacyVersion: canonicalVersions.privacyVersion,
           },
         })
-      ).rejects.toBeInstanceOf(InvalidPayloadError);
+      ).rejects.toBeInstanceOf(IdempotencyConflictError);
 
       const [afterConflict] = await db
         .select({
@@ -286,6 +286,58 @@ describe('checkout legal consent phase 4', () => {
       expect(afterConflict?.privacyVersion).toBe(
         canonicalVersions.privacyVersion
       );
+    } finally {
+      if (orderId) await cleanupOrder(orderId);
+      await cleanupProduct(productId);
+    }
+  }, 30_000);
+
+  it('replays an existing order even after canonical legal versions rotate', async () => {
+    const { productId } = await seedProduct();
+    let orderId: string | null = null;
+    const idempotencyKey = crypto.randomUUID();
+    const baselineConsent = canonicalLegalConsent();
+
+    try {
+      const first = await createOrderWithItems({
+        idempotencyKey,
+        userId: null,
+        locale: 'en-US',
+        country: 'US',
+        items: [{ productId, quantity: 1 }],
+        legalConsent: baselineConsent,
+      });
+
+      orderId = first.order.id;
+
+      vi.stubEnv('SHOP_TERMS_VERSION', 'terms-2026-04-01');
+      vi.stubEnv('SHOP_PRIVACY_VERSION', 'privacy-2026-04-01');
+
+      const replay = await createOrderWithItems({
+        idempotencyKey,
+        userId: null,
+        locale: 'en-US',
+        country: 'US',
+        items: [{ productId, quantity: 1 }],
+        legalConsent: baselineConsent,
+      });
+
+      expect(replay.isNew).toBe(false);
+      expect(replay.order.id).toBe(orderId);
+
+      const [persisted] = await db
+        .select({
+          termsVersion: orderLegalConsents.termsVersion,
+          privacyVersion: orderLegalConsents.privacyVersion,
+        })
+        .from(orderLegalConsents)
+        .where(eq(orderLegalConsents.orderId, orderId))
+        .limit(1);
+
+      expect(persisted).toMatchObject({
+        termsVersion: baselineConsent.termsVersion,
+        privacyVersion: baselineConsent.privacyVersion,
+      });
     } finally {
       if (orderId) await cleanupOrder(orderId);
       await cleanupProduct(productId);
