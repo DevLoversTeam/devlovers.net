@@ -1452,6 +1452,11 @@ describe.sequential('shipping shipments worker phase 5', () => {
     });
 
     try {
+      const authoritativePayload =
+        await buildAuthoritativeNovaPoshtaRequestPayload(seed);
+      const authoritativeIdentity =
+        buildCarrierCreatePayloadIdentity(authoritativePayload);
+
       await db.insert(shippingEvents).values([
         {
           orderId: seed.orderId,
@@ -1462,7 +1467,8 @@ describe.sequential('shipping shipments worker phase 5', () => {
           eventRef: 'np-provider-ref-conflict-a',
           trackingNumber: '20450000444441',
           payload: {
-            canonicalHash: 'conflict-hash-a',
+            canonicalHash: authoritativeIdentity.canonicalHash,
+            canonicalPayload: authoritativeIdentity.canonicalPayload,
             providerRef: 'np-provider-ref-conflict-a',
             trackingNumber: '20450000444441',
           },
@@ -1484,7 +1490,8 @@ describe.sequential('shipping shipments worker phase 5', () => {
           eventRef: 'np-provider-ref-conflict-b',
           trackingNumber: '20450000444442',
           payload: {
-            canonicalHash: 'conflict-hash-b',
+            canonicalHash: authoritativeIdentity.canonicalHash,
+            canonicalPayload: authoritativeIdentity.canonicalPayload,
             providerRef: 'np-provider-ref-conflict-b',
             trackingNumber: '20450000444442',
           },
