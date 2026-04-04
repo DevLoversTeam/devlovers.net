@@ -670,4 +670,64 @@ describe('checkout shipping phase 3', () => {
       await cleanupSeedData(seed, createdOrderIds);
     }
   }, 60_000);
+
+  it('replays an existing order even if the shipping refs drift and would block a fresh order', async () => {
+    const seed = await seedCheckoutShippingData();
+    const createdOrderIds: string[] = [];
+
+    try {
+      const idem = crypto.randomUUID();
+      const first = await createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'uk-UA',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: createTestLegalConsent(),
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRefA,
+          },
+          recipient: {
+            fullName: 'Alice',
+            phone: '+380501112233',
+          },
+        },
+      });
+      createdOrderIds.push(first.order.id);
+
+      await db
+        .delete(npWarehouses)
+        .where(eq(npWarehouses.ref, seed.warehouseRefA));
+
+      const replay = await createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'uk-UA',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: createTestLegalConsent(),
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRefA,
+          },
+          recipient: {
+            fullName: 'Alice',
+            phone: '+380501112233',
+          },
+        },
+      });
+
+      expect(replay.isNew).toBe(false);
+      expect(replay.order.id).toBe(first.order.id);
+    } finally {
+      await cleanupSeedData(seed, createdOrderIds);
+    }
+  }, 60_000);
 });

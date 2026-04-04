@@ -1551,6 +1551,7 @@ describe.sequential('shipping shipments worker phase 5', () => {
     try {
       const originalExecute = db.execute.bind(db);
       const executeSpy = vi.spyOn(db, 'execute');
+      let interceptionOccurred = false;
 
       vi.mocked(createInternetDocument).mockResolvedValue({
         providerRef: 'np-provider-ref-blocked-after-success',
@@ -1586,6 +1587,8 @@ describe.sequential('shipping shipments worker phase 5', () => {
           sqlText.includes('provider_ref =') &&
           sqlText.includes('tracking_number =')
         ) {
+          interceptionOccurred = true;
+
           await originalExecute(sql`
             update shipping_shipments
             set status = 'succeeded',
@@ -1628,6 +1631,7 @@ describe.sequential('shipping shipments worker phase 5', () => {
         baseBackoffSeconds: 10,
       });
 
+      expect(interceptionOccurred).toBe(true);
       expect(result).toMatchObject({
         claimed: 1,
         processed: 1,

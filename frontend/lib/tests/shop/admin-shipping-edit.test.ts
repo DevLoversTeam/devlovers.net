@@ -22,6 +22,12 @@ type SeededOrder = {
   shipmentId: string | null;
 };
 
+type NpCityInsert = typeof npCities.$inferInsert;
+type NpWarehouseInsert = typeof npWarehouses.$inferInsert;
+type OrderInsert = typeof orders.$inferInsert;
+type OrderShippingInsert = typeof orderShipping.$inferInsert;
+type ShippingShipmentInsert = typeof shippingShipments.$inferInsert;
+
 async function cleanup(seed: SeededOrder) {
   await db.delete(adminAuditLog).where(eq(adminAuditLog.orderId, seed.orderId));
   await db.delete(orderShipping).where(eq(orderShipping.orderId, seed.orderId));
@@ -52,7 +58,7 @@ async function seedEditableOrder(args?: {
     region: 'Kyiv',
     settlementType: 'місто',
     isActive: true,
-  } as any);
+  } satisfies NpCityInsert);
 
   await db.insert(npWarehouses).values({
     ref: warehouseRef,
@@ -64,7 +70,7 @@ async function seedEditableOrder(args?: {
     address: 'Khreshchatyk 1',
     isPostMachine: false,
     isActive: true,
-  } as any);
+  } satisfies NpWarehouseInsert);
 
   await db.insert(orders).values({
     id: orderId,
@@ -83,7 +89,7 @@ async function seedEditableOrder(args?: {
     shippingAmountMinor: 100,
     shippingStatus: args?.shippingStatus ?? 'pending',
     idempotencyKey: `admin-shipping-edit-${orderId}`,
-  } as any);
+  } satisfies OrderInsert);
 
   await db.insert(orderShipping).values({
     orderId,
@@ -114,7 +120,7 @@ async function seedEditableOrder(args?: {
         comment: 'Call me before delivery',
       },
     },
-  } as any);
+  } satisfies OrderShippingInsert);
 
   if (shipmentId && args?.shipmentStatus) {
     await db.insert(shippingShipments).values({
@@ -126,7 +132,7 @@ async function seedEditableOrder(args?: {
       nextAttemptAt: null,
       leaseOwner: null,
       leaseExpiresAt: null,
-    } as any);
+    } satisfies ShippingShipmentInsert);
   }
 
   return {

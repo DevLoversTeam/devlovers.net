@@ -411,6 +411,18 @@ function mapMonobankCheckoutError(error: unknown) {
     } as const;
   }
 
+  if (
+    error instanceof InsufficientStockError ||
+    code === 'INSUFFICIENT_STOCK' ||
+    code === 'OUT_OF_STOCK'
+  ) {
+    return {
+      code: 'INSUFFICIENT_STOCK',
+      message: getErrorMessage(error, 'Insufficient stock.'),
+      status: 422,
+    } as const;
+  }
+
   if (code) {
     const status =
       checkoutUnprocessableStatus(code) ?? shippingErrorStatus(code);
@@ -427,18 +439,6 @@ function mapMonobankCheckoutError(error: unknown) {
     return {
       code: 'INVALID_REQUEST',
       message: getErrorMessage(error, 'Invalid request.'),
-      status: 422,
-    } as const;
-  }
-
-  if (
-    error instanceof InsufficientStockError ||
-    code === 'INSUFFICIENT_STOCK' ||
-    code === 'OUT_OF_STOCK'
-  ) {
-    return {
-      code: 'OUT_OF_STOCK',
-      message: getErrorMessage(error, 'Insufficient stock.'),
       status: 422,
     } as const;
   }

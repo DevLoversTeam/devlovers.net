@@ -374,6 +374,32 @@ describe('checkout route validation/business error contract', () => {
   });
 
   it.each([
+    ['OUT_OF_STOCK', 'checkout_monobank_out_of_stock_0001'],
+    ['INSUFFICIENT_STOCK', 'checkout_monobank_insufficient_stock_0001'],
+  ] as const)(
+    'normalizes Monobank stock error %s to 422 INSUFFICIENT_STOCK before generic code mapping',
+    async (code, idempotencyKey) => {
+      createOrderWithItemsMock.mockRejectedValueOnce(
+        Object.assign(new Error('Insufficient stock.'), {
+          code,
+        })
+      );
+
+      const response = await POST(
+        makeValidationCheckoutReq({
+          idempotencyKey,
+          paymentProvider: 'monobank',
+          paymentMethod: 'monobank_invoice',
+        })
+      );
+
+      expect(response.status).toBe(422);
+      const json = await response.json();
+      expect(json.code).toBe('INSUFFICIENT_STOCK');
+    }
+  );
+
+  it.each([
     ['OUT_OF_STOCK', 'checkout_business_out_of_stock_0001'],
     ['INSUFFICIENT_STOCK', 'checkout_business_insufficient_stock_0001'],
   ] as const)(

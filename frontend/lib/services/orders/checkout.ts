@@ -325,18 +325,38 @@ function buildPreparedLegalConsentSnapshot(args: {
   hashRefs: PreparedLegalConsent['hashRefs'];
   locale: string | null | undefined;
   country: string | null | undefined;
+  consentedAt?: Date;
 }): PreparedLegalConsent['snapshot'] {
   return {
     termsAccepted: true,
     privacyAccepted: true,
     termsVersion: args.hashRefs.termsVersion,
     privacyVersion: args.hashRefs.privacyVersion,
-    consentedAt: new Date(),
+    consentedAt: args.consentedAt ?? new Date(),
     source: 'checkout_explicit',
     locale: normVariant(args.locale).toLowerCase() || null,
     country: normalizeCountryCode(
       args.country ?? resolveStandardStorefrontShippingCountry()
     ),
+  };
+}
+
+function resolveRequestedCheckoutShippingHashRefs(
+  shipping: CheckoutShippingInput | null | undefined
+): PreparedShipping['hashRefs'] {
+  if (!shipping) return null;
+
+  return {
+    provider: 'nova_poshta',
+    methodCode: shipping.methodCode,
+    cityRef: shipping.selection.cityRef,
+    warehouseRef: shipping.selection.warehouseRef ?? null,
+    recipient: {
+      fullName: shipping.recipient.fullName.trim(),
+      phone: shipping.recipient.phone.trim(),
+      email: normalizeOptionalRecipientText(shipping.recipient.email),
+      comment: normalizeOptionalRecipientText(shipping.recipient.comment),
+    },
   };
 }
 
@@ -932,31 +952,20 @@ export async function createOrderWithItems({
   const normalizedItems = mergeCheckoutItems(items).map(item =>
     normalizeCheckoutItem(item)
   );
-
-  const preparedShipping = await prepareCheckoutShipping({
-    shipping: shipping ?? null,
-    locale,
-    country: country ?? null,
-    currency,
-    shippingQuoteFingerprint,
-    requireShippingQuoteFingerprint,
-  });
+  const requestedShippingHashRefs = resolveRequestedCheckoutShippingHashRefs(
+    shipping ?? null
+  );
   const requestedLegalConsentHashRefs =
     resolveRequestedCheckoutLegalConsentHashRefs({
       legalConsent,
     });
-  const requestedLegalConsentSnapshot = buildPreparedLegalConsentSnapshot({
-    hashRefs: requestedLegalConsentHashRefs,
-    locale,
-    country: country ?? null,
-  });
   const requestHash = hashIdempotencyRequest({
     items: normalizedItems,
     currency,
     locale: locale ?? null,
     paymentProvider,
     paymentMethod: resolvedPaymentMethod,
-    shipping: preparedShipping.hashRefs,
+    shipping: requestedShippingHashRefs,
     legalConsent: requestedLegalConsentHashRefs,
   });
 
@@ -1013,7 +1022,12 @@ export async function createOrderWithItems({
       if (canRepairMissingLegalConsent) {
         await ensureOrderLegalConsentSnapshot({
           orderId: row.id,
-          snapshot: requestedLegalConsentSnapshot,
+          snapshot: buildPreparedLegalConsentSnapshot({
+            hashRefs: requestedLegalConsentHashRefs,
+            locale,
+            country: country ?? null,
+            consentedAt: existing.createdAt,
+          }),
         });
 
         [existingLegalConsentRow] = await db
@@ -1232,6 +1246,26 @@ export async function createOrderWithItems({
     }
   }
 
+  const existing = await getOrderByIdempotencyKey(db, idempotencyKey);
+  if (existing) {
+    await assertIdempotencyCompatible(existing);
+    await ensureOrderCreatedCanonicalEvent(existing);
+    return {
+      order: existing,
+      isNew: false,
+      totalCents: requireTotalCents(existing),
+    };
+  }
+
+  const preparedShipping = await prepareCheckoutShipping({
+    shipping: shipping ?? null,
+    locale,
+    country: country ?? null,
+    currency,
+    shippingQuoteFingerprint,
+    requireShippingQuoteFingerprint,
+  });
+
   const uniqueProductIds = Array.from(
     new Set(normalizedItems.map(i => i.productId))
   );
@@ -1323,23 +1357,6 @@ export async function createOrderWithItems({
         }
       );
     }
-  }
-
-  const existing = await getOrderByIdempotencyKey(db, idempotencyKey);
-  if (existing) {
-    await assertIdempotencyCompatible(existing);
-    if (preparedShipping.required && preparedShipping.snapshot) {
-      await ensureOrderShippingSnapshot({
-        orderId: existing.id,
-        snapshot: preparedShipping.snapshot,
-      });
-    }
-    await ensureOrderCreatedCanonicalEvent(existing);
-    return {
-      order: existing,
-      isNew: false,
-      totalCents: requireTotalCents(existing),
-    };
   }
 
   const preparedLegalConsent = resolveCheckoutLegalConsent({

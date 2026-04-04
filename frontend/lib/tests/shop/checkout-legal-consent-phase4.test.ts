@@ -344,7 +344,7 @@ describe('checkout legal consent phase 4', () => {
     }
   }, 30_000);
 
-  it('repairs a transiently missing legal consent row for a recent matching replay', async () => {
+  it('replays an existing order even if the product becomes unavailable after creation', async () => {
     const { productId } = await seedProduct();
     let orderId: string | null = null;
     const idempotencyKey = crypto.randomUUID();
@@ -360,6 +360,64 @@ describe('checkout legal consent phase 4', () => {
       });
 
       orderId = first.order.id;
+
+      await db
+        .update(products)
+        .set({
+          isActive: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(products.id, productId));
+
+      const replay = await createOrderWithItems({
+        idempotencyKey,
+        userId: null,
+        locale: 'en-US',
+        country: 'US',
+        items: [{ productId, quantity: 1 }],
+        legalConsent: canonicalLegalConsent(),
+      });
+
+      expect(replay.isNew).toBe(false);
+      expect(replay.order.id).toBe(orderId);
+    } finally {
+      if (orderId) await cleanupOrder(orderId);
+      await cleanupProduct(productId);
+    }
+  }, 30_000);
+
+  it('repairs a transiently missing legal consent row for a recent matching replay', async () => {
+    const { productId } = await seedProduct();
+    let orderId: string | null = null;
+    const idempotencyKey = crypto.randomUUID();
+    const originalConsentedAt = new Date(Date.now() - 5_000);
+
+    try {
+      const first = await createOrderWithItems({
+        idempotencyKey,
+        userId: null,
+        locale: 'en-US',
+        country: 'US',
+        items: [{ productId, quantity: 1 }],
+        legalConsent: canonicalLegalConsent(),
+      });
+
+      orderId = first.order.id;
+
+      await db
+        .update(orders)
+        .set({
+          createdAt: originalConsentedAt,
+          updatedAt: originalConsentedAt,
+        })
+        .where(eq(orders.id, orderId));
+
+      await db
+        .update(orderLegalConsents)
+        .set({
+          consentedAt: originalConsentedAt,
+        })
+        .where(eq(orderLegalConsents.orderId, orderId));
 
       await db
         .delete(orderLegalConsents)
@@ -383,6 +441,7 @@ describe('checkout legal consent phase 4', () => {
           termsVersion: orderLegalConsents.termsVersion,
           privacyVersion: orderLegalConsents.privacyVersion,
           source: orderLegalConsents.source,
+          consentedAt: orderLegalConsents.consentedAt,
         })
         .from(orderLegalConsents)
         .where(eq(orderLegalConsents.orderId, orderId))
@@ -394,6 +453,9 @@ describe('checkout legal consent phase 4', () => {
         getShopLegalVersions().privacyVersion
       );
       expect(restored?.source).toBe('checkout_explicit');
+      expect(restored?.consentedAt.getTime()).toBe(
+        originalConsentedAt.getTime()
+      );
     } finally {
       if (orderId) await cleanupOrder(orderId);
       await cleanupProduct(productId);
