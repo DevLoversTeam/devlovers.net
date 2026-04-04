@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
@@ -113,6 +113,10 @@ async function seedCheckoutShippingData(): Promise<SeedData> {
 }
 
 async function cleanupSeedData(data: SeedData, orderIds: string[]) {
+  if (orderIds.length > 0) {
+    await db.delete(orderItems).where(inArray(orderItems.orderId, orderIds));
+  }
+
   for (const orderId of orderIds) {
     await db.delete(orderShipping).where(eq(orderShipping.orderId, orderId));
     await db.delete(orders).where(eq(orders.id, orderId));

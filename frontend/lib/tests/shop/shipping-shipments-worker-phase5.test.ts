@@ -235,6 +235,9 @@ async function buildAuthoritativeNovaPoshtaRequestPayload(
   const selection = shippingAddress?.selection as
     | Record<string, unknown>
     | undefined;
+  const recipient = shippingAddress?.recipient as
+    | Record<string, unknown>
+    | undefined;
 
   const totalAmountMinor = row?.totalAmountMinor ?? 0;
   const defaultWeightGramsRaw = Number.parseInt(
@@ -270,8 +273,8 @@ async function buildAuthoritativeNovaPoshtaRequestPayload(
       warehouseRef: selection?.warehouseRef as string,
       addressLine1: null,
       addressLine2: null,
-      fullName: 'Test User',
-      phone: '+380501112233',
+      fullName: recipient?.fullName as string,
+      phone: recipient?.phone as string,
     },
   };
 }
@@ -1100,7 +1103,11 @@ describe.sequential('shipping shipments worker phase 5', () => {
       const internalEventsAfterReplay = await readInternalCarrierEvents(
         seed.shipmentId
       );
-      expect(carrierSuccessOutcomeKeys(internalEventsAfterReplay).size).toBe(1);
+      const successEventsAfterReplay = internalEventsAfterReplay.filter(
+        event => event.eventName === 'carrier_create_succeeded_internal'
+      );
+      expect(successEventsAfterReplay).toHaveLength(1);
+      expect(carrierSuccessOutcomeKeys(successEventsAfterReplay).size).toBe(1);
     } finally {
       warnSpy.mockRestore();
       await cleanupSeed(seed);
@@ -1332,6 +1339,107 @@ describe.sequential('shipping shipments worker phase 5', () => {
           event => event.eventName === 'label_creation_retry_scheduled'
         )
       ).toBe(false);
+    } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('detects recipient payload drift for the same shipment intent and fails closed', async () => {
+    const seed = await seedShipment({
+      shipmentStatus: 'failed',
+      attemptCount: 1,
+    });
+
+    try {
+      const authoritativePayload =
+        await buildAuthoritativeNovaPoshtaRequestPayload(seed);
+      const originalIdentity =
+        buildCarrierCreatePayloadIdentity(authoritativePayload);
+
+      await db.insert(shippingEvents).values({
+        orderId: seed.orderId,
+        shipmentId: seed.shipmentId,
+        provider: 'nova_poshta',
+        eventName: 'carrier_create_requested_internal',
+        eventSource: 'shipments_worker_internal',
+        payload: {
+          canonicalHash: originalIdentity.canonicalHash,
+          canonicalPayload: originalIdentity.canonicalPayload,
+        },
+        dedupeKey: buildCarrierCreateRequestDedupeKeyForTest({
+          orderId: seed.orderId,
+          shipmentId: seed.shipmentId,
+          provider: 'nova_poshta',
+        }),
+      } as any);
+
+      const [shippingRow] = await db
+        .select({
+          shippingAddress: orderShipping.shippingAddress,
+        })
+        .from(orderShipping)
+        .where(eq(orderShipping.orderId, seed.orderId))
+        .limit(1);
+
+      const shippingAddress = shippingRow?.shippingAddress as
+        | Record<string, unknown>
+        | undefined;
+      const recipient = shippingAddress?.recipient as
+        | Record<string, unknown>
+        | undefined;
+
+      await db
+        .update(orderShipping)
+        .set({
+          shippingAddress: {
+            ...(shippingAddress ?? {}),
+            recipient: {
+              ...(recipient ?? {}),
+              fullName: 'Ivan Petrenko DRIFT',
+            },
+          },
+        } as any)
+        .where(eq(orderShipping.orderId, seed.orderId));
+
+      vi.mocked(createInternetDocument).mockResolvedValue({
+        providerRef: 'np-provider-ref-recipient-drift-should-not-run',
+        trackingNumber: '20450000555556',
+      });
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 1,
+        processed: 1,
+        succeeded: 0,
+        retried: 0,
+        needsAttention: 1,
+      });
+      expect(createInternetDocument).not.toHaveBeenCalled();
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          lastErrorCode: shippingShipments.lastErrorCode,
+          providerRef: shippingShipments.providerRef,
+          trackingNumber: shippingShipments.trackingNumber,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('needs_attention');
+      expect(shipment?.attemptCount).toBe(2);
+      expect(shipment?.lastErrorCode).toBe('CARRIER_CREATE_PAYLOAD_DRIFT');
+      expect(shipment?.providerRef).toBeNull();
+      expect(shipment?.trackingNumber).toBeNull();
     } finally {
       await cleanupSeed(seed);
     }

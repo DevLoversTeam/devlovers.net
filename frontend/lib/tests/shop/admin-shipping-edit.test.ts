@@ -435,12 +435,13 @@ describe.sequential('admin shipping edit service', () => {
       shippingStatus: 'queued',
       shipmentStatus: 'queued',
     });
+    const requestId = `req_${crypto.randomUUID()}`;
 
     try {
       const result = await applyAdminOrderShippingEdit({
         orderId: seed.orderId,
         actorUserId: null,
-        requestId: `req_${crypto.randomUUID()}`,
+        requestId,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -510,6 +511,20 @@ describe.sequential('admin shipping edit service', () => {
           email: 'queue@example.com',
           comment: 'Use the side entrance',
         },
+      });
+
+      const auditRows = await db
+        .select({
+          action: adminAuditLog.action,
+          requestId: adminAuditLog.requestId,
+        })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, seed.orderId));
+
+      expect(auditRows).toHaveLength(1);
+      expect(auditRows[0]).toEqual({
+        action: 'order_admin_action.edit_shipping',
+        requestId,
       });
     } finally {
       await cleanup(seed);
