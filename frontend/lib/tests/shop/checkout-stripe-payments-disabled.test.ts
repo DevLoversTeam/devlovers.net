@@ -25,7 +25,8 @@ import { rehydrateCartItems } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 import { getOrSeedActiveTemplateProduct } from '@/lib/tests/helpers/seed-product';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -237,7 +238,7 @@ async function postCheckout(args: {
       origin: 'http://localhost:3000',
     },
     body: JSON.stringify({
-      legalConsent: TEST_LEGAL_CONSENT,
+      legalConsent: createTestLegalConsent(),
       ...(quote
         ? { pricingFingerprint: quote.summary.pricingFingerprint }
         : {}),

@@ -146,7 +146,7 @@ async function runNotificationWorkerUntilSent(orderId: string, maxRuns = 20) {
 
     await runNotificationOutboxWorker({
       runId: `notify-worker-${crypto.randomUUID()}`,
-      limit: 5000,
+      limit: 1,
       leaseSeconds: 120,
       maxAttempts: 5,
       baseBackoffSeconds: 5,

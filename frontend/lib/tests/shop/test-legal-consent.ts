@@ -10,5 +10,3 @@ export function createTestLegalConsent() {
     privacyVersion: canonicalLegalVersions.privacyVersion,
   } as const;
 }
-
-export const TEST_LEGAL_CONSENT = createTestLegalConsent();

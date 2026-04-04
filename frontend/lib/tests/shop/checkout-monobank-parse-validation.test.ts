@@ -15,7 +15,8 @@ import {
   hasStatusTokenScope,
   verifyStatusToken,
 } from '@/lib/shop/status-token';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -143,7 +144,7 @@ function makeMonobankCheckoutReq(params: {
   acceptLanguage?: string;
 }) {
   const body = {
-    legalConsent: TEST_LEGAL_CONSENT,
+    legalConsent: createTestLegalConsent(),
     ...params.body,
   };
 

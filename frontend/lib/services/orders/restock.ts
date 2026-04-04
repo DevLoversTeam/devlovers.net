@@ -114,7 +114,7 @@ type OrderCanceledNotificationState = Pick<
 
 type RestockFinalizeState = Pick<
   OrderRow,
-  'status' | 'inventoryStatus' | 'stockRestored'
+  'status' | 'inventoryStatus' | 'stockRestored' | 'paymentStatus'
 >;
 
 async function loadOrderCanceledNotificationState(
@@ -170,7 +170,11 @@ function isRestockReasonAlreadyFinalized(
   }
 
   if (reason === 'refunded') {
-    return state.inventoryStatus === 'released' && state.stockRestored;
+    return (
+      state.paymentStatus === 'refunded' &&
+      state.inventoryStatus === 'released' &&
+      state.stockRestored
+    );
   }
 
   return false;
@@ -350,12 +354,19 @@ export async function restockOrder(
           status: orders.status,
           inventoryStatus: orders.inventoryStatus,
           stockRestored: orders.stockRestored,
+          paymentStatus: orders.paymentStatus,
         })
         .from(orders)
         .where(eq(orders.id, orderId))
         .limit(1);
 
       if (latest && isRestockReasonAlreadyFinalized(latest, reason)) {
+        if (reason === 'canceled') {
+          await ensureOrderCanceledCanonicalEvent({
+            orderId,
+            ensuredBy: 'restock_replay',
+          });
+        }
         return;
       }
 
@@ -525,12 +536,19 @@ export async function restockOrder(
         status: orders.status,
         inventoryStatus: orders.inventoryStatus,
         stockRestored: orders.stockRestored,
+        paymentStatus: orders.paymentStatus,
       })
       .from(orders)
       .where(eq(orders.id, orderId))
       .limit(1);
 
     if (latest && isRestockReasonAlreadyFinalized(latest, reason)) {
+      if (reason === 'canceled') {
+        await ensureOrderCanceledCanonicalEvent({
+          orderId,
+          ensuredBy: 'restock_replay',
+        });
+      }
       return;
     }
 

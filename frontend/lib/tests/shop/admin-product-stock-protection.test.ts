@@ -67,6 +67,9 @@ type SeededProduct = {
   initialStock: number;
 };
 
+type ProductInsertRow = typeof products.$inferInsert;
+type OrderInsertRow = typeof orders.$inferInsert;
+
 type SeededReservedOrder = {
   orderId: string;
   productId: string;
@@ -98,19 +101,27 @@ async function seedProduct(initialStock = 10): Promise<SeededProduct> {
   const productId = crypto.randomUUID();
   const suffix = crypto.randomUUID().slice(0, 8);
 
-  await db.insert(products).values({
+  const productRow: ProductInsertRow = {
     id: productId,
     title: `Admin stock protection ${suffix}`,
     slug: `admin-stock-protection-${suffix}`,
     sku: `admin-stock-${suffix}`,
+    description: null,
     badge: 'NONE',
     imageUrl: 'https://example.com/admin-stock.png',
+    imagePublicId: null,
     isActive: true,
     isFeatured: false,
     stock: initialStock,
     price: toDbMoney(1000),
+    originalPrice: null,
     currency: 'USD',
-  } as any);
+    category: null,
+    type: null,
+    colors: [],
+    sizes: [],
+  };
+  await db.insert(products).values(productRow);
 
   await db.insert(productPrices).values([
     {
@@ -143,7 +154,7 @@ async function seedReservedOrder(args?: {
   const { productId } = await seedProduct(initialStock);
   const orderId = crypto.randomUUID();
 
-  await db.insert(orders).values({
+  const orderRow: OrderInsertRow = {
     id: orderId,
     userId: null,
     totalAmountMinor: 4200,
@@ -160,7 +171,8 @@ async function seedReservedOrder(args?: {
     stockRestored: false,
     restockedAt: null,
     idempotencyKey: `idem_${crypto.randomUUID()}`,
-  } as any);
+  };
+  await db.insert(orders).values(orderRow);
 
   const reserveResult = await applyReserveMove(orderId, productId, reservedQty);
   expect(reserveResult.ok).toBe(true);

@@ -271,7 +271,7 @@ describe.sequential('admin order lifecycle audit reliability', () => {
       shippingStatus: 'shipped',
     });
 
-    await db.insert(shippingShipments).values({
+    const shipmentRow: typeof shippingShipments.$inferInsert = {
       id: crypto.randomUUID(),
       orderId,
       provider: 'nova_poshta',
@@ -280,7 +280,8 @@ describe.sequential('admin order lifecycle audit reliability', () => {
       leaseOwner: null,
       leaseExpiresAt: null,
       nextAttemptAt: null,
-    } as any);
+    };
+    await db.insert(shippingShipments).values(shipmentRow);
 
     writeAdminAuditMock.mockRejectedValueOnce(auditError);
 

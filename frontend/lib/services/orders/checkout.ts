@@ -923,21 +923,6 @@ export async function createOrderWithItems({
     shippingQuoteFingerprint,
     requireShippingQuoteFingerprint,
   });
-  const preparedLegalConsent = resolveCheckoutLegalConsent({
-    legalConsent,
-    locale,
-    country: country ?? null,
-  });
-
-  const requestHash = hashIdempotencyRequest({
-    items: normalizedItems,
-    currency,
-    locale: locale ?? null,
-    paymentProvider,
-    paymentMethod: resolvedPaymentMethod,
-    shipping: preparedShipping.hashRefs,
-    legalConsent: preparedLegalConsent.hashRefs,
-  });
 
   async function assertIdempotencyCompatible(existing: OrderSummaryWithMinor) {
     const [row] = await db
@@ -1211,22 +1196,6 @@ export async function createOrderWithItems({
     }
   }
 
-  const existing = await getOrderByIdempotencyKey(db, idempotencyKey);
-  if (existing) {
-    await assertIdempotencyCompatible(existing);
-    if (preparedShipping.required && preparedShipping.snapshot) {
-      await ensureOrderShippingSnapshot({
-        orderId: existing.id,
-        snapshot: preparedShipping.snapshot,
-      });
-    }
-    await ensureOrderCreatedCanonicalEvent(existing);
-    return {
-      order: existing,
-      isNew: false,
-      totalCents: requireTotalCents(existing),
-    };
-  }
   const uniqueProductIds = Array.from(
     new Set(normalizedItems.map(i => i.productId))
   );
@@ -1318,6 +1287,39 @@ export async function createOrderWithItems({
         }
       );
     }
+  }
+
+  const preparedLegalConsent = resolveCheckoutLegalConsent({
+    legalConsent,
+    locale,
+    country: country ?? null,
+  });
+
+  const requestHash = hashIdempotencyRequest({
+    items: normalizedItems,
+    currency,
+    locale: locale ?? null,
+    paymentProvider,
+    paymentMethod: resolvedPaymentMethod,
+    shipping: preparedShipping.hashRefs,
+    legalConsent: preparedLegalConsent.hashRefs,
+  });
+
+  const existing = await getOrderByIdempotencyKey(db, idempotencyKey);
+  if (existing) {
+    await assertIdempotencyCompatible(existing);
+    if (preparedShipping.required && preparedShipping.snapshot) {
+      await ensureOrderShippingSnapshot({
+        orderId: existing.id,
+        snapshot: preparedShipping.snapshot,
+      });
+    }
+    await ensureOrderCreatedCanonicalEvent(existing);
+    return {
+      order: existing,
+      isNew: false,
+      totalCents: requireTotalCents(existing),
+    };
   }
 
   const itemsSubtotalCents = sumLineTotals(

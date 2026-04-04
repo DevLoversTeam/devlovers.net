@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+import { createTestLegalConsent } from './test-legal-consent';
 
 function parseLoggedJson(spy: ReturnType<typeof vi.spyOn>, index = 0) {
   return JSON.parse(String(spy.mock.calls[index]?.[0] ?? '{}')) as Record<
@@ -86,7 +86,7 @@ describe('shop logging redaction real flows', () => {
           'x-request-id': 'checkout-redaction-test',
         },
         body: JSON.stringify({
-          legalConsent: TEST_LEGAL_CONSENT,
+          legalConsent: createTestLegalConsent(),
           userId: '11111111-1111-1111-1111-111111111111',
           items: [
             {

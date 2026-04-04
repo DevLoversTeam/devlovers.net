@@ -15,7 +15,8 @@ import {
 import { resetEnvCache } from '@/lib/env';
 import { rehydrateCartItems } from '@/lib/services/products';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 vi.mock('@/lib/auth', async () => {
   const actual = await vi.importActual<any>('@/lib/auth');
@@ -80,7 +81,7 @@ async function makeCheckoutRequest(args: {
         paymentMethod: 'stripe_card',
         items: [{ productId: args.productId, quantity: 1 }],
         pricingFingerprint: args.pricingFingerprint,
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
       }),
     })
   );

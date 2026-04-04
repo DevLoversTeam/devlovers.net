@@ -56,7 +56,7 @@ import { runNotificationOutboxWorker } from '@/lib/services/shop/notifications/o
 import { runNotificationOutboxProjector } from '@/lib/services/shop/notifications/projector';
 import { toDbMoney } from '@/lib/shop/money';
 
-import { TEST_LEGAL_CONSENT } from './test-legal-consent';
+import { createTestLegalConsent } from './test-legal-consent';
 
 type SeedProduct = {
   productId: string;
@@ -171,7 +171,7 @@ async function runNotificationWorkerUntilSent(orderId: string, maxRuns = 20) {
 
     await runNotificationOutboxWorker({
       runId: `notify-worker-${crypto.randomUUID()}`,
-      limit: 5000,
+      limit: 1,
       leaseSeconds: 120,
       maxAttempts: 5,
       baseBackoffSeconds: 5,
@@ -219,7 +219,7 @@ describe.sequential('checkout order-created notification phase 5', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
       });
@@ -231,7 +231,7 @@ describe.sequential('checkout order-created notification phase 5', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
       });
@@ -293,7 +293,7 @@ describe.sequential('checkout order-created notification phase 5', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
       });
@@ -361,7 +361,7 @@ describe.sequential('checkout order-created notification phase 5', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
       });

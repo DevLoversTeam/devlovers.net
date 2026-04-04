@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+import { createTestLegalConsent } from './test-legal-consent';
 
 const enforceRateLimitMock = vi.fn();
 const createOrderWithItemsMock = vi.fn();
@@ -88,7 +88,7 @@ describe('checkout rate limit policy', () => {
         origin: 'http://localhost:3000',
       },
       body: JSON.stringify({
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
         items: [

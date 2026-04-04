@@ -20,7 +20,8 @@ import {
 } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import { rehydrateCartItems } from '@/lib/services/products';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 vi.mock('@/lib/auth', async () => {
   const actual =
@@ -184,7 +185,7 @@ async function makeCheckoutRequest(
     payload && typeof payload === 'object' && !Array.isArray(payload)
       ? ({ ...(payload as Record<string, unknown>) } as Record<string, unknown>)
       : {};
-  body.legalConsent ??= TEST_LEGAL_CONSENT;
+  body.legalConsent ??= createTestLegalConsent();
   const items = Array.isArray(body.items) ? body.items : [];
   const currency = 'UAH';
 

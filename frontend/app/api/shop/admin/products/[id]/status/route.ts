@@ -197,25 +197,20 @@ export async function PATCH(
     }
 
     if (error instanceof InvalidPayloadError) {
-      const rec = error as unknown as Record<string, unknown>;
-      const code = typeof rec.code === 'string' ? rec.code : 'INVALID_PAYLOAD';
-      const field = typeof rec.field === 'string' ? rec.field : undefined;
-      const details = rec.details;
-
       logWarn('admin_product_status_invalid_payload_error', {
         ...baseMeta,
-        code,
+        code: error.code,
         productId: productIdForLog,
-        field,
+        field: error.field,
         durationMs: Date.now() - startedAtMs,
       });
 
       return noStoreJson(
         {
           error: error.message || 'Invalid product state',
-          code,
-          field,
-          details,
+          code: error.code,
+          field: error.field,
+          details: error.details,
         },
         { status: 400 }
       );

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 import { MoneyValueError } from '@/db/queries/shop/orders';
 import { getCurrentUser } from '@/lib/auth';
@@ -53,8 +54,11 @@ import {
   type StatusTokenScope,
 } from '@/lib/shop/status-token';
 import {
-  checkoutPayloadSchema,
+  checkoutItemSchema,
+  checkoutShippingSchema,
+  currencySchema,
   idempotencyKeySchema,
+  paymentMethodSchema,
 } from '@/lib/validation/shop';
 
 type CheckoutRequestedProvider = 'stripe' | 'monobank';
@@ -248,11 +252,112 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-function hasLegalConsentValidationIssue(issues: Array<{ path?: unknown[] }>) {
-  return issues.some(
-    issue => Array.isArray(issue.path) && issue.path[0] === 'legalConsent'
-  );
-}
+const routeCheckoutRequestedProviderSchema = z.enum(['stripe', 'monobank']);
+const routePricingFingerprintSchema = z
+  .string()
+  .trim()
+  .length(64)
+  .regex(/^[a-f0-9]{64}$/);
+
+const routeCheckoutLegalConsentSchema = z.preprocess(
+  value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return undefined;
+    }
+
+    const record = value as Record<string, unknown>;
+    return {
+      termsAccepted:
+        typeof record.termsAccepted === 'boolean'
+          ? record.termsAccepted
+          : undefined,
+      privacyAccepted:
+        typeof record.privacyAccepted === 'boolean'
+          ? record.privacyAccepted
+          : undefined,
+      termsVersion:
+        typeof record.termsVersion === 'string'
+          ? record.termsVersion
+          : undefined,
+      privacyVersion:
+        typeof record.privacyVersion === 'string'
+          ? record.privacyVersion
+          : undefined,
+    };
+  },
+  z
+    .object({
+      termsAccepted: z.boolean().optional(),
+      privacyAccepted: z.boolean().optional(),
+      termsVersion: z.string().trim().min(1).max(64).optional(),
+      privacyVersion: z.string().trim().min(1).max(64).optional(),
+    })
+    .strict()
+    .optional()
+);
+
+const checkoutRoutePayloadSchema = z
+  .object({
+    items: z.array(checkoutItemSchema).min(1),
+    userId: z.string().uuid().optional(),
+    country: z
+      .string()
+      .trim()
+      .length(2)
+      .transform(value => value.toUpperCase())
+      .optional(),
+    shipping: checkoutShippingSchema.optional(),
+    legalConsent: routeCheckoutLegalConsentSchema,
+    pricingFingerprint: routePricingFingerprintSchema.optional(),
+    shippingQuoteFingerprint: routePricingFingerprintSchema.optional(),
+    paymentProvider: routeCheckoutRequestedProviderSchema.optional(),
+    paymentMethod: paymentMethodSchema.optional(),
+    paymentCurrency: currencySchema.optional(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (!value.paymentMethod) return;
+
+    if (!value.paymentProvider) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['paymentProvider'],
+        message: 'paymentProvider is required when paymentMethod is provided',
+      });
+      return;
+    }
+
+    const provider = value.paymentProvider;
+    const method = value.paymentMethod;
+
+    const providerAllowed =
+      (method === 'stripe_card' && provider === 'stripe') ||
+      ((method === 'monobank_invoice' || method === 'monobank_google_pay') &&
+        provider === 'monobank');
+
+    if (!providerAllowed) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['paymentMethod'],
+        message:
+          'paymentMethod is not allowed for the selected paymentProvider',
+      });
+      return;
+    }
+
+    if (
+      (method === 'monobank_invoice' || method === 'monobank_google_pay') &&
+      value.paymentCurrency != null &&
+      value.paymentCurrency !== 'UAH'
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['paymentMethod'],
+        message:
+          'paymentMethod is not allowed for the selected provider and currency',
+      });
+    }
+  });
 
 function isMonobankInvalidRequestError(error: unknown): boolean {
   const code = getErrorCode(error);
@@ -274,6 +379,37 @@ function isMonobankInvalidRequestError(error: unknown): boolean {
 
 function mapMonobankCheckoutError(error: unknown) {
   const code = getErrorCode(error);
+
+  if (error instanceof PriceConfigError || code === 'PRICE_CONFIG_ERROR') {
+    return {
+      code: 'PRICE_CONFIG_ERROR',
+      message: getErrorMessage(error, 'Price configuration error.'),
+      status: 422,
+      details:
+        error instanceof PriceConfigError
+          ? {
+              productId: error.productId,
+              currency: error.currency,
+            }
+          : undefined,
+    } as const;
+  }
+
+  if (
+    error instanceof IdempotencyConflictError ||
+    code === 'IDEMPOTENCY_CONFLICT'
+  ) {
+    return {
+      code: 'CHECKOUT_IDEMPOTENCY_CONFLICT',
+      message:
+        error instanceof IdempotencyConflictError
+          ? error.message
+          : 'Checkout idempotency conflict.',
+      status: 422,
+      details:
+        error instanceof IdempotencyConflictError ? error.details : undefined,
+    } as const;
+  }
 
   if (code) {
     const status =
@@ -307,21 +443,6 @@ function mapMonobankCheckoutError(error: unknown) {
     } as const;
   }
 
-  if (error instanceof PriceConfigError || code === 'PRICE_CONFIG_ERROR') {
-    return {
-      code: 'PRICE_CONFIG_ERROR',
-      message: getErrorMessage(error, 'Price configuration error.'),
-      status: 422,
-      details:
-        error instanceof PriceConfigError
-          ? {
-              productId: error.productId,
-              currency: error.currency,
-            }
-          : undefined,
-    } as const;
-  }
-
   if (
     error instanceof PspUnavailableError ||
     code === 'PSP_UNAVAILABLE' ||
@@ -331,22 +452,6 @@ function mapMonobankCheckoutError(error: unknown) {
       code: 'PSP_UNAVAILABLE',
       message: 'Payment provider unavailable.',
       status: 503,
-    } as const;
-  }
-
-  if (
-    error instanceof IdempotencyConflictError ||
-    code === 'IDEMPOTENCY_CONFLICT'
-  ) {
-    return {
-      code: 'CHECKOUT_IDEMPOTENCY_CONFLICT',
-      message:
-        error instanceof IdempotencyConflictError
-          ? error.message
-          : 'Checkout idempotency conflict.',
-      status: 422,
-      details:
-        error instanceof IdempotencyConflictError ? error.details : undefined,
     } as const;
   }
 
@@ -1080,24 +1185,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const parsedPayload = checkoutPayloadSchema.safeParse(payloadForValidation);
+  const parsedPayload =
+    checkoutRoutePayloadSchema.safeParse(payloadForValidation);
 
   if (!parsedPayload.success) {
-    if (hasLegalConsentValidationIssue(parsedPayload.error.issues ?? [])) {
-      logWarn('checkout_legal_consent_required', {
-        ...meta,
-        code: 'LEGAL_CONSENT_REQUIRED',
-        issuesCount: parsedPayload.error.issues?.length ?? 0,
-      });
-
-      return errorResponse(
-        'LEGAL_CONSENT_REQUIRED',
-        'Explicit legal consent is required before checkout.',
-        422,
-        parsedPayload.error.format()
-      );
-    }
-
     if (selectedProvider === 'monobank') {
       logWarn('checkout_invalid_request', {
         ...meta,
@@ -1259,7 +1350,9 @@ export async function POST(request: NextRequest) {
         locale,
         country: country ?? null,
         shipping: shipping ?? null,
-        legalConsent,
+        legalConsent: legalConsent as Parameters<
+          typeof createOrderWithItems
+        >[0]['legalConsent'],
         pricingFingerprint,
         shippingQuoteFingerprint,
         requirePricingFingerprint: true,
@@ -1287,7 +1380,9 @@ export async function POST(request: NextRequest) {
         locale,
         country: country ?? null,
         shipping: shipping ?? null,
-        legalConsent,
+        legalConsent: legalConsent as Parameters<
+          typeof createOrderWithItems
+        >[0]['legalConsent'],
         pricingFingerprint,
         shippingQuoteFingerprint,
         requirePricingFingerprint: true,
@@ -1754,8 +1849,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (error instanceof InsufficientStockError) {
-      return errorResponse('INSUFFICIENT_STOCK', error.message, 422);
+    if (
+      error instanceof InsufficientStockError ||
+      getErrorCode(error) === 'OUT_OF_STOCK'
+    ) {
+      return errorResponse(
+        'INSUFFICIENT_STOCK',
+        error instanceof InsufficientStockError
+          ? error.message
+          : getErrorMessage(error, 'Insufficient stock.'),
+        422
+      );
     }
 
     if (error instanceof MoneyValueError) {

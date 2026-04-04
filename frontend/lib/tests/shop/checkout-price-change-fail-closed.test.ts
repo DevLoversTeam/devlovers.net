@@ -15,7 +15,8 @@ import {
 import { resetEnvCache } from '@/lib/env';
 import { rehydrateCartItems } from '@/lib/services/products';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 vi.mock('@/lib/auth', async () => {
   const actual =
@@ -197,7 +198,7 @@ function makeCheckoutRequest(args: {
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
         pricingFingerprint: args.pricingFingerprint,
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         items: [{ productId: args.productId, quantity: 1 }],
       }),
     })
@@ -223,7 +224,7 @@ describe('checkout fail-closed for changed price mismatch', () => {
           body: JSON.stringify({
             paymentProvider: 'stripe',
             paymentMethod: 'stripe_card',
-            legalConsent: TEST_LEGAL_CONSENT,
+            legalConsent: createTestLegalConsent(),
             items: [{ productId, quantity: 1 }],
           }),
         })

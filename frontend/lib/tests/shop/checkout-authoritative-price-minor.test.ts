@@ -1,4 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 const { dbSelectMock } = vi.hoisted(() => ({
   dbSelectMock: vi.fn(),
@@ -26,19 +34,33 @@ vi.mock('@/lib/services/orders/summary', () => ({
 
 import { createOrderWithItems } from '@/lib/services/orders/checkout';
 import { rehydrateCartItems } from '@/lib/services/products';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+import { createTestLegalConsent } from '@/lib/tests/shop/test-legal-consent';
 
 function mockSelectRows(rows: unknown[]) {
+  const where = async () => rows;
   dbSelectMock.mockImplementationOnce(() => ({
     from: () => ({
+      where,
       leftJoin: () => ({
-        where: async () => rows,
+        where,
       }),
     }),
   }));
 }
 
 describe('checkout authoritative priceMinor guard', () => {
+  const previousAuthSecret = process.env.AUTH_SECRET;
+
+  beforeAll(() => {
+    process.env.AUTH_SECRET =
+      'test_auth_secret_checkout_authoritative_price_minor';
+  });
+
+  afterAll(() => {
+    if (previousAuthSecret === undefined) delete process.env.AUTH_SECRET;
+    else process.env.AUTH_SECRET = previousAuthSecret;
+  });
+
   beforeEach(() => {
     dbSelectMock.mockReset();
   });
@@ -99,7 +121,7 @@ describe('checkout authoritative priceMinor guard', () => {
         locale: 'uk-UA',
         country: 'UA',
         shipping: null,
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
       })

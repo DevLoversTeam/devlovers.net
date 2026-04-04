@@ -1182,6 +1182,60 @@ async function markFailed(args: {
   );
 }
 
+async function markNeedsAttentionAfterSucceeded(args: {
+  shipmentId: string;
+  orderId: string;
+  error: ShipmentError;
+}): Promise<{ shipment_updated: boolean; order_updated: boolean } | null> {
+  const safeErrorMessage = sanitizeShippingErrorMessage(
+    args.error.message,
+    'Shipment processing failed.'
+  );
+
+  const res = await db.execute<{
+    shipment_updated: boolean;
+    order_updated: boolean;
+  }>(sql`
+    with updated_shipment as (
+      update shipping_shipments s
+      set status = 'needs_attention',
+          last_error_code = ${args.error.code},
+          last_error_message = ${safeErrorMessage},
+          next_attempt_at = null,
+          lease_owner = null,
+          lease_expires_at = null,
+          updated_at = now()
+      where s.id = ${args.shipmentId}::uuid
+        and s.status in ('succeeded', 'needs_attention')
+      returning s.order_id
+    ),
+    updated_order as (
+      update orders o
+      set shipping_status = 'needs_attention',
+          updated_at = now()
+      where o.id = ${args.orderId}::uuid
+        and exists (select 1 from updated_shipment)
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: 'needs_attention',
+          allowNullFrom: true,
+          includeSame: true,
+        })}
+      returning o.id
+    )
+    select
+      exists (select 1 from updated_shipment) as shipment_updated,
+      exists (select 1 from updated_order) as order_updated
+  `);
+
+  return (
+    readRows<{
+      shipment_updated: boolean;
+      order_updated: boolean;
+    }>(res)[0] ?? null
+  );
+}
+
 async function finalizeShipmentSuccess(args: {
   claim: ClaimedShipmentRow;
   runId: string;
@@ -1213,17 +1267,14 @@ async function finalizeShipmentSuccess(args: {
       statusTo: 'label_created',
     });
 
-    const updated = await markFailed({
+    const updated = await markNeedsAttentionAfterSucceeded({
       shipmentId: args.claim.id,
-      runId: args.runId,
       orderId: args.claim.order_id,
       error: buildFailure(
         'SHIPMENT_SUCCESS_APPLY_BLOCKED',
         'Shipment carrier success could not be applied because the order shipping transition was blocked.',
         false
       ),
-      nextAttemptAt: null,
-      terminalNeedsAttention: true,
     });
 
     if (!updated?.shipment_updated) {

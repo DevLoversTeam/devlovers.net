@@ -8,7 +8,8 @@ import { orders, productPrices, products } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 import { getOrSeedActiveTemplateProduct } from '@/lib/tests/helpers/seed-product';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 
@@ -177,7 +178,7 @@ async function postCheckout(params: {
 
     body: JSON.stringify({
       items: params.items,
-      legalConsent: TEST_LEGAL_CONSENT,
+      legalConsent: createTestLegalConsent(),
       ...(params.paymentProvider
         ? { paymentProvider: params.paymentProvider }
         : {}),

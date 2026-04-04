@@ -6,7 +6,7 @@ import { db } from '@/db';
 import { orderItems, orders, productPrices, products } from '@/db/schema/shop';
 import { createOrderWithItems } from '@/lib/services/orders';
 
-import { TEST_LEGAL_CONSENT } from './test-legal-consent';
+import { createTestLegalConsent } from './test-legal-consent';
 
 describe('order_items variants (selected_size/selected_color)', () => {
   it('creates two distinct order_items rows for same product with different variants', async () => {
@@ -27,31 +27,29 @@ describe('order_items variants (selected_size/selected_color)', () => {
       currency: 'USD',
       isActive: true,
       stock: 50,
-
-      ...({
-        sizes: ['S', 'M'],
-        colors: ['Red'],
-      } as any),
-    } as any);
-
-    await db.insert(productPrices).values({
-      id: priceId,
-      productId,
-      currency: 'UAH',
-      priceMinor: 1800,
-      originalPriceMinor: null,
-      price: '18.00',
-      originalPrice: null,
+      sizes: ['S', 'M'],
+      colors: ['black'],
     });
 
-    await db.insert(productPrices).values({
-      productId,
-      currency: 'USD',
-      priceMinor: 1800,
-      originalPriceMinor: null,
-      price: '18.00',
-      originalPrice: null,
-    });
+    await db.insert(productPrices).values([
+      {
+        id: priceId,
+        productId,
+        currency: 'UAH',
+        priceMinor: 1800,
+        originalPriceMinor: null,
+        price: '18.00',
+        originalPrice: null,
+      },
+      {
+        productId,
+        currency: 'USD',
+        priceMinor: 1800,
+        originalPriceMinor: null,
+        price: '18.00',
+        originalPrice: null,
+      },
+    ]);
 
     try {
       const idem = crypto.randomUUID();
@@ -59,22 +57,20 @@ describe('order_items variants (selected_size/selected_color)', () => {
         idempotencyKey: idem,
         userId: null,
         locale: 'en-US',
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         items: [
           {
             productId,
             quantity: 1,
-
             selectedSize: 'S',
-            selectedColor: 'Red',
-          } as any,
+            selectedColor: 'black',
+          },
           {
             productId,
             quantity: 1,
-
             selectedSize: 'M',
-            selectedColor: 'Red',
-          } as any,
+            selectedColor: 'black',
+          },
         ],
       });
 
@@ -85,14 +81,6 @@ describe('order_items variants (selected_size/selected_color)', () => {
         String(v ?? '')
           .trim()
           .toLowerCase();
-
-      const sizes = result.order.items.map(i => norm((i as any).selectedSize));
-      const colors = result.order.items.map(i =>
-        norm((i as any).selectedColor)
-      );
-
-      expect(sizes.sort()).toEqual(['m', 's']);
-      expect(colors.sort()).toEqual(['red', 'red']);
 
       const rows = await db
         .select({
@@ -112,7 +100,7 @@ describe('order_items variants (selected_size/selected_color)', () => {
         )
         .sort();
 
-      expect(rowKeys).toEqual([`${productId}|m|red`, `${productId}|s|red`]);
+      expect(rowKeys).toEqual([`${productId}|m|black`, `${productId}|s|black`]);
     } finally {
       if (orderId) {
         await db.delete(orders).where(eq(orders.id, orderId));

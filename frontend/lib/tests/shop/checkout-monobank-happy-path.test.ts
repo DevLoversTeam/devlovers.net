@@ -18,7 +18,8 @@ import { rehydrateCartItems } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
 import { assertNotProductionDb } from '@/lib/tests/helpers/db-safety';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -187,7 +188,7 @@ async function postCheckout(idemKey: string, productId: string) {
       items: [{ productId, quantity: 1 }],
       paymentProvider: 'monobank',
       pricingFingerprint: quote.summary.pricingFingerprint,
-      legalConsent: TEST_LEGAL_CONSENT,
+      legalConsent: createTestLegalConsent(),
     }),
   });
 

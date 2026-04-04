@@ -434,19 +434,19 @@ export async function applyAdminOrderShippingEdit(args: {
       };
     }
 
-    if (quoteAffectingChange) {
-      throw invalid(
-        'SHIPPING_EDIT_REQUIRES_TOTAL_SYNC',
-        'Quote-affecting shipping edits are blocked until order totals can be safely synchronized.'
-      );
-    }
-
     const resolved = await resolveSnapshotData({
       executor: tx,
       input: args.shipping,
       existingSnapshot: state.shipping_address,
       preserveQuote: true,
     });
+
+    if (quoteAffectingChange) {
+      throw invalid(
+        'SHIPPING_EDIT_REQUIRES_TOTAL_SYNC',
+        'Quote-affecting shipping edits are blocked until order totals can be safely synchronized.'
+      );
+    }
 
     const now = new Date();
     const [updatedOrder] = await tx

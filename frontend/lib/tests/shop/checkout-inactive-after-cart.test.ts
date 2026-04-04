@@ -22,6 +22,7 @@ import {
 } from '@/db/schema';
 import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { rehydrateCartItems } from '@/lib/services/products';
+import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 
 vi.mock('@/lib/auth', () => ({
@@ -53,19 +54,18 @@ const ensureStripePaymentIntentForOrderMock =
   ensureStripePaymentIntentForOrder as unknown as ReturnType<typeof vi.fn>;
 
 const createdProductIds: string[] = [];
-
-const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
-const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
-const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
-const __prevStripeSecret = process.env.STRIPE_SECRET_KEY;
-const __prevStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+type ProductInsertRow = typeof products.$inferInsert;
+type ProductPriceInsertRow = typeof productPrices.$inferInsert;
 
 beforeAll(() => {
-  process.env.RATE_LIMIT_DISABLED = '1';
-  process.env.PAYMENTS_ENABLED = 'true';
-  process.env.STRIPE_PAYMENTS_ENABLED = 'true';
-  process.env.STRIPE_SECRET_KEY = 'sk_test_checkout_inactive_after_cart';
-  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_checkout_inactive_after_cart';
+  vi.stubEnv('RATE_LIMIT_DISABLED', '1');
+  vi.stubEnv('PAYMENTS_ENABLED', 'true');
+  vi.stubEnv('STRIPE_PAYMENTS_ENABLED', 'true');
+  vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_checkout_inactive_after_cart');
+  vi.stubEnv(
+    'STRIPE_WEBHOOK_SECRET',
+    'whsec_test_checkout_inactive_after_cart'
+  );
 });
 
 afterAll(async () => {
@@ -81,24 +81,7 @@ afterAll(async () => {
       .where(inArray(productPrices.productId, createdProductIds));
     await db.delete(products).where(inArray(products.id, createdProductIds));
   }
-
-  if (__prevRateLimitDisabled === undefined)
-    delete process.env.RATE_LIMIT_DISABLED;
-  else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
-
-  if (__prevPaymentsEnabled === undefined) delete process.env.PAYMENTS_ENABLED;
-  else process.env.PAYMENTS_ENABLED = __prevPaymentsEnabled;
-
-  if (__prevStripePaymentsEnabled === undefined)
-    delete process.env.STRIPE_PAYMENTS_ENABLED;
-  else process.env.STRIPE_PAYMENTS_ENABLED = __prevStripePaymentsEnabled;
-
-  if (__prevStripeSecret === undefined) delete process.env.STRIPE_SECRET_KEY;
-  else process.env.STRIPE_SECRET_KEY = __prevStripeSecret;
-
-  if (__prevStripeWebhookSecret === undefined)
-    delete process.env.STRIPE_WEBHOOK_SECRET;
-  else process.env.STRIPE_WEBHOOK_SECRET = __prevStripeWebhookSecret;
+  vi.unstubAllEnvs();
 });
 
 beforeEach(() => {
@@ -110,14 +93,14 @@ async function seedCheckoutProduct() {
   const productId = crypto.randomUUID();
   const now = new Date();
 
-  await db.insert(products).values({
+  const productRow: ProductInsertRow = {
     id: productId,
     slug: `inactive-after-cart-${productId.slice(0, 8)}`,
     title: 'Inactive After Cart Product',
     description: null,
     imageUrl: 'https://example.com/inactive-after-cart.png',
     imagePublicId: null,
-    price: '40.00',
+    price: toDbMoney(4000),
     originalPrice: null,
     currency: 'USD',
     category: null,
@@ -131,19 +114,21 @@ async function seedCheckoutProduct() {
     sku: `inactive-after-cart-${productId.slice(0, 8)}`,
     createdAt: now,
     updatedAt: now,
-  } as any);
+  };
+  await db.insert(products).values(productRow);
 
-  await db.insert(productPrices).values({
+  const priceRow: ProductPriceInsertRow = {
     id: crypto.randomUUID(),
     productId,
     currency: 'UAH',
     priceMinor: 4000,
     originalPriceMinor: null,
-    price: '40.00',
+    price: toDbMoney(4000),
     originalPrice: null,
     createdAt: now,
     updatedAt: now,
-  } as any);
+  };
+  await db.insert(productPrices).values(priceRow);
 
   createdProductIds.push(productId);
   return { productId };
@@ -205,7 +190,7 @@ describe('checkout inactive-after-cart fail-closed contract', () => {
 
     await db
       .update(products)
-      .set({ isActive: false, updatedAt: new Date() } as any)
+      .set({ isActive: false, updatedAt: new Date() })
       .where(eq(products.id, productId));
 
     const idempotencyKey = crypto.randomUUID();

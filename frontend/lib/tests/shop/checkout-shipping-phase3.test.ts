@@ -20,7 +20,7 @@ import {
 } from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
 
-import { TEST_LEGAL_CONSENT } from './test-legal-consent';
+import { createTestLegalConsent } from './test-legal-consent';
 
 type SeedData = {
   productId: string;
@@ -173,7 +173,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'en-US',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -250,7 +250,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -297,7 +297,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_LOCKER',
@@ -340,7 +340,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_COURIER',
@@ -382,7 +382,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -463,7 +463,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -485,7 +485,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -530,7 +530,7 @@ describe('checkout shipping phase 3', () => {
           locale: 'uk-UA',
           country: 'UA',
           items: [{ productId: seed.productId, quantity: 1 }],
-          legalConsent: TEST_LEGAL_CONSENT,
+          legalConsent: createTestLegalConsent(),
           shipping: {
             provider: 'nova_poshta',
             methodCode: 'NP_WAREHOUSE',
@@ -578,7 +578,7 @@ describe('checkout shipping phase 3', () => {
           locale: 'uk-UA',
           country: 'UA',
           items: [{ productId: seed.productId, quantity: 1 }],
-          legalConsent: TEST_LEGAL_CONSENT,
+          legalConsent: createTestLegalConsent(),
           shipping: {
             provider: 'nova_poshta',
             methodCode: 'NP_WAREHOUSE',

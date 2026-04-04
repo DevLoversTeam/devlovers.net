@@ -21,7 +21,8 @@ import {
   cleanupSeededTemplateProduct,
   getOrSeedActiveTemplateProduct,
 } from '@/lib/tests/helpers/seed-product';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -212,7 +213,7 @@ async function postCheckout(
 
     body: JSON.stringify({
       items: [{ productId, quantity: 1 }],
-      legalConsent: TEST_LEGAL_CONSENT,
+      legalConsent: createTestLegalConsent(),
       paymentProvider: 'monobank',
       ...(pricingFingerprint ? { pricingFingerprint } : {}),
       ...(options?.paymentMethod
@@ -375,7 +376,7 @@ describe.sequential('checkout monobank contract', () => {
       });
       expect(second.status).toBe(422);
       const secondJson: any = await second.json();
-      expect(secondJson.code).toBe('IDEMPOTENCY_CONFLICT');
+      expect(secondJson.code).toBe('CHECKOUT_IDEMPOTENCY_CONFLICT');
 
       const [dbOrder] = await db
         .select({

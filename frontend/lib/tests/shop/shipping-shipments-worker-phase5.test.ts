@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
@@ -1541,6 +1541,145 @@ describe.sequential('shipping shipments worker phase 5', () => {
         )
       ).toBe(false);
     } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('converts carrier success into explicit needs_attention when the order transition becomes blocked after carrier success', async () => {
+    const seed = await seedShipment({ orderShippingStatus: 'queued' });
+
+    try {
+      const originalExecute = db.execute.bind(db);
+      const executeSpy = vi.spyOn(db, 'execute');
+
+      vi.mocked(createInternetDocument).mockResolvedValue({
+        providerRef: 'np-provider-ref-blocked-after-success',
+        trackingNumber: '20450000333333',
+      });
+
+      executeSpy.mockImplementation((async (query: unknown) => {
+        const sqlText = Array.isArray(
+          (query as { queryChunks?: unknown[] })?.queryChunks
+        )
+          ? (query as { queryChunks: unknown[] }).queryChunks
+              .map(chunk => {
+                if (
+                  chunk &&
+                  typeof chunk === 'object' &&
+                  'value' in (chunk as Record<string, unknown>) &&
+                  Array.isArray((chunk as { value?: unknown }).value)
+                ) {
+                  return ((chunk as { value: unknown[] }).value ?? []).join('');
+                }
+                return String(chunk ?? '');
+              })
+              .join('')
+          : '';
+
+        if (
+          sqlText.includes('update shipping_shipments s') &&
+          sqlText.includes('provider_ref =') &&
+          sqlText.includes('tracking_number =')
+        ) {
+          await originalExecute(sql`
+            update shipping_shipments
+            set status = 'succeeded',
+                attempt_count = attempt_count + 1,
+                provider_ref = ${'np-provider-ref-blocked-after-success'},
+                tracking_number = ${'20450000333333'},
+                last_error_code = null,
+                last_error_message = null,
+                next_attempt_at = null,
+                lease_owner = null,
+                lease_expires_at = null,
+                updated_at = now()
+            where id = ${seed.shipmentId}::uuid
+          `);
+
+          await originalExecute(sql`
+            update orders
+            set shipping_status = 'shipped',
+                updated_at = now()
+            where id = ${seed.orderId}::uuid
+          `);
+
+          return [
+            {
+              shipment_updated: true,
+              order_updated: false,
+              order_id: seed.orderId,
+            },
+          ] as any;
+        }
+
+        return originalExecute(query as any);
+      }) as typeof db.execute);
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 1,
+        processed: 1,
+        succeeded: 0,
+        retried: 0,
+        needsAttention: 1,
+      });
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          lastErrorCode: shippingShipments.lastErrorCode,
+          providerRef: shippingShipments.providerRef,
+          trackingNumber: shippingShipments.trackingNumber,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('needs_attention');
+      expect(shipment?.attemptCount).toBe(1);
+      expect(shipment?.lastErrorCode).toBe('SHIPMENT_SUCCESS_APPLY_BLOCKED');
+      expect(shipment?.providerRef).toBe(
+        'np-provider-ref-blocked-after-success'
+      );
+      expect(shipment?.trackingNumber).toBe('20450000333333');
+
+      const [order] = await db
+        .select({
+          shippingStatus: orders.shippingStatus,
+          trackingNumber: orders.trackingNumber,
+          shippingProviderRef: orders.shippingProviderRef,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(order?.shippingStatus).toBe('shipped');
+      expect(order?.trackingNumber).toBeNull();
+      expect(order?.shippingProviderRef).toBeNull();
+
+      const publicEvents = workerEvents(
+        await readOrderShippingEvents(seed.orderId)
+      );
+      const terminalEvents = publicEvents.filter(
+        event => event.eventName === 'label_creation_needs_attention'
+      );
+      expect(terminalEvents).toHaveLength(1);
+      expect(terminalEvents[0]?.eventRef).toBe(
+        'SHIPMENT_SUCCESS_APPLY_BLOCKED'
+      );
+      expect(
+        publicEvents.some(event => event.eventName === 'label_created')
+      ).toBe(false);
+    } finally {
+      vi.restoreAllMocks();
       await cleanupSeed(seed);
     }
   });

@@ -329,6 +329,69 @@ describe.sequential('admin shipping edit service', () => {
     }
   });
 
+  it('surfaces invalid shipping address before total-sync rejection for stale quote-affecting refs', async () => {
+    const seed = await seedEditableOrder();
+    const requestId = `req_${crypto.randomUUID()}`;
+
+    try {
+      await expect(
+        applyAdminOrderShippingEdit({
+          orderId: seed.orderId,
+          actorUserId: null,
+          requestId,
+          shipping: {
+            provider: 'nova_poshta',
+            methodCode: 'NP_COURIER',
+            selection: {
+              cityRef: `missing_city_${crypto.randomUUID()}`,
+              addressLine1: 'Khreshchatyk 7',
+              addressLine2: 'Apartment 21',
+            },
+            recipient: {
+              fullName: 'Olena Petrenko',
+              phone: '+380671112233',
+              email: 'olena@example.com',
+              comment: 'Call before delivery',
+            },
+          },
+        })
+      ).rejects.toMatchObject({
+        name: 'AdminOrderShippingEditError',
+        code: 'INVALID_SHIPPING_ADDRESS',
+        status: 400,
+      });
+
+      const [orderRow] = await db
+        .select({
+          shippingMethodCode: orders.shippingMethodCode,
+          shippingProvider: orders.shippingProvider,
+          shippingAmountMinor: orders.shippingAmountMinor,
+          totalAmountMinor: orders.totalAmountMinor,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(orderRow).toEqual({
+        shippingMethodCode: 'NP_WAREHOUSE',
+        shippingProvider: 'nova_poshta',
+        shippingAmountMinor: 100,
+        totalAmountMinor: 1000,
+      });
+
+      const auditRows = await db
+        .select({
+          action: adminAuditLog.action,
+        })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, seed.orderId));
+
+      expect(auditRows).toHaveLength(0);
+    } finally {
+      await cleanup(seed);
+    }
+  });
+
   it('keeps fulfillment-facing persisted snapshot coherent for recipient-only edits while shipment stays queued', async () => {
     const seed = await seedEditableOrder({
       shippingStatus: 'queued',

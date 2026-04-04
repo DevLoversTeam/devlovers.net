@@ -47,6 +47,7 @@ async function assertProductCanBeActivated(
         'SALE badge requires original price for each provided currency.',
         {
           code: 'SALE_ORIGINAL_REQUIRED',
+          field: 'prices',
           details: {
             currency: invalidSaleRow.currency,
             field: 'originalPriceMinor',
@@ -57,7 +58,6 @@ async function assertProductCanBeActivated(
           },
         }
       );
-      (error as any).field = 'prices';
       throw error;
     }
   }
@@ -72,10 +72,10 @@ async function assertProductCanBeActivated(
       'At least one product photo is required.',
       {
         code: 'IMAGE_REQUIRED',
+        field: 'photos',
         details: { productId: current.id },
       }
     );
-    (error as any).field = 'photos';
     throw error;
   }
 }

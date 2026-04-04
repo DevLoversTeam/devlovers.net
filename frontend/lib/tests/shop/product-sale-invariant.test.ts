@@ -22,7 +22,7 @@ function uniqueSlug(prefix = 'sale-invariant') {
 
 function dualCurrencyPrices(
   priceMinor: number,
-  originalPriceMinor: number | null
+  originalPriceMinor: number | null = null
 ) {
   return [
     { currency: 'UAH' as const, priceMinor, originalPriceMinor },
@@ -102,20 +102,29 @@ describe('SALE invariant: originalPriceMinor is required', () => {
 
     const rows = await db
       .select({
+        currency: productPrices.currency,
         priceMinor: productPrices.priceMinor,
         originalPriceMinor: productPrices.originalPriceMinor,
       })
       .from(productPrices)
-      .where(eq(productPrices.productId, p.id))
-      .limit(2);
+      .where(eq(productPrices.productId, p.id));
 
-    expect(rows).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          priceMinor: 1000,
-          originalPriceMinor: 2000,
-        }),
-      ])
-    );
+    expect(rows).toHaveLength(2);
+    expect(
+      [...rows].sort((left, right) =>
+        left.currency.localeCompare(right.currency)
+      )
+    ).toEqual([
+      {
+        currency: 'UAH',
+        priceMinor: 1000,
+        originalPriceMinor: 2000,
+      },
+      {
+        currency: 'USD',
+        priceMinor: 1000,
+        originalPriceMinor: 2000,
+      },
+    ]);
   }, 30_000);
 });

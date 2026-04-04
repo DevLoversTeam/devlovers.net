@@ -29,15 +29,21 @@ export class OrderNotFoundError extends Error {
 
 export class InvalidPayloadError extends Error {
   code: string;
+  field?: string;
   details?: Record<string, unknown>;
 
   constructor(
     message = 'Invalid payload',
-    opts?: { code?: string; details?: Record<string, unknown> }
+    opts?: {
+      code?: string;
+      field?: string;
+      details?: Record<string, unknown>;
+    }
   ) {
     super(message);
     this.name = 'InvalidPayloadError';
     this.code = opts?.code ?? 'INVALID_PAYLOAD';
+    this.field = opts?.field;
     this.details = opts?.details;
   }
 }

@@ -9,11 +9,19 @@ import {
   vi,
 } from 'vitest';
 
-import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+import { createTestLegalConsent } from '@/lib/tests/shop/test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock('@/lib/shop/commercial-policy.server', () => ({
+  resolveStandardStorefrontProviderCapabilities: vi.fn(() => ({
+    stripeCheckoutEnabled: true,
+    monobankCheckoutEnabled: true,
+    monobankGooglePayEnabled: false,
+    enabledProviders: ['monobank', 'stripe'],
+  })),
 }));
 
 vi.mock('@/lib/env/stripe', async () => {
@@ -113,10 +121,55 @@ beforeEach(() => {
   getCurrentUserMock.mockResolvedValue(null);
 });
 
+function makeValidationCheckoutReq(params: {
+  idempotencyKey: string;
+  items?: Array<{
+    productId: string;
+    quantity: number;
+    selectedSize?: string;
+    selectedColor?: string;
+  }>;
+  legalConsent?: Record<string, unknown> | null;
+  paymentProvider?: 'stripe' | 'monobank';
+  paymentMethod?: 'stripe_card' | 'monobank_invoice';
+}) {
+  const paymentProvider = params.paymentProvider ?? 'stripe';
+  const paymentMethod = params.paymentMethod ?? 'stripe_card';
+
+  const headers = new Headers({
+    'content-type': 'application/json',
+    'accept-language': 'en',
+    'idempotency-key': params.idempotencyKey,
+    'x-forwarded-for': '198.51.100.10',
+    'x-real-ip': '198.51.100.10',
+    origin: 'http://localhost:3000',
+  });
+
+  return new NextRequest(
+    new Request('http://localhost/api/shop/checkout', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        items: params.items ?? [
+          {
+            productId: '11111111-1111-4111-8111-111111111111',
+            quantity: 1,
+          },
+        ],
+        ...(params.legalConsent === null
+          ? {}
+          : { legalConsent: params.legalConsent ?? createTestLegalConsent() }),
+        paymentProvider,
+        paymentMethod,
+      }),
+    })
+  );
+}
+
 describe('checkout route validation/business error contract', () => {
   it('returns 422 INVALID_PAYLOAD for schema-level invalid checkout payload', async () => {
     const response = await POST(
-      makeCheckoutReq({
+      makeValidationCheckoutReq({
         idempotencyKey: 'checkout_invalid_payload_0001',
         items: [
           {
@@ -134,8 +187,17 @@ describe('checkout route validation/business error contract', () => {
   });
 
   it('returns 422 LEGAL_CONSENT_REQUIRED when explicit consent is missing', async () => {
+    createOrderWithItemsMock.mockRejectedValueOnce(
+      new InvalidPayloadError(
+        'Explicit legal consent is required before checkout.',
+        {
+          code: 'LEGAL_CONSENT_REQUIRED',
+        }
+      )
+    );
+
     const response = await POST(
-      makeCheckoutReq({
+      makeValidationCheckoutReq({
         idempotencyKey: 'checkout_legal_consent_0001',
         legalConsent: null,
       })
@@ -144,7 +206,7 @@ describe('checkout route validation/business error contract', () => {
     expect(response.status).toBe(422);
     const json = await response.json();
     expect(json.code).toBe('LEGAL_CONSENT_REQUIRED');
-    expect(createOrderWithItemsMock).not.toHaveBeenCalled();
+    expect(createOrderWithItemsMock).toHaveBeenCalledTimes(1);
   });
 
   it('returns 422 INVALID_VARIANT for service-level variant rejection', async () => {
@@ -158,7 +220,9 @@ describe('checkout route validation/business error contract', () => {
     );
 
     const response = await POST(
-      makeCheckoutReq({ idempotencyKey: 'checkout_invalid_variant_0001' })
+      makeValidationCheckoutReq({
+        idempotencyKey: 'checkout_invalid_variant_0001',
+      })
     );
 
     expect(response.status).toBe(422);
@@ -232,7 +296,7 @@ describe('checkout route validation/business error contract', () => {
     createOrderWithItemsMock.mockRejectedValueOnce(error);
 
     const response = await POST(
-      makeCheckoutReq({
+      makeValidationCheckoutReq({
         idempotencyKey: `checkout_${String(expectedCode).toLowerCase()}_0001`,
       })
     );
@@ -248,12 +312,83 @@ describe('checkout route validation/business error contract', () => {
     );
 
     const response = await POST(
-      makeCheckoutReq({ idempotencyKey: 'checkout_unexpected_error_0001' })
+      makeValidationCheckoutReq({
+        idempotencyKey: 'checkout_unexpected_error_0001',
+      })
     );
 
     expect(response.status).toBe(500);
     const json = await response.json();
     expect(json.code).toBe('INTERNAL_ERROR');
+  });
+
+  it('preserves structured PriceConfigError details for monobank checkout errors', async () => {
+    createOrderWithItemsMock.mockRejectedValueOnce(
+      new PriceConfigError('Missing UAH price.', {
+        productId: '11111111-1111-4111-8111-111111111111',
+        currency: 'UAH',
+      })
+    );
+
+    const response = await POST(
+      makeValidationCheckoutReq({
+        idempotencyKey: 'checkout_monobank_price_config_0001',
+        paymentProvider: 'monobank',
+        paymentMethod: 'monobank_invoice',
+      })
+    );
+
+    expect(response.status).toBe(422);
+    const json = await response.json();
+    expect(json.code).toBe('PRICE_CONFIG_ERROR');
+    expect(json.details).toMatchObject({
+      productId: '11111111-1111-4111-8111-111111111111',
+      currency: 'UAH',
+    });
+  });
+
+  it('preserves structured idempotency conflict details for monobank checkout errors', async () => {
+    createOrderWithItemsMock.mockRejectedValueOnce(
+      new IdempotencyConflictError(
+        'Idempotency key reuse with different payload.',
+        {
+          existingOrderId: 'order_existing_0001',
+        }
+      )
+    );
+
+    const response = await POST(
+      makeValidationCheckoutReq({
+        idempotencyKey: 'checkout_monobank_idempotency_conflict_0001',
+        paymentProvider: 'monobank',
+        paymentMethod: 'monobank_invoice',
+      })
+    );
+
+    expect(response.status).toBe(422);
+    const json = await response.json();
+    expect(json.code).toBe('CHECKOUT_IDEMPOTENCY_CONFLICT');
+    expect(json.details).toMatchObject({
+      existingOrderId: 'order_existing_0001',
+    });
+  });
+
+  it('returns 422 INSUFFICIENT_STOCK for business-code stock errors outside the typed stock exception path', async () => {
+    createOrderWithItemsMock.mockRejectedValueOnce(
+      Object.assign(new Error('Insufficient stock.'), {
+        code: 'OUT_OF_STOCK',
+      })
+    );
+
+    const response = await POST(
+      makeValidationCheckoutReq({
+        idempotencyKey: 'checkout_business_out_of_stock_0001',
+      })
+    );
+
+    expect(response.status).toBe(422);
+    const json = await response.json();
+    expect(json.code).toBe('INSUFFICIENT_STOCK');
   });
 });
 
@@ -263,6 +398,9 @@ function makeRouteCheckoutReq(params: {
   paymentMethod?: 'stripe_card' | 'monobank_invoice';
   userId?: string;
 }) {
+  const paymentProvider = params.paymentProvider ?? 'stripe';
+  const paymentMethod = params.paymentMethod ?? 'stripe_card';
+
   const headers = new Headers({
     'content-type': 'application/json',
     'accept-language': 'uk-UA',
@@ -284,13 +422,9 @@ function makeRouteCheckoutReq(params: {
             quantity: 1,
           },
         ],
-        legalConsent: TEST_LEGAL_CONSENT,
-        ...(params.paymentProvider
-          ? { paymentProvider: params.paymentProvider }
-          : {}),
-        ...(params.paymentMethod
-          ? { paymentMethod: params.paymentMethod }
-          : {}),
+        legalConsent: createTestLegalConsent(),
+        paymentProvider,
+        paymentMethod,
         ...(params.userId ? { userId: params.userId } : {}),
       }),
     })

@@ -26,7 +26,8 @@ import {
 import { resetEnvCache } from '@/lib/env';
 import { rehydrateCartItems } from '@/lib/services/products';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 const enforceRateLimitMock = vi.fn();
 
@@ -326,7 +327,7 @@ function makeCheckoutRequest(args: {
           },
         },
         items: [{ productId: args.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         ...(args.extraBody ?? {}),
       }),
     })
