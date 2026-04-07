@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+import { createTestLegalConsent } from '@/lib/tests/shop/test-legal-consent';
 
 export type CheckoutItemInput = {
   productId: string;
@@ -59,7 +59,7 @@ export function makeCheckoutReq(params: {
       items: payloadItems,
       ...(params.legalConsent === null
         ? {}
-        : { legalConsent: params.legalConsent ?? TEST_LEGAL_CONSENT }),
+        : { legalConsent: params.legalConsent ?? createTestLegalConsent() }),
       ...(params.userId ? { userId: params.userId } : {}),
     }),
   });
