@@ -982,3 +982,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Stabilized auth and CSRF secret resolution in SSR runtime using server-safe env reads
 - Fixed Vercel Analytics loading condition to avoid `/_vercel/insights/script.js` 404 on Netlify
 - Improved Redis client safety path for malformed or missing runtime configuration
+
+## [1.0.11] - 2026-04-12
+
+### Added
+
+- Shop launch-readiness hardening (repeat audit integration):
+  - Payment correctness protections with webhook-first terminal-state handling
+  - Inventory reserve/release integrity and concurrency safeguards
+  - Carrier/shipment idempotency protections and explicit lifecycle safety states
+  - Expanded checkout idempotency and legal-consent contract coverage
+  - Operational runtime safety checks and stricter env validation for critical routes
+- Shop customer communications:
+  - Transactional notifications for `order_created`, `order_shipped`, `order_canceled`, and `order_returned`
+  - Fail-closed guest recipient policy and improved notification reliability at business-action boundaries
+- Shop merchandising/admin improvements:
+  - Controlled post-order shipping edit flow and expanded shipment visibility
+  - Better admin audit/history coverage for product and order operations
+  - Size guide UX component decoupled from purchase availability on PDP
+- Platform and content:
+  - New Java and Spring categories with icons, seeded data, and category accent styles
+  - Seller address env support for legal/seller information surfaces
+
+### Changed
+
+- Commercial policy refactor (CP-01):
+  - Locale now controls language only; storefront commercial behavior is policy-driven
+  - UAH enforced as canonical storefront currency across locales
+  - Checkout/provider selection made locale-agnostic and server-authoritative
+  - Admin pricing contract aligned with UAH-required / USD-compatibility-only policy
+- Netlify SSR runtime stability:
+  - Runtime env fallback chain and allowlist coverage expanded for auth, admin, and shop flows
+  - OAuth provider/env resolution hardened to avoid build/runtime crashes on develop
+  - Server env reads unified through `readServerEnv(...)` in remaining sensitive paths
+- Q&A pagination UX:
+  - Replaced native per-page select with custom accessible dropdown
+  - Unified page-size control visuals with pagination style
+  - Dropdown behavior refined (keyboard navigation, outside click close, chevron state)
+
+### Fixed
+
+- Fixed footer overlap in Q&A per-page control by opening dropdown upward with higher stacking context
+- Fixed stale test helper import (`TEST_LEGAL_CONSENT`) by switching to runtime consent factory generation
+- Fixed OAuth build/runtime fragility by lazy-loading provider env usage
+- Fixed shop/runtime regressions around env delivery and SSR safety on Netlify develop
