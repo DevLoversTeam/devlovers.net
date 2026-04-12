@@ -143,8 +143,9 @@ describe('Pagination', () => {
       />
     );
 
-    const select = screen.getByLabelText('itemsPerPageAria');
-    fireEvent.change(select, { target: { value: '40' } });
+    const trigger = screen.getByLabelText('itemsPerPageAria');
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole('option', { name: '40' }));
 
     expect(onPageSizeChange).toHaveBeenCalledWith(40);
   });
