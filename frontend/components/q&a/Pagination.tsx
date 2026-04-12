@@ -1,8 +1,8 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -38,6 +38,19 @@ export function Pagination({
   const accentSoft = hexToRgba(accentColor, 0.16);
   const accentGlow = hexToRgba(accentColor, 0.22);
   const [isMobile, setIsMobile] = useState(false);
+  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
+  const pageSizeInstanceId = useId();
+  const pageSizeLabelId = `${pageSizeInstanceId}-label`;
+  const pageSizeTriggerId = `${pageSizeInstanceId}-trigger`;
+  const pageSizeListboxId = `${pageSizeInstanceId}-listbox`;
+  const pageSizeTriggerRef = useRef<HTMLButtonElement>(null);
+  const pageSizeDropdownRef = useRef<HTMLDivElement>(null);
+  const pageSizeOptionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const selectedPageSizeIndex = pageSizeOptions.findIndex(
+    size => size === pageSize
+  );
+  const normalizedSelectedPageSizeIndex =
+    selectedPageSizeIndex >= 0 ? selectedPageSizeIndex : 0;
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 640px)');
@@ -46,6 +59,122 @@ export function Pagination({
     media.addEventListener('change', update);
     return () => media.removeEventListener('change', update);
   }, []);
+
+  useEffect(() => {
+    if (!isPageSizeOpen) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      if (
+        pageSizeDropdownRef.current &&
+        !pageSizeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsPageSizeOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsPageSizeOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isPageSizeOpen]);
+
+  useEffect(() => {
+    if (!isPageSizeOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      pageSizeOptionRefs.current[normalizedSelectedPageSizeIndex]?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isPageSizeOpen, normalizedSelectedPageSizeIndex]);
+
+  const focusPageSizeOption = (index: number) => {
+    if (pageSizeOptions.length === 0) return;
+    const clamped = Math.max(0, Math.min(index, pageSizeOptions.length - 1));
+    pageSizeOptionRefs.current[clamped]?.focus();
+  };
+
+  const selectPageSize = (size: number) => {
+    onPageSizeChange?.(size);
+    setIsPageSizeOpen(false);
+    window.requestAnimationFrame(() => {
+      pageSizeTriggerRef.current?.focus();
+    });
+  };
+
+  const handlePageSizeTriggerKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>
+  ) => {
+    if (
+      event.key !== 'ArrowDown' &&
+      event.key !== 'ArrowUp' &&
+      event.key !== 'Home' &&
+      event.key !== 'End'
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    if (!isPageSizeOpen) {
+      setIsPageSizeOpen(true);
+    }
+
+    window.requestAnimationFrame(() => {
+      if (event.key === 'ArrowDown') {
+        focusPageSizeOption(normalizedSelectedPageSizeIndex + 1);
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        focusPageSizeOption(normalizedSelectedPageSizeIndex - 1);
+        return;
+      }
+      if (event.key === 'Home') {
+        focusPageSizeOption(0);
+        return;
+      }
+      focusPageSizeOption(pageSizeOptions.length - 1);
+    });
+  };
+
+  const handlePageSizeOptionKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    index: number
+  ) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      focusPageSizeOption(index + 1);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      focusPageSizeOption(index - 1);
+      return;
+    }
+    if (event.key === 'Home') {
+      event.preventDefault();
+      focusPageSizeOption(0);
+      return;
+    }
+    if (event.key === 'End') {
+      event.preventDefault();
+      focusPageSizeOption(pageSizeOptions.length - 1);
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setIsPageSizeOpen(false);
+      pageSizeTriggerRef.current?.focus();
+    }
+  };
 
   const effectiveTotalPages = Math.max(totalPages, 1);
 
@@ -183,32 +312,84 @@ export function Pagination({
       {onPageSizeChange && pageSizeOptions.length > 1 && (
         <div className="absolute top-1/2 right-0 hidden -translate-y-1/2 items-center gap-2 lg:flex">
           <label
-            htmlFor="qa-page-size"
+            id={pageSizeLabelId}
             className="text-xs font-medium whitespace-nowrap text-gray-600 dark:text-gray-300"
           >
             {t('itemsPerPage')}
           </label>
           <div
-            className="relative overflow-hidden rounded-lg border bg-white/90 shadow-sm dark:bg-neutral-900/80"
+            ref={pageSizeDropdownRef}
+            className="relative rounded-lg border bg-white/90 shadow-sm dark:bg-neutral-900/80"
             style={{
               borderColor: accentColor,
               boxShadow: `0 0 0 1px ${accentSoft}`,
             }}
           >
-            <select
-              id="qa-page-size"
-              value={pageSize}
-              onChange={event => onPageSizeChange(Number(event.target.value))}
+            <button
+              ref={pageSizeTriggerRef}
+              id={pageSizeTriggerId}
+              type="button"
+              onClick={() => setIsPageSizeOpen(prev => !prev)}
+              onKeyDown={handlePageSizeTriggerKeyDown}
               aria-label={t('itemsPerPageAria')}
-              className="min-w-20 appearance-none bg-transparent px-3 py-2 pr-9 text-sm font-medium text-gray-800 transition-colors outline-none hover:bg-[var(--qa-accent-soft)] focus:bg-[var(--qa-accent-soft)] dark:text-gray-200"
+              aria-haspopup="listbox"
+              aria-expanded={isPageSizeOpen}
+              aria-controls={pageSizeListboxId}
+              aria-labelledby={`${pageSizeLabelId} ${pageSizeTriggerId}`}
+              className="flex min-w-20 items-center justify-between gap-2 rounded-lg bg-transparent px-3 py-2 text-sm font-medium text-gray-800 transition-colors outline-none hover:bg-[var(--qa-accent-soft)] focus:bg-[var(--qa-accent-soft)] dark:text-gray-200"
             >
-              {pageSizeOptions.map(size => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-600 dark:text-gray-300" />
+              <span>{pageSize}</span>
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 text-gray-600 transition-transform dark:text-gray-300',
+                  isPageSizeOpen && 'rotate-180'
+                )}
+              />
+            </button>
+
+            {isPageSizeOpen && (
+              <ul
+                id={pageSizeListboxId}
+                role="listbox"
+                aria-labelledby={pageSizeLabelId}
+                className="absolute right-0 bottom-[calc(100%+8px)] z-[80] min-w-full rounded-lg border bg-white/95 p-1 shadow-lg backdrop-blur-md dark:bg-neutral-900/90"
+                style={{
+                  borderColor: accentColor,
+                  boxShadow: `0 10px 24px ${accentGlow}`,
+                }}
+              >
+                {pageSizeOptions.map((size, optionIndex) => {
+                  const selected = size === pageSize;
+                  return (
+                    <li key={size}>
+                      <button
+                        ref={node => {
+                          pageSizeOptionRefs.current[optionIndex] = node;
+                        }}
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        onClick={() => selectPageSize(size)}
+                        onKeyDown={event =>
+                          handlePageSizeOptionKeyDown(event, optionIndex)
+                        }
+                        className={cn(
+                          'flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm font-medium transition-colors',
+                          selected
+                            ? 'bg-[var(--qa-accent-soft)] text-gray-900 dark:text-gray-100'
+                            : 'text-gray-700 hover:bg-[var(--qa-accent-soft)] dark:text-gray-300'
+                        )}
+                      >
+                        <span>{size}</span>
+                        {selected && (
+                          <Check className="h-3.5 w-3.5 text-gray-700 dark:text-gray-100" />
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
       )}
