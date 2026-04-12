@@ -39,8 +39,18 @@ export function Pagination({
   const accentGlow = hexToRgba(accentColor, 0.22);
   const [isMobile, setIsMobile] = useState(false);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
+  const pageSizeInstanceId = useId();
+  const pageSizeLabelId = `${pageSizeInstanceId}-label`;
+  const pageSizeTriggerId = `${pageSizeInstanceId}-trigger`;
+  const pageSizeListboxId = `${pageSizeInstanceId}-listbox`;
+  const pageSizeTriggerRef = useRef<HTMLButtonElement>(null);
   const pageSizeDropdownRef = useRef<HTMLDivElement>(null);
-  const pageSizeListboxId = useId();
+  const pageSizeOptionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const selectedPageSizeIndex = pageSizeOptions.findIndex(
+    size => size === pageSize
+  );
+  const normalizedSelectedPageSizeIndex =
+    selectedPageSizeIndex >= 0 ? selectedPageSizeIndex : 0;
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 640px)');
@@ -78,6 +88,93 @@ export function Pagination({
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isPageSizeOpen]);
+
+  useEffect(() => {
+    if (!isPageSizeOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      pageSizeOptionRefs.current[normalizedSelectedPageSizeIndex]?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isPageSizeOpen, normalizedSelectedPageSizeIndex]);
+
+  const focusPageSizeOption = (index: number) => {
+    if (pageSizeOptions.length === 0) return;
+    const clamped = Math.max(0, Math.min(index, pageSizeOptions.length - 1));
+    pageSizeOptionRefs.current[clamped]?.focus();
+  };
+
+  const selectPageSize = (size: number) => {
+    onPageSizeChange?.(size);
+    setIsPageSizeOpen(false);
+    window.requestAnimationFrame(() => {
+      pageSizeTriggerRef.current?.focus();
+    });
+  };
+
+  const handlePageSizeTriggerKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>
+  ) => {
+    if (
+      event.key !== 'ArrowDown' &&
+      event.key !== 'ArrowUp' &&
+      event.key !== 'Home' &&
+      event.key !== 'End'
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    if (!isPageSizeOpen) {
+      setIsPageSizeOpen(true);
+    }
+
+    window.requestAnimationFrame(() => {
+      if (event.key === 'ArrowDown') {
+        focusPageSizeOption(normalizedSelectedPageSizeIndex + 1);
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        focusPageSizeOption(normalizedSelectedPageSizeIndex - 1);
+        return;
+      }
+      if (event.key === 'Home') {
+        focusPageSizeOption(0);
+        return;
+      }
+      focusPageSizeOption(pageSizeOptions.length - 1);
+    });
+  };
+
+  const handlePageSizeOptionKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    index: number
+  ) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      focusPageSizeOption(index + 1);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      focusPageSizeOption(index - 1);
+      return;
+    }
+    if (event.key === 'Home') {
+      event.preventDefault();
+      focusPageSizeOption(0);
+      return;
+    }
+    if (event.key === 'End') {
+      event.preventDefault();
+      focusPageSizeOption(pageSizeOptions.length - 1);
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setIsPageSizeOpen(false);
+      pageSizeTriggerRef.current?.focus();
+    }
+  };
 
   const effectiveTotalPages = Math.max(totalPages, 1);
 
@@ -215,7 +312,7 @@ export function Pagination({
       {onPageSizeChange && pageSizeOptions.length > 1 && (
         <div className="absolute top-1/2 right-0 hidden -translate-y-1/2 items-center gap-2 lg:flex">
           <label
-            id="qa-page-size-label"
+            id={pageSizeLabelId}
             className="text-xs font-medium whitespace-nowrap text-gray-600 dark:text-gray-300"
           >
             {t('itemsPerPage')}
@@ -229,14 +326,16 @@ export function Pagination({
             }}
           >
             <button
-              id="qa-page-size-trigger"
+              ref={pageSizeTriggerRef}
+              id={pageSizeTriggerId}
               type="button"
               onClick={() => setIsPageSizeOpen(prev => !prev)}
+              onKeyDown={handlePageSizeTriggerKeyDown}
               aria-label={t('itemsPerPageAria')}
               aria-haspopup="listbox"
               aria-expanded={isPageSizeOpen}
               aria-controls={pageSizeListboxId}
-              aria-labelledby="qa-page-size-label qa-page-size-trigger"
+              aria-labelledby={`${pageSizeLabelId} ${pageSizeTriggerId}`}
               className="flex min-w-20 items-center justify-between gap-2 rounded-lg bg-transparent px-3 py-2 text-sm font-medium text-gray-800 transition-colors outline-none hover:bg-[var(--qa-accent-soft)] focus:bg-[var(--qa-accent-soft)] dark:text-gray-200"
             >
               <span>{pageSize}</span>
@@ -252,25 +351,28 @@ export function Pagination({
               <ul
                 id={pageSizeListboxId}
                 role="listbox"
-                aria-label={t('itemsPerPageAria')}
+                aria-labelledby={pageSizeLabelId}
                 className="absolute right-0 bottom-[calc(100%+8px)] z-[80] min-w-full rounded-lg border bg-white/95 p-1 shadow-lg backdrop-blur-md dark:bg-neutral-900/90"
                 style={{
                   borderColor: accentColor,
                   boxShadow: `0 10px 24px ${accentGlow}`,
                 }}
               >
-                {pageSizeOptions.map(size => {
+                {pageSizeOptions.map((size, optionIndex) => {
                   const selected = size === pageSize;
                   return (
                     <li key={size}>
                       <button
+                        ref={node => {
+                          pageSizeOptionRefs.current[optionIndex] = node;
+                        }}
                         type="button"
                         role="option"
                         aria-selected={selected}
-                        onClick={() => {
-                          onPageSizeChange(size);
-                          setIsPageSizeOpen(false);
-                        }}
+                        onClick={() => selectPageSize(size)}
+                        onKeyDown={event =>
+                          handlePageSizeOptionKeyDown(event, optionIndex)
+                        }
                         className={cn(
                           'flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm font-medium transition-colors',
                           selected
