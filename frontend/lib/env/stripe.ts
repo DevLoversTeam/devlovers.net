@@ -32,10 +32,14 @@ export function getStripeEnv(): StripeEnv {
   const publishableKey = nonEmpty(
     readServerEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')
   );
+  const rawMode = nonEmpty(readServerEnv('STRIPE_MODE'))?.toLowerCase();
 
   const mode =
-    (nonEmpty(readServerEnv('STRIPE_MODE')) as 'test' | 'live' | null) ??
-    (String(nodeEnv).trim().toLowerCase() === 'production' ? 'live' : 'test');
+    rawMode === 'test' || rawMode === 'live'
+      ? rawMode
+      : String(nodeEnv).trim().toLowerCase() === 'production'
+        ? 'live'
+        : 'test';
 
   const paymentsEnabled =
     paymentsFlag === 'true' && !!secretKey && !!webhookSecret;
