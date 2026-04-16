@@ -1,9 +1,9 @@
-import { getClientEnv, getRuntimeEnv } from '@/lib/env';
 import {
   assertProductionLikeProviderString,
   isProductionLikeRuntime,
   ShopProviderConfigError,
 } from '@/lib/env/provider-runtime';
+import { readServerEnv } from '@/lib/env/server-env';
 
 export type StripeEnv = {
   secretKey: string | null;
@@ -25,19 +25,17 @@ function nonEmpty(v: string | undefined): string | null {
 }
 
 export function getStripeEnv(): StripeEnv {
-  const runtimeEnv = getRuntimeEnv();
-  const clientEnv = getClientEnv();
-
-  const paymentsFlag = process.env.PAYMENTS_ENABLED ?? 'false';
-  const secretKey = nonEmpty(process.env.STRIPE_SECRET_KEY);
-  const webhookSecret = nonEmpty(process.env.STRIPE_WEBHOOK_SECRET);
+  const nodeEnv = readServerEnv('NODE_ENV') ?? process.env.NODE_ENV;
+  const paymentsFlag = readServerEnv('PAYMENTS_ENABLED') ?? 'false';
+  const secretKey = nonEmpty(readServerEnv('STRIPE_SECRET_KEY'));
+  const webhookSecret = nonEmpty(readServerEnv('STRIPE_WEBHOOK_SECRET'));
   const publishableKey = nonEmpty(
-    clientEnv.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? undefined
+    readServerEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')
   );
 
   const mode =
-    (nonEmpty(process.env.STRIPE_MODE) as 'test' | 'live' | null) ??
-    (runtimeEnv.NODE_ENV === 'production' ? 'live' : 'test');
+    (nonEmpty(readServerEnv('STRIPE_MODE')) as 'test' | 'live' | null) ??
+    (String(nodeEnv).trim().toLowerCase() === 'production' ? 'live' : 'test');
 
   const paymentsEnabled =
     paymentsFlag === 'true' && !!secretKey && !!webhookSecret;
@@ -100,10 +98,10 @@ function isFlagEnabled(value: string | undefined): boolean {
 }
 
 function isStripeRailEnabledByFlags(): boolean {
-  const paymentsEnabled = isFlagEnabled(process.env.PAYMENTS_ENABLED);
+  const paymentsEnabled = isFlagEnabled(readServerEnv('PAYMENTS_ENABLED'));
   if (!paymentsEnabled) return false;
 
-  const stripeFlag = (process.env.STRIPE_PAYMENTS_ENABLED ?? '').trim();
+  const stripeFlag = (readServerEnv('STRIPE_PAYMENTS_ENABLED') ?? '').trim();
   return stripeFlag.length > 0 ? stripeFlag === 'true' : true;
 }
 

@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { readServerEnv } from './server-env';
+
 const PLACEHOLDER_SEGMENTS = new Set([
   'test',
   'testing',
@@ -59,10 +61,10 @@ export class ShopProviderConfigError extends Error {
 }
 
 export function isProductionLikeRuntime(): boolean {
-  const appEnv = String(process.env.APP_ENV ?? '')
+  const appEnv = String(readServerEnv('APP_ENV') ?? '')
     .trim()
     .toLowerCase();
-  const nodeEnv = String(process.env.NODE_ENV ?? '')
+  const nodeEnv = String(readServerEnv('NODE_ENV') ?? process.env.NODE_ENV ?? '')
     .trim()
     .toLowerCase();
   return appEnv === 'production' || nodeEnv === 'production';
