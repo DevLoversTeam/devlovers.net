@@ -1,6 +1,6 @@
-type CategoryRegistryItem = {
-  slug: string;
-  title: string;
+type CategoryRegistryItem<TSlug extends string = string, TTitle extends string = string> = {
+  slug: TSlug;
+  title: TTitle;
   displayOrder: number;
   icon: string;
   accent: string;
@@ -9,16 +9,19 @@ type CategoryRegistryItem = {
   glowClassName: string;
 };
 
-const createRegistryItem = (
-  slug: string,
-  title: string,
+const createRegistryItem = <
+  TSlug extends string,
+  TTitle extends string,
+>(
+  slug: TSlug,
+  title: TTitle,
   displayOrder: number,
   icon: string,
   accent: string,
   colorClassName: string,
   glowClassName: string,
   options?: { iconClassName?: string }
-): CategoryRegistryItem => ({
+): CategoryRegistryItem<TSlug, TTitle> => ({
   slug,
   title,
   displayOrder,

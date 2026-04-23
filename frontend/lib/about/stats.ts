@@ -13,7 +13,10 @@ export interface PlatformStats {
 }
 
 const formatMetric = (n: number) => {
-  if (n >= 1000) return (n / 1000).toFixed(1) + 'k+';
+  if (n >= 1000) {
+    const value = n / 1000;
+    return (Number.isInteger(value) ? value.toString() : value.toFixed(1)) + 'k+';
+  }
   return n.toString();
 };
 
