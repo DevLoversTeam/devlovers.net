@@ -13,7 +13,10 @@ export interface PlatformStats {
 }
 
 const formatMetric = (n: number) => {
-  if (n >= 1000) return (n / 1000).toFixed(1) + 'k+';
+  if (n >= 1000) {
+    const value = n / 1000;
+    return (Number.isInteger(value) ? value.toString() : value.toFixed(1)) + 'k+';
+  }
   return n.toString();
 };
 
@@ -43,7 +46,7 @@ export const getPlatformStats = unstable_cache(
 
     const linkedinCount = process.env.LINKEDIN_FOLLOWER_COUNT
       ? parseInt(process.env.LINKEDIN_FOLLOWER_COUNT)
-      : 1900;
+      : 2000;
 
     let totalUsers = 243;
     let solvedTests = 1890;
