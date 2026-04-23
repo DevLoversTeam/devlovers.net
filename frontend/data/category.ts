@@ -1,3 +1,5 @@
+import { categoryRegistry } from './categoryRegistry';
+
 const createCategory = (slug: string, title: string, displayOrder: number) => ({
   slug,
   displayOrder,
@@ -8,31 +10,6 @@ const createCategory = (slug: string, title: string, displayOrder: number) => ({
   },
 });
 
-export const categoryData = [
-  createCategory('git', 'Git', 0),
-  createCategory('html', 'HTML', 1),
-  createCategory('css', 'CSS', 2),
-  createCategory('javascript', 'JavaScript', 3),
-  createCategory('typescript', 'TypeScript', 4),
-  createCategory('react', 'React', 5),
-  createCategory('next', 'Next.js', 6),
-  createCategory('vue', 'Vue.js', 7),
-  createCategory('angular', 'Angular', 8),
-  createCategory('node', 'Node.js', 9),
-  createCategory('sql', 'SQL', 10),
-  createCategory('postgresql', 'PostgreSQL', 11),
-  createCategory('mongodb', 'MongoDB', 12),
-  createCategory('python', 'Python', 13),
-  createCategory('django', 'Django', 14),
-  createCategory('docker', 'Docker', 15),
-  createCategory('kubernetes', 'Kubernetes', 16),
-  createCategory('aws', 'AWS', 17),
-  createCategory('azure', 'Azure', 18),
-  createCategory('devops', 'DevOps', 19),
-  createCategory('swift', 'Swift', 20),
-  createCategory('flutter', 'Flutter', 21),
-  createCategory('kotlin', 'Kotlin', 22),
-  createCategory('reactnative', 'React Native', 23),
-  createCategory('java', 'Java', 24),
-  createCategory('spring', 'Spring', 25),
-];
+export const categoryData = categoryRegistry.map(item =>
+  createCategory(item.slug, item.title, item.displayOrder)
+);
