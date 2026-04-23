@@ -1026,3 +1026,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed stale test helper import (`TEST_LEGAL_CONSENT`) by switching to runtime consent factory generation
 - Fixed OAuth build/runtime fragility by lazy-loading provider env usage
 - Fixed shop/runtime regressions around env delivery and SSR safety on Netlify develop
+
+## [1.0.12] - 2026-04-23
+
+### Added
+
+- New category visual support:
+  - Added PHP, Laravel, C#, and .NET category styles and SVG icon mapping
+  - Introduced centralized `categoryRegistry` as a single source of truth for category metadata and style config
+
+### Changed
+
+- Q&A / Quiz category architecture:
+  - Refactored `categoryData` and `categoryTabStyles` generation to use shared registry-driven definitions
+  - Preserved existing style/data APIs (`categoryData`, `categoryTabStyles`, `getCategoryTabStyle`) for compatibility across pages
+- About page social metric:
+  - Updated LinkedIn followers fallback target from `1.8k+` to `2k+`
+  - Normalized compact-number formatting so whole thousands render as `2k+` (without `.0`)
+- Docs and project presentation:
+  - Refreshed README screenshots and dashboard section copy
+  - Updated README Blog section to reflect in-house admin workflow (not Sanity CMS)
+
+### Fixed
+
+- Shop cart SSR/runtime capability checks:
+  - Restored fail-closed cart provider resolution behavior to prevent SSR crashes when unrelated env is missing
+  - Migrated Stripe/Monobank cart capability env reads to runtime-safe server env access for Netlify
+- Category typing robustness:
+  - Preserved literal slug/title types in `categoryRegistry` factory to avoid widening to `string`
+- UI polish:
+  - Brightened Django category accent color for better readability on dark theme
