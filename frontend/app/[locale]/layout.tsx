@@ -10,10 +10,32 @@ import { CookieBanner } from '@/components/shared/CookieBanner';
 import Footer from '@/components/shared/Footer';
 import { ScrollWatcher } from '@/components/shared/ScrollWatcher';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
-import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
 import { AuthProvider } from '@/hooks/useAuth';
 import { locales } from '@/i18n/config';
 import { readServerEnv } from '@/lib/env/server-env';
+
+type BlogCategory = {
+  id: string;
+  slug: string;
+  title: string;
+};
+
+async function getLayoutBlogCategories(locale: string): Promise<BlogCategory[]> {
+  try {
+    const { getCachedBlogCategories } = await import(
+      '@/db/queries/blog/blog-categories'
+    );
+
+    return await getCachedBlogCategories(locale);
+  } catch (error) {
+    console.error(
+      `[layout] failed to load blog categories for locale "${locale}"`,
+      error
+    );
+
+    return [];
+  }
+}
 
 export default async function LocaleLayout({
   children,
@@ -28,7 +50,7 @@ export default async function LocaleLayout({
 
   const [messages, blogCategories] = await Promise.all([
     getMessages({ locale }),
-    getCachedBlogCategories(locale),
+    getLayoutBlogCategories(locale),
   ]);
 
   const enableAdmin =

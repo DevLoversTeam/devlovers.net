@@ -12,7 +12,9 @@ export async function generateMetadata({
 }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'homepage' });
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://devlovers.net';
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://devlovers.net'
+  ).replace(/\/$/, '');
   const canonicalUrl =
     locale === 'en' ? `${siteUrl}/en` : `${siteUrl}/${locale}`;
   const localeMap: Record<string, string> = {
