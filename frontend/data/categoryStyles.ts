@@ -1,5 +1,9 @@
-import type { CategorySlug } from '@/components/q&a/types';
-import { categoryRegistry } from '@/data/categoryRegistry';
+import {
+  categoryRegistry,
+  type CategoryRegistryEntry,
+} from '@/data/categoryRegistry';
+
+type CategorySlug = CategoryRegistryEntry['slug'];
 
 export type CategoryTabStyle = {
   icon: string;
@@ -28,7 +32,7 @@ export const categoryTabStyles = Object.fromEntries(
       iconClassName: item.iconClassName,
     } satisfies CategoryTabStyle,
   ])
-) as Partial<Record<CategorySlug, CategoryTabStyle>>;
+) as Record<CategorySlug, CategoryTabStyle>;
 
 export function getCategoryTabStyle(slug: string): CategoryTabStyle {
   return (
