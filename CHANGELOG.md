@@ -1056,3 +1056,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - Preserved literal slug/title types in `categoryRegistry` factory to avoid widening to `string`
 - UI polish:
   - Brightened Django category accent color for better readability on dark theme
+
+## [1.0.13] - 2026-07-18
+
+### Added
+
+- New category visual support:
+  - Added Go, GraphQL, NestJS, and NuxtJS to the centralized category registry
+  - Added SVG icons and category-specific accent styles for all four categories
+
+### Changed
+
+- Category styling architecture:
+  - Derived category slug typing directly from `categoryRegistry`
+  - Made generated category styles exhaustive for every registered category
+- Layout runtime resilience:
+  - Changed blog category loading to a guarded dynamic query with an empty-state fallback
+- Homepage SEO:
+  - Normalized the configured site URL before generating localized canonical URLs
+
+### Fixed
+
+- Prevented locale layout rendering from failing when blog category loading throws at runtime
+- Prevented duplicate slashes in homepage canonical URLs when `NEXT_PUBLIC_SITE_URL` ends with `/`
