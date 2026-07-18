@@ -309,6 +309,42 @@ export const categoryRegistry = [
     'group-hover:border-[#512BD4]/50 group-hover:bg-[#512BD4]/10 data-[state=active]:border-[#512BD4]/50 data-[state=active]:bg-[#512BD4]/10',
     'bg-[#512BD4]'
   ),
+  createRegistryItem(
+    'go',
+    'Go',
+    30,
+    '/icons/go.svg',
+    '#00ADD8',
+    'group-hover:border-[#00ADD8]/50 group-hover:bg-[#00ADD8]/10 data-[state=active]:border-[#00ADD8]/50 data-[state=active]:bg-[#00ADD8]/10',
+    'bg-[#00ADD8]'
+  ),
+  createRegistryItem(
+    'graphql',
+    'GraphQL',
+    31,
+    '/icons/graphql.svg',
+    '#E434AA',
+    'group-hover:border-[#E434AA]/50 group-hover:bg-[#E434AA]/10 data-[state=active]:border-[#E434AA]/50 data-[state=active]:bg-[#E434AA]/10',
+    'bg-[#E434AA]'
+  ),
+  createRegistryItem(
+    'nestjs',
+    'NestJS',
+    32,
+    '/icons/nestjs.svg',
+    '#DF234F',
+    'group-hover:border-[#DF234F]/50 group-hover:bg-[#DF234F]/10 data-[state=active]:border-[#DF234F]/50 data-[state=active]:bg-[#DF234F]/10',
+    'bg-[#DF234F]'
+  ),
+  createRegistryItem(
+    'nuxtjs',
+    'NuxtJS',
+    33,
+    '/icons/nuxtjs.svg',
+    '#00C58E',
+    'group-hover:border-[#00C58E]/50 group-hover:bg-[#00C58E]/10 data-[state=active]:border-[#00C58E]/50 data-[state=active]:bg-[#00C58E]/10',
+    'bg-[#00C58E]'
+  ),
 ] as const satisfies readonly CategoryRegistryItem[];
 
 export type CategoryRegistryEntry = (typeof categoryRegistry)[number];
