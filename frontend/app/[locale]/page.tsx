@@ -1,13 +1,10 @@
-import dynamic from 'next/dynamic';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 
+import FeaturesHeroSection from '@/components/home/FeaturesHeroSection';
 import HomePageScroll from '@/components/home/HomePageScroll';
 import WelcomeHeroSection from '@/components/home/WelcomeHeroSection';
-
-const LazyFeaturesHeroSection = dynamic(
-  () => import('@/components/home/FeaturesHeroSection')
-);
-const LazyFooter = dynamic(() => import('@/components/shared/Footer'));
+import LazyFooter from '@/components/shared/LazyFooter';
 
 export async function generateMetadata({
   params,
@@ -79,7 +76,9 @@ export default function Home() {
         data-home-step
         className="min-h-[calc(100dvh-4rem)] shrink-0 snap-start [scroll-snap-stop:always]"
       >
-        <LazyFeaturesHeroSection />
+        <Suspense fallback={null}>
+          <FeaturesHeroSection />
+        </Suspense>
       </div>
       <LazyFooter forceVisible />
     </HomePageScroll>
