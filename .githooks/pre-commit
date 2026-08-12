@@ -1,0 +1,9 @@
+#!/bin/sh
+
+cd frontend || exit 1
+
+echo "[pre-commit] lint-staged"
+npx lint-staged || exit 1
+
+echo "[pre-commit] typecheck"
+npx tsc --noEmit
