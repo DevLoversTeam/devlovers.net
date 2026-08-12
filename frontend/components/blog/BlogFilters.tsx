@@ -385,8 +385,8 @@ export default function BlogFilters({
 
       if (resolvedCategory) {
         const postCategories = (post.categories || [])
-        .map(c => normalizeTag(c?.title || ''))
-        .filter(Boolean);
+          .map(c => normalizeTag(c?.title || ''))
+          .filter(Boolean);
         if (!postCategories.includes(resolvedCategory.norm)) return false;
       }
 
@@ -530,7 +530,7 @@ export default function BlogFilters({
           {selectedAuthorData && (
             <div className="flex flex-col gap-6 md:flex-row md:items-start">
               {selectedAuthorData.image && (
-                <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden rounded-xl border border-[0.5px] border-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)]">
+                <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden rounded-xl border-[0.5px] border-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)]">
                   <Image
                     src={selectedAuthorData.image}
                     alt={selectedAuthorData.name || t('author')}
