@@ -41,6 +41,18 @@ export default defineConfig([
       '@typescript-eslint/no-explicit-any': 'off',
 
       /**
+       * No TS enum — use an `as const` object with a union type
+       */
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'TSEnumDeclaration',
+          message:
+            'Do not use TS enum: it emits runtime code and const enum is unusable with isolatedModules. Use an `as const` object with a union type.',
+        },
+      ],
+
+      /**
        * Let Prettier handle formatting
        */
       'react/jsx-curly-newline': 'off',
