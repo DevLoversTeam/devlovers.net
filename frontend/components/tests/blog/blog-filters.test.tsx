@@ -45,7 +45,7 @@ vi.mock('@/components/blog/BlogGrid', () => ({
   default: ({ posts }: { posts: Post[] }) => (
     <ul data-testid="blog-grid">
       {posts.map(post => (
-        <li key={post._id}>{post.title}</li>
+        <li key={post.id}>{post.title}</li>
       ))}
     </ul>
   ),
@@ -62,9 +62,9 @@ describe('BlogFilters', () => {
     searchParams = new URLSearchParams({ search: 'співбесіди' });
     const posts: Post[] = [
       {
-        _id: '1',
+        id: '1',
         title: 'Як підготуватися до співбесіди',
-        slug: { current: 'interview' },
+        slug: 'interview',
         body: [
           {
             _type: 'block',
@@ -73,9 +73,9 @@ describe('BlogFilters', () => {
         ],
       },
       {
-        _id: '2',
+        id: '2',
         title: 'CSS підказки',
-        slug: { current: 'css-tips' },
+        slug: 'css-tips',
         body: [
           {
             _type: 'block',
@@ -96,15 +96,15 @@ describe('BlogFilters', () => {
     searchParams = new URLSearchParams({ author: 'Анна' });
     const posts: Post[] = [
       {
-        _id: '1',
+        id: '1',
         title: 'Пост Анни',
-        slug: { current: 'anna-post' },
+        slug: 'anna-post',
         author: { name: 'Анна' },
       },
       {
-        _id: '2',
+        id: '2',
         title: 'Пост Віктора',
-        slug: { current: 'viktor-post' },
+        slug: 'viktor-post',
         author: { name: 'Віктор' },
       },
     ];

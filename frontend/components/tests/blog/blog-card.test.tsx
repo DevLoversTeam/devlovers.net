@@ -37,11 +37,11 @@ describe('BlogCard', () => {
       image: 'https://example.com/anna.jpg',
     };
     const post: Post = {
-      _id: '1',
+      id: '1',
       title: 'Пост про співбесіду',
-      slug: { current: 'interview' },
+      slug: 'interview',
       publishedAt: '2026-01-01',
-      categories: ['Growth'],
+      categories: [{ slug: 'growth', title: 'Growth' }],
       body: [
         {
           _type: 'block',
@@ -66,9 +66,9 @@ describe('BlogCard', () => {
   it('calls onAuthorSelect when author is clicked', () => {
     const author: Author = { name: 'Анна' };
     const post: Post = {
-      _id: '1',
+      id: '1',
       title: 'Пост',
-      slug: { current: 'post' },
+      slug: 'post',
       author,
     };
 

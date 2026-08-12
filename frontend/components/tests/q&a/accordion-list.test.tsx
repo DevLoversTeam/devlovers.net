@@ -175,9 +175,7 @@ describe('AccordionList', () => {
     fireEvent.click(screen.getByText('What is CSS?'));
 
     expect(
-      JSON.parse(
-        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
-      )
+      JSON.parse(localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]')
     ).toContain('css:What is CSS?');
   });
 
@@ -221,19 +219,13 @@ describe('AccordionList', () => {
 
     render(<AccordionList items={items} totalItems={1} />);
 
-    expect(
-      screen.queryByRole('button', { name: 'Add bookmark' })
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add bookmark' })).toBeNull();
 
     fireEvent.click(screen.getByText('What is CSS?'));
 
+    expect(screen.getByRole('button', { name: 'Add bookmark' })).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'Add bookmark' })
-    ).toBeTruthy();
-    expect(
-      JSON.parse(
-        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
-      )
+      JSON.parse(localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]')
     ).toContain('css:q1');
     expect(screen.getByText('1/1')).toBeTruthy();
   });
@@ -260,9 +252,7 @@ describe('AccordionList', () => {
 
     expect(screen.getByText('0/1')).toBeTruthy();
     expect(
-      JSON.parse(
-        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
-      )
+      JSON.parse(localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]')
     ).not.toContain('css:q1');
   });
 
@@ -311,21 +301,15 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} />);
+    render(<AccordionList items={items} totalItems={items.length} />);
 
-    expect(
-      screen.queryByRole('button', { name: 'Add bookmark' })
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add bookmark' })).toBeNull();
 
     fireEvent.click(screen.getByText('What is CSS?'));
 
+    expect(screen.getByRole('button', { name: 'Add bookmark' })).toBeTruthy();
     expect(
-      screen.getByRole('button', { name: 'Add bookmark' })
-    ).toBeTruthy();
-    expect(
-      JSON.parse(
-        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
-      )
+      JSON.parse(localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]')
     ).toContain('q1');
   });
 
@@ -344,7 +328,7 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} />);
+    render(<AccordionList items={items} totalItems={items.length} />);
 
     fireEvent.click(screen.getByText('What is CSS?'));
     fireEvent.click(screen.getByRole('button', { name: 'Add bookmark' }));
@@ -545,7 +529,7 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} />);
+    render(<AccordionList items={items} totalItems={items.length} />);
 
     fireEvent.click(screen.getByText('select-text'));
     expect(screen.getByText('dismiss')).toBeTruthy();
@@ -570,7 +554,7 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} />);
+    render(<AccordionList items={items} totalItems={items.length} />);
 
     expect(screen.getByTestId('code-block').textContent).toBe('<div></div>');
   });

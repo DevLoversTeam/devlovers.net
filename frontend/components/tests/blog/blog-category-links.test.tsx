@@ -43,8 +43,8 @@ describe('BlogCategoryLinks', () => {
     render(
       <BlogCategoryLinks
         categories={[
-          { _id: '1', title: 'Tech' },
-          { _id: '2', title: 'Growth' },
+          { id: '1', slug: 'tech', title: 'Tech' },
+          { id: '2', slug: 'growth', title: 'Growth' },
         ]}
       />
     );

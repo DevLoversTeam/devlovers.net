@@ -32,6 +32,9 @@ type QuizState = {
   questionStatus: 'answering' | 'revealed';
   selectedAnswerId: string | null;
   startedAt: Date | null;
+  pointsAwarded: number | null;
+  attemptId: string | null;
+  isIncomplete: boolean;
 };
 
 const createState = (overrides: Partial<QuizState> = {}): QuizState => ({
@@ -41,6 +44,9 @@ const createState = (overrides: Partial<QuizState> = {}): QuizState => ({
   questionStatus: 'answering',
   selectedAnswerId: null,
   startedAt: null,
+  pointsAwarded: null,
+  attemptId: null,
+  isIncomplete: false,
   ...overrides,
 });
 
@@ -56,8 +62,7 @@ describe('useQuizSession', () => {
     vi.clearAllMocks();
   });
 
-  it('restores session on reload', async () => {
-    const onRestore = vi.fn();
+  it('keeps saved session and consumes reload flag', async () => {
     const reloadKey = getQuizReloadKey(quizId);
 
     sessionStorage.setItem(reloadKey, '1');
@@ -71,18 +76,13 @@ describe('useQuizSession', () => {
       savedAt: Date.now(),
     });
 
-    renderHook(() =>
-      useQuizSession({ quizId, state: createState(), onRestore })
-    );
+    renderHook(() => useQuizSession({ quizId, state: createState() }));
 
-    await waitFor(() => expect(onRestore).toHaveBeenCalledTimes(1));
     expect(clearMock).not.toHaveBeenCalled();
     expect(sessionStorage.getItem(reloadKey)).toBeNull();
   });
 
-  it('restores session when allow-restore flag is set', async () => {
-    const onRestore = vi.fn();
-
+  it('keeps saved session and consumes allow-restore flag', async () => {
     sessionStorage.setItem(QUIZ_ALLOW_RESTORE_KEY, '1');
     loadMock.mockReturnValue({
       status: 'in_progress',
@@ -94,18 +94,13 @@ describe('useQuizSession', () => {
       savedAt: Date.now(),
     });
 
-    renderHook(() =>
-      useQuizSession({ quizId, state: createState(), onRestore })
-    );
+    renderHook(() => useQuizSession({ quizId, state: createState() }));
 
-    await waitFor(() => expect(onRestore).toHaveBeenCalledTimes(1));
     expect(clearMock).not.toHaveBeenCalled();
     expect(sessionStorage.getItem(QUIZ_ALLOW_RESTORE_KEY)).toBeNull();
   });
 
   it('clears saved session when restore is not allowed', async () => {
-    const onRestore = vi.fn();
-
     loadMock.mockReturnValue({
       status: 'in_progress',
       currentIndex: 0,
@@ -116,31 +111,22 @@ describe('useQuizSession', () => {
       savedAt: Date.now(),
     });
 
-    renderHook(() =>
-      useQuizSession({ quizId, state: createState(), onRestore })
-    );
+    renderHook(() => useQuizSession({ quizId, state: createState() }));
 
     await waitFor(() => expect(clearMock).toHaveBeenCalledWith(quizId));
-    expect(onRestore).not.toHaveBeenCalled();
   });
 
   it('does nothing when no saved session exists', async () => {
-    const onRestore = vi.fn();
-
     loadMock.mockReturnValue(null);
 
-    renderHook(() =>
-      useQuizSession({ quizId, state: createState(), onRestore })
-    );
+    renderHook(() => useQuizSession({ quizId, state: createState() }));
 
     await waitFor(() => {
-      expect(onRestore).not.toHaveBeenCalled();
       expect(clearMock).not.toHaveBeenCalled();
     });
   });
 
   it('saves session when status is in_progress', async () => {
-    const onRestore = vi.fn();
     const startedAt = new Date('2026-01-25T12:00:00Z');
     const answeredAt = new Date('2026-01-25T12:00:10Z');
 
@@ -160,7 +146,7 @@ describe('useQuizSession', () => {
       ],
     });
 
-    renderHook(() => useQuizSession({ quizId, state, onRestore }));
+    renderHook(() => useQuizSession({ quizId, state }));
 
     await waitFor(() => expect(saveMock).toHaveBeenCalledTimes(1));
 
@@ -188,11 +174,7 @@ describe('useQuizSession', () => {
   });
 
   it('does not save session when status is not in_progress', async () => {
-    const onRestore = vi.fn();
-
-    renderHook(() =>
-      useQuizSession({ quizId, state: createState(), onRestore })
-    );
+    renderHook(() => useQuizSession({ quizId, state: createState() }));
 
     await waitFor(() => expect(saveMock).not.toHaveBeenCalled());
   });

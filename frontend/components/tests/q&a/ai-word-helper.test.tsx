@@ -186,7 +186,7 @@ describe('AIWordHelper', () => {
   });
 
   it('renders loading state while fetching', async () => {
-    let resolveJson: (value: unknown) => void;
+    let resolveJson: ((value: unknown) => void) | undefined;
 
     const fetchMock = mockFetchSequence([
       {

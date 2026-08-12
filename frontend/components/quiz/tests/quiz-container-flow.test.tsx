@@ -84,7 +84,6 @@ describe('QuizContainer flow', () => {
         quizId="quiz-1"
         quizSlug="quiz-1"
         questions={questions}
-        encryptedAnswers="encrypted"
         userId={null}
         timeLimitSeconds={60}
         seed={123}
