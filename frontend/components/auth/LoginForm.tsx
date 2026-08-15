@@ -9,16 +9,23 @@ import { AuthShell } from '@/components/auth/AuthShell';
 import { AuthSuccessBanner } from '@/components/auth/AuthSuccessBanner';
 import { EmailField } from '@/components/auth/fields/EmailField';
 import { PasswordField } from '@/components/auth/fields/PasswordField';
+import { LastLoginBadge } from '@/components/auth/LastLoginBadge';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
+import type { LastLoginMethod } from '@/lib/auth-last-login';
 import { broadcastAuthUpdated } from '@/lib/auth-sync';
 
 type LoginFormProps = {
   locale: string;
   returnTo: string;
+  lastLoginMethod: LastLoginMethod | null;
 };
 
-export function LoginForm({ locale, returnTo }: LoginFormProps) {
+export function LoginForm({
+  locale,
+  returnTo,
+  lastLoginMethod,
+}: LoginFormProps) {
   const t = useTranslations('auth.login');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -118,7 +125,7 @@ export function LoginForm({ locale, returnTo }: LoginFormProps) {
         </p>
       }
     >
-      <AuthProvidersBlock />
+      <AuthProvidersBlock lastLoginMethod={lastLoginMethod} />
 
       <form onSubmit={onSubmit} className="space-y-4">
         <EmailField onChange={setEmail} />
@@ -164,9 +171,12 @@ export function LoginForm({ locale, returnTo }: LoginFormProps) {
           />
         )}
 
-        <Button type="submit" disabled={loading} className="w-full">
-          {loading ? t('submitting') : t('submit')}
-        </Button>
+        <div className="relative">
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? t('submitting') : t('submit')}
+          </Button>
+          {lastLoginMethod === 'email' && <LastLoginBadge />}
+        </div>
       </form>
     </AuthShell>
   );

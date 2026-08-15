@@ -1,15 +1,18 @@
-'use client';
-
 import { useTranslations } from 'next-intl';
 
 import { OAuthButtons } from '@/components/auth/OAuthButtons';
+import type { LastLoginMethod } from '@/lib/auth-last-login';
 
-export function AuthProvidersBlock() {
+export function AuthProvidersBlock({
+  lastLoginMethod = null,
+}: {
+  lastLoginMethod?: LastLoginMethod | null;
+}) {
   const t = useTranslations('auth');
 
   return (
     <>
-      <OAuthButtons />
+      <OAuthButtons lastLoginMethod={lastLoginMethod} />
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-gray-200" />
