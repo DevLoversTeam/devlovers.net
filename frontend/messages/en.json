@@ -1472,7 +1472,8 @@
         "resendFailed": "Failed to resend verification email. Please try again."
       },
       "resendVerification": "Resend verification email",
-      "verificationSent": "Verification successfully sent to"
+      "verificationSent": "Verification successfully sent to",
+      "lastUsed": "Last used"
     },
     "signup": {
       "title": "Sign up",
