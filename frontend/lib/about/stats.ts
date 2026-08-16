@@ -12,10 +12,13 @@ export interface PlatformStats {
   questionsSolved: string;
 }
 
-const formatMetric = (n: number) => {
+const formatMetric = (n: number, showPlus = true) => {
   if (n >= 1000) {
     const value = n / 1000;
-    return (Number.isInteger(value) ? value.toString() : value.toFixed(1)) + 'k+';
+    return (
+      (Number.isInteger(value) ? value.toString() : value.toFixed(1)) +
+      (showPlus ? 'k+' : 'k')
+    );
   }
   return n.toString();
 };
@@ -46,7 +49,7 @@ export const getPlatformStats = unstable_cache(
 
     const linkedinCount = process.env.LINKEDIN_FOLLOWER_COUNT
       ? parseInt(process.env.LINKEDIN_FOLLOWER_COUNT)
-      : 2000;
+      : 2400;
 
     let totalUsers = 243;
     let solvedTests = 1890;
@@ -65,11 +68,11 @@ export const getPlatformStats = unstable_cache(
 
     return {
       githubStars: formatMetric(stars),
-      linkedinFollowers: formatMetric(linkedinCount),
+      linkedinFollowers: formatMetric(linkedinCount, false),
       activeUsers: formatMetric(totalUsers),
       questionsSolved: formatMetric(solvedTests),
     };
   },
-  ['platform-stats-v2'],
+  ['platform-stats-v3'],
   { revalidate: 3600 }
 );
