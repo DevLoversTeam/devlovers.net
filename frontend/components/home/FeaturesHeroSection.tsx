@@ -1,8 +1,5 @@
-'use client';
-
 import { BrainCircuit, MessageCircleQuestion, TrendingUp } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import * as React from 'react';
+import { getTranslations } from 'next-intl/server';
 
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 import { Link } from '@/i18n/routing';
@@ -10,8 +7,8 @@ import { Link } from '@/i18n/routing';
 import { FlipCardQA } from './FlipCardQA';
 import { FloatingCode } from './FloatingCode';
 
-export default function FeaturesHeroSection() {
-  const t = useTranslations('homepage');
+export default async function FeaturesHeroSection() {
+  const t = await getTranslations('homepage');
 
   return (
     <DynamicGridBackground

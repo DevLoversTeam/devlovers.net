@@ -22,7 +22,6 @@ export const InteractiveCTAButton = React.forwardRef<HTMLAnchorElement>(
 
     const [currentText, setCurrentText] = useState(t('cta'));
     const [variantIndex, setVariantIndex] = useState(0);
-    const [isFirstRender, setIsFirstRender] = useState(true);
 
     const textVariants = [
       t('cta'),
@@ -35,10 +34,6 @@ export const InteractiveCTAButton = React.forwardRef<HTMLAnchorElement>(
       t('ctaVariants.7'),
       t('ctaVariants.8'),
     ];
-
-    useEffect(() => {
-      setIsFirstRender(false);
-    }, []);
 
     const x = useMotionValue(0);
     const y = useMotionValue(0);
