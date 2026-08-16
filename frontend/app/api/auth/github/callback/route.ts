@@ -5,6 +5,7 @@ import { db } from '@/db';
 import { users } from '@/db/schema/users';
 import { setAuthCookie, signAuthToken } from '@/lib/auth';
 import { consumeOAuthState } from '@/lib/auth/oauth-state';
+import { setLastLoginMethodCookie } from '@/lib/auth-last-login';
 import { authEnv } from '@/lib/env/auth';
 
 type GithubTokenResponse = {
@@ -163,6 +164,7 @@ export async function GET(req: NextRequest) {
   });
 
   await setAuthCookie(token);
+  await setLastLoginMethodCookie('github');
 
   return NextResponse.redirect(new URL('/dashboard', req.url));
 }

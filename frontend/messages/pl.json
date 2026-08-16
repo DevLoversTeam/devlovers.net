@@ -1473,7 +1473,8 @@
         "resendFailed": "Nie udało się ponownie wysłać emaila weryfikacyjnego. Spróbuj ponownie."
       },
       "resendVerification": "Wyślij ponownie email weryfikacyjny",
-      "verificationSent": "Email weryfikacyjny został wysłany na"
+      "verificationSent": "Email weryfikacyjny został wysłany na",
+      "lastUsed": "Ostatnio używane"
     },
     "signup": {
       "title": "Rejestracja",
