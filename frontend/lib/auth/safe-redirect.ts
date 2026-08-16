@@ -1,4 +1,7 @@
-export function getSafeRedirect(raw: string | null | undefined): string {
+export function getSafeRedirect(
+  raw: string | string[] | null | undefined
+): string {
+  if (Array.isArray(raw)) return '';
   if (!raw) return '';
 
   if (raw.includes('\\')) return '';

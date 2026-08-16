@@ -26,6 +26,8 @@ export function LoginForm({
   returnTo,
   lastLoginMethod,
 }: LoginFormProps) {
+  const emailLastLoginBadgeId =
+    lastLoginMethod === 'email' ? 'last-login-email-badge' : undefined;
   const t = useTranslations('auth.login');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -172,10 +174,17 @@ export function LoginForm({
         )}
 
         <div className="relative">
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button
+            type="submit"
+            disabled={loading}
+            aria-describedby={emailLastLoginBadgeId}
+            className="w-full"
+          >
             {loading ? t('submitting') : t('submit')}
           </Button>
-          {lastLoginMethod === 'email' && <LastLoginBadge />}
+          {lastLoginMethod === 'email' && (
+            <LastLoginBadge id={emailLastLoginBadgeId} />
+          )}
         </div>
       </form>
     </AuthShell>

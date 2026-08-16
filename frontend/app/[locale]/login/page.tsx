@@ -7,12 +7,12 @@ export default async function LoginPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ returnTo?: string }>;
+  searchParams: Promise<{ returnTo?: string | string[] }>;
 }) {
   const { locale } = await params;
   const { returnTo: returnToParam } = await searchParams;
 
-  const returnTo = getSafeRedirect(returnToParam ?? null);
+  const returnTo = getSafeRedirect(returnToParam);
   const lastLoginMethod = await getLastLoginMethod();
 
   return (

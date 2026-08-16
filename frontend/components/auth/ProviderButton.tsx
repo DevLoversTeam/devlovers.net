@@ -18,6 +18,10 @@ export function ProviderButton({
   icon,
   isLastUsed,
 }: ProviderButtonProps) {
+  const lastLoginBadgeId = isLastUsed
+    ? `last-login-${provider}-badge`
+    : undefined;
+
   function oauthLogin() {
     window.location.href = `/api/auth/${provider}`;
   }
@@ -27,13 +31,14 @@ export function ProviderButton({
       <Button
         type="button"
         variant="outline"
+        aria-describedby={lastLoginBadgeId}
         className="flex w-full items-center justify-center gap-2"
         onClick={oauthLogin}
       >
         {icon}
         <span>{label}</span>
       </Button>
-      {isLastUsed && <LastLoginBadge />}
+      {isLastUsed && <LastLoginBadge id={lastLoginBadgeId} />}
     </div>
   );
 }

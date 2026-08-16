@@ -29,6 +29,9 @@ describe('ProviderButton', () => {
       />
     );
     expect(screen.getByText('lastUsed')).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Continue with Google' })
+    ).toHaveAccessibleDescription('lastUsed');
   });
 
   it('hides the badge when isLastUsed is false', () => {
@@ -40,5 +43,8 @@ describe('ProviderButton', () => {
       />
     );
     expect(screen.queryByText('lastUsed')).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Continue with GitHub' })
+    ).not.toHaveAttribute('aria-describedby');
   });
 });
