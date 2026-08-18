@@ -1100,6 +1100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - About page social metric:
   - Updated the LinkedIn followers fallback to `2.4k`
   - Refreshed the cached platform-statistics key so the new value is served immediately
+- Test tooling security:
+  - Updated Vitest and its V8 coverage provider from vulnerable `4.0.x` versions to patched `4.1.10`
 
 ### Fixed
 
