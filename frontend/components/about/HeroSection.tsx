@@ -16,7 +16,7 @@ export function HeroSection({ stats }: { stats?: PlatformStats }) {
     questionsSolved: '850+',
     githubStars: '120+',
     activeUsers: '200+',
-    linkedinFollowers: '2k+',
+    linkedinFollowers: '2.4k',
   };
 
   return (

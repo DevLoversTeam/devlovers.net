@@ -1,9 +1,10 @@
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 
 import FeaturesHeroSection from '@/components/home/FeaturesHeroSection';
 import HomePageScroll from '@/components/home/HomePageScroll';
 import WelcomeHeroSection from '@/components/home/WelcomeHeroSection';
-import Footer from '@/components/shared/Footer';
+import LazyFooter from '@/components/shared/LazyFooter';
 
 export async function generateMetadata({
   params,
@@ -75,9 +76,11 @@ export default function Home() {
         data-home-step
         className="min-h-[calc(100dvh-4rem)] shrink-0 snap-start [scroll-snap-stop:always]"
       >
-        <FeaturesHeroSection />
+        <Suspense fallback={null}>
+          <FeaturesHeroSection />
+        </Suspense>
       </div>
-      <Footer forceVisible />
+      <LazyFooter forceVisible />
     </HomePageScroll>
   );
 }

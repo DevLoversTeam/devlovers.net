@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { users } from '@/db/schema/users';
 import { setAuthCookie, signAuthToken } from '@/lib/auth';
+import { setLastLoginMethodCookie } from '@/lib/auth-last-login';
 
 export const runtime = 'nodejs';
 
@@ -78,6 +79,7 @@ export async function POST(req: Request) {
   });
 
   await setAuthCookie(token);
+  await setLastLoginMethodCookie('email');
   revalidatePath('/[locale]', 'layout');
   return NextResponse.json({ success: true, userId: result[0].id });
 }
