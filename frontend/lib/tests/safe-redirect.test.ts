@@ -14,4 +14,13 @@ describe('getSafeRedirect', () => {
   it('rejects an external redirect', () => {
     expect(getSafeRedirect('https://example.com')).toBe('');
   });
+
+  it('rejects a control-character redirect that normalizes externally', () => {
+    expect(getSafeRedirect('/\n//evil.example')).toBe('');
+    expect(getSafeRedirect('/\t//evil.example')).toBe('');
+  });
+
+  it('rejects a protocol-relative redirect', () => {
+    expect(getSafeRedirect('//internal.invalid/path')).toBe('');
+  });
 });

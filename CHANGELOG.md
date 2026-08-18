@@ -1079,3 +1079,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Prevented locale layout rendering from failing when blog category loading throws at runtime
 - Prevented duplicate slashes in homepage canonical URLs when `NEXT_PUBLIC_SITE_URL` ends with `/`
+
+## [1.0.14] - 2026-08-18
+
+### Added
+
+- Last-used login method indicator:
+  - Remembers successful email, Google, or GitHub sign-in in a secure, HTTP-only cookie
+  - Highlights the matching option when the user returns to the login page
+  - Adds localized labels for English, Ukrainian, and Polish
+  - Includes unit coverage for badge rendering and accessibility wiring
+
+### Changed
+
+- Homepage delivery:
+  - Converted the Features section to an async Server Component with server-side translations
+  - Added a Suspense boundary so the Features section can stream independently
+  - Deferred mounting and loading the Footer client chunk until it is within 300px of the viewport
+  - Removed unused homepage state and React imports
+- About page social metric:
+  - Updated the LinkedIn followers fallback to `2.4k`
+  - Refreshed the cached platform-statistics key so the new value is served immediately
+
+### Fixed
+
+- Hardened post-login redirect validation against duplicate query values, external URLs, protocol-relative URLs, backslashes, and control-character normalization bypasses
+- Added accessible descriptions linking the “Last used” badge to email and OAuth login buttons

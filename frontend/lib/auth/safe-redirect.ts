@@ -10,5 +10,16 @@ export function getSafeRedirect(
   if (raw.startsWith('//')) return '';
   if (raw.includes('://')) return '';
 
-  return raw;
+  try {
+    const appOrigin = new URL(
+      process.env.NEXT_PUBLIC_SITE_URL ?? 'https://devlovers.net'
+    ).origin;
+    const redirectUrl = new URL(raw, appOrigin);
+
+    if (redirectUrl.origin !== appOrigin) return '';
+
+    return raw;
+  } catch {
+    return '';
+  }
 }
