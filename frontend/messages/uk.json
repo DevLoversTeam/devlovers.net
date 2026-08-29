@@ -1664,6 +1664,7 @@
       "saved": "Збережено",
       "status": "Статус",
       "viewed": "Переглянуто {viewed} із {total}",
+      "resume": "Продовжити з останнього питання · {viewed}/{total}",
       "inProgress": "Вивчається",
       "complete": "Завершено",
       "continueTopic": "Продовжити вивчення теми {topic}",

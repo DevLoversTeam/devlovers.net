@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getCachedTermsMock = vi.fn();
@@ -21,23 +21,29 @@ vi.mock('@/components/ui/accordion', async () => {
     Accordion: ({
       children,
       onValueChange,
+      defaultValue,
     }: {
       children: React.ReactNode;
       onValueChange?: (value: string) => void;
+      defaultValue?: string;
     }) => (
       <ChangeContext.Provider value={onValueChange ?? (() => {})}>
-        <div data-testid="accordion">{children}</div>
+        <div data-testid="accordion" data-default-value={defaultValue}>
+          {children}
+        </div>
       </ChangeContext.Provider>
     ),
     AccordionItem: ({
       children,
       value,
+      id,
     }: {
       children: React.ReactNode;
       value: string;
+      id?: string;
     }) => (
       <ValueContext.Provider value={value}>
-        <div>{children}</div>
+        <div id={id}>{children}</div>
       </ValueContext.Provider>
     ),
     AccordionTrigger: ({
@@ -160,6 +166,32 @@ import type { QuestionEntry } from '@/components/q&a/types';
 describe('AccordionList', () => {
   beforeEach(() => {
     getCachedTermsMock.mockReturnValue([]);
+  });
+
+  it('opens and scrolls to a focused question', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    const items: QuestionEntry[] = [
+      {
+        id: 'q1',
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [],
+      },
+    ];
+
+    render(<AccordionList items={items} initialOpenQuestionId="q1" />);
+
+    expect(screen.getByTestId('accordion')).toHaveAttribute(
+      'data-default-value',
+      'q1'
+    );
+    await waitFor(() => {
+      expect(scrollIntoView).toHaveBeenCalledWith({
+        block: 'center',
+        behavior: 'smooth',
+      });
+    });
   });
 
   it('does not persist a fallback id when question id is missing', () => {

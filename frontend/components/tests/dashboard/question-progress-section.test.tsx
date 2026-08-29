@@ -44,6 +44,7 @@ const progress: DashboardQuestionProgressItem[] = [
     totalQuestions: 100,
     viewedCount: 25,
     bookmarkedCount: 3,
+    lastOpenedQuestionId: 'question-25',
   },
   {
     categoryId: 'category-css',
@@ -52,6 +53,7 @@ const progress: DashboardQuestionProgressItem[] = [
     totalQuestions: 40,
     viewedCount: 40,
     bookmarkedCount: 1,
+    lastOpenedQuestionId: null,
   },
 ];
 
@@ -63,12 +65,13 @@ describe('QuestionProgressSection', () => {
     expect(screen.getByText('Git Fundamentals')).toBeTruthy();
     expect(screen.getByText('25/100')).toBeTruthy();
     expect(screen.getByText('25%')).toBeTruthy();
+    expect(screen.getByText('resume:25/100')).toBeTruthy();
     expect(screen.getByText('inProgress')).toBeTruthy();
     expect(screen.getByText('complete')).toBeTruthy();
 
     expect(
       screen.getByRole('link', { name: 'continueTopic:Git Fundamentals' })
-    ).toHaveAttribute('href', '/q&a?category=git');
+    ).toHaveAttribute('href', '/q&a?category=git&question=question-25');
     expect(
       screen.getByRole('link', { name: 'openSaved:Git Fundamentals/3' })
     ).toHaveAttribute('href', '/q&a?category=git&filter=bookmarked');

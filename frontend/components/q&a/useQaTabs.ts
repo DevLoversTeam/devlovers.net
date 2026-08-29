@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   type CategorySlug,
@@ -52,6 +52,11 @@ export function useQaTabs() {
   const filterFromUrl: QaQuestionFilter = isQaQuestionFilter(rawFilter)
     ? rawFilter
     : 'all';
+  const rawFocusedQuestionId = searchParams.get('question')?.trim();
+  const focusedQuestionId =
+    rawFocusedQuestionId && rawFocusedQuestionId.length <= 100
+      ? rawFocusedQuestionId
+      : null;
   const [active, setActive] = useState<CategorySlug>(
     isCategorySlug(categoryFromUrl) ? categoryFromUrl : DEFAULT_CATEGORY
   );
@@ -62,6 +67,7 @@ export function useQaTabs() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const resolvedRequestRef = useRef<string | null>(null);
 
   const updateUrl = useCallback(
     (
@@ -108,6 +114,20 @@ export function useQaTabs() {
   }, [categoryFromUrl]);
 
   useEffect(() => {
+    const requestKey = [
+      active,
+      currentPage,
+      pageSize,
+      localeKey,
+      filter,
+      focusedQuestionId ?? '',
+    ].join(':');
+
+    if (resolvedRequestRef.current === requestKey) {
+      resolvedRequestRef.current = null;
+      return;
+    }
+
     let isActive = true;
     const controller = new AbortController();
 
@@ -116,8 +136,11 @@ export function useQaTabs() {
 
       try {
         const filterQuery = filter === 'bookmarked' ? '&filter=bookmarked' : '';
+        const focusedQuestionQuery = focusedQuestionId
+          ? `&question=${encodeURIComponent(focusedQuestionId)}`
+          : '';
         const res = await fetch(
-          `/api/questions/${active}?page=${currentPage}&limit=${pageSize}&locale=${localeKey}${filterQuery}`,
+          `/api/questions/${active}?page=${currentPage}&limit=${pageSize}&locale=${localeKey}${filterQuery}${focusedQuestionQuery}`,
           { signal: controller.signal }
         );
 
@@ -137,6 +160,17 @@ export function useQaTabs() {
         );
         setTotalItems(data.total);
         setTotalPages(data.totalPages);
+        if (data.page !== currentPage) {
+          resolvedRequestRef.current = [
+            active,
+            data.page,
+            pageSize,
+            localeKey,
+            filter,
+            focusedQuestionId ?? '',
+          ].join(':');
+          setCurrentPage(data.page);
+        }
       } catch (error) {
         if (!isActive || controller.signal.aborted) {
           return;
@@ -157,7 +191,7 @@ export function useQaTabs() {
       isActive = false;
       controller.abort();
     };
-  }, [active, currentPage, filter, localeKey, pageSize]);
+  }, [active, currentPage, filter, focusedQuestionId, localeKey, pageSize]);
 
   const handleCategoryChange = useCallback(
     (category: string) => {
@@ -166,6 +200,7 @@ export function useQaTabs() {
       }
       setActive(category);
       setCurrentPage(1);
+      resolvedRequestRef.current = null;
       updateUrl(category, 1, pageSize, filter);
     },
     [filter, pageSize, updateUrl]
@@ -174,6 +209,7 @@ export function useQaTabs() {
   const handlePageChange = useCallback(
     (page: number) => {
       setCurrentPage(page);
+      resolvedRequestRef.current = null;
       updateUrl(active, page, pageSize, filter);
     },
     [active, filter, pageSize, updateUrl]
@@ -187,6 +223,7 @@ export function useQaTabs() {
 
       setPageSize(size);
       setCurrentPage(1);
+      resolvedRequestRef.current = null;
       updateUrl(active, 1, size, filter);
     },
     [active, filter, updateUrl]
@@ -197,6 +234,7 @@ export function useQaTabs() {
       setFilter(nextFilter);
       setCurrentPage(1);
       setItems([]);
+      resolvedRequestRef.current = null;
       updateUrl(active, 1, pageSize, nextFilter);
     },
     [active, pageSize, updateUrl]
@@ -206,6 +244,7 @@ export function useQaTabs() {
     active,
     currentPage,
     filter,
+    focusedQuestionId,
     handleCategoryChange,
     handleFilterChange,
     handlePageChange,

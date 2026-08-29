@@ -113,6 +113,39 @@ describe('GET /api/questions/[category]', () => {
     expect(data.page).toBe(1);
   });
 
+  it('resolves the page containing a focused question', async () => {
+    const selectMock = db.select as ReturnType<typeof vi.fn>;
+    const setQaCacheMock = setQaCache as ReturnType<typeof vi.fn>;
+    const questions = Array.from({ length: 25 }, (_, index) => ({
+      id: `q${index + 1}`,
+      categoryId: 'cat-1',
+      sortOrder: index + 1,
+      difficulty: null,
+      question: `Question ${index + 1}`,
+      answerBlocks: [],
+      locale: 'en',
+    }));
+
+    selectMock
+      .mockReturnValueOnce(makeBuilder('limit', [{ id: 'cat-1' }]))
+      .mockReturnValueOnce(makeBuilder('orderBy', questions));
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/questions/git?page=1&limit=10&locale=en&question=q15'
+      ),
+      { params: Promise.resolve({ category: 'git' }) }
+    );
+    const data = await response.json();
+
+    expect(data.page).toBe(2);
+    expect(data.items.map((item: { id: string }) => item.id)).toEqual(
+      questions.slice(10, 20).map(item => item.id)
+    );
+    expect(response.headers.get('x-qa-cache')).toBe('BYPASS');
+    expect(setQaCacheMock).not.toHaveBeenCalled();
+  });
+
   it('returns 500 on db error', async () => {
     const selectMock = db.select as ReturnType<typeof vi.fn>;
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});

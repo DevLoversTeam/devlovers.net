@@ -23,6 +23,7 @@ describe('useQaTabs', () => {
   const fetchMock = vi.fn();
 
   beforeEach(() => {
+    fetchMock.mockReset();
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -202,5 +203,43 @@ describe('useQaTabs', () => {
     expect(routerReplace).toHaveBeenCalledWith('/q&a?filter=bookmarked', {
       scroll: false,
     });
+  });
+
+  it('loads and adopts the page containing a focused question', async () => {
+    searchParamsValue = new URLSearchParams('category=git&question=q15');
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        items: [
+          {
+            id: 'q15',
+            categoryId: 'cat-1',
+            sortOrder: 15,
+            difficulty: null,
+            question: 'Question 15',
+            answerBlocks: [],
+            locale: 'en',
+          },
+        ],
+        total: 25,
+        page: 2,
+        totalPages: 3,
+        locale: 'en',
+      }),
+    });
+
+    const { result } = renderHook(() => useQaTabs());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.currentPage).toBe(2);
+    });
+
+    expect(result.current.focusedQuestionId).toBe('q15');
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/questions/git?page=1&limit=10&locale=en&question=q15',
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

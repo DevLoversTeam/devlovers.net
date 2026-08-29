@@ -171,6 +171,7 @@ export default async function DashboardPage({
     totalQuestions: item.totalQuestions,
     viewedCount: item.viewedCount,
     bookmarkedCount: item.bookmarkedCount,
+    lastOpenedQuestionId: item.lastOpenedQuestionId,
   }));
 
   const isMatchedSponsor = userStats ? userStats.sponsorCount > 0 : false;

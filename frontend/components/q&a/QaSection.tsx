@@ -25,6 +25,7 @@ export default function TabsSection() {
     active,
     currentPage,
     filter,
+    focusedQuestionId,
     handleCategoryChange,
     handleFilterChange,
     handlePageChange,
@@ -190,6 +191,7 @@ export default function TabsSection() {
                 <AccordionList
                   key={animationKey}
                   items={items}
+                  initialOpenQuestionId={focusedQuestionId}
                   viewedItems={questionProgress.viewedItems}
                   bookmarkedItems={questionProgress.bookmarkedItems}
                   onQuestionOpened={handleQuestionOpened}

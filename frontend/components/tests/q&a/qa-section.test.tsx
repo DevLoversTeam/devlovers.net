@@ -11,6 +11,7 @@ const qaState = {
   active: 'git',
   currentPage: 1,
   filter: 'all' as 'all' | 'bookmarked',
+  focusedQuestionId: null as string | null,
   handleCategoryChange: vi.fn(),
   handleFilterChange: vi.fn(),
   handlePageChange: vi.fn(),
@@ -113,6 +114,7 @@ import { categoryData } from '@/data/category';
 describe('QaSection', () => {
   beforeEach(() => {
     qaState.filter = 'all';
+    qaState.focusedQuestionId = null;
     qaState.items = [];
     qaState.totalItems = 0;
     qaState.totalPages = 0;

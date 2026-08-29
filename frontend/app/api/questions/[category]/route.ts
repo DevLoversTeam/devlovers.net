@@ -88,8 +88,6 @@ export async function GET(
       100,
       Math.max(1, Number(searchParams.get('limit') ?? DEFAULT_LIMIT))
     );
-    const offset = (page - 1) * limit;
-
     const locale =
       searchParams.get('locale') ||
       req.headers.get('x-locale') ||
@@ -97,6 +95,9 @@ export async function GET(
 
     const search = searchParams.get('search')?.trim();
     const filter = searchParams.get('filter') ?? 'all';
+    const rawQuestionId = searchParams.get('question')?.trim();
+    const focusedQuestionId =
+      rawQuestionId && rawQuestionId.length <= 100 ? rawQuestionId : null;
 
     if (filter !== 'all' && filter !== 'bookmarked') {
       const response = NextResponse.json(
@@ -126,8 +127,10 @@ export async function GET(
       search,
     });
 
-    const cached =
-      filter === 'all' ? await getQaCache<QaApiResponse>(cacheKey) : null;
+    const shouldUseSharedCache = filter === 'all' && !focusedQuestionId;
+    const cached = shouldUseSharedCache
+      ? await getQaCache<QaApiResponse>(cacheKey)
+      : null;
 
     if (cached) {
       const normalizedCached = normalizeResponse(cached, limit);
@@ -201,12 +204,20 @@ export async function GET(
     const uniqueItems = dedupeItems(allItems);
     const total = uniqueItems.length;
     const totalPages = Math.ceil(total / limit);
+    const focusedQuestionIndex = focusedQuestionId
+      ? uniqueItems.findIndex(item => item.id === focusedQuestionId)
+      : -1;
+    const resolvedPage =
+      focusedQuestionIndex >= 0
+        ? Math.floor(focusedQuestionIndex / limit) + 1
+        : page;
+    const offset = (resolvedPage - 1) * limit;
     const items = uniqueItems.slice(offset, offset + limit);
 
     const payload = {
       items,
       total,
-      page,
+      page: resolvedPage,
       totalPages,
       locale,
     } satisfies QaApiResponse;
@@ -214,10 +225,10 @@ export async function GET(
     response.headers.set('Cache-Control', 'no-store');
     response.headers.set(
       'x-qa-cache',
-      filter === 'bookmarked' ? 'BYPASS' : 'MISS'
+      filter === 'bookmarked' || focusedQuestionId ? 'BYPASS' : 'MISS'
     );
 
-    if (filter === 'all') {
+    if (shouldUseSharedCache) {
       await setQaCache(cacheKey, payload);
     }
 

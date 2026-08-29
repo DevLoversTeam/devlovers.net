@@ -336,6 +336,7 @@ function renderBlock(
 
 export default function AccordionList({
   items,
+  initialOpenQuestionId = null,
   viewedItems = EMPTY_QUESTION_IDS,
   bookmarkedItems = EMPTY_QUESTION_IDS,
   onQuestionOpened,
@@ -343,6 +344,7 @@ export default function AccordionList({
 }: {
   items: QuestionEntry[];
   totalItems?: number;
+  initialOpenQuestionId?: string | null;
   viewedItems?: ReadonlySet<string>;
   bookmarkedItems?: ReadonlySet<string>;
   onQuestionOpened?: (questionId: string) => void | Promise<unknown>;
@@ -360,6 +362,23 @@ export default function AccordionList({
   const [cachedTerms, setCachedTerms] = useState<Set<string>>(
     () => new Set(getCachedTerms().map(normalizeCachedTerm))
   );
+  const initialAccordionValue =
+    initialOpenQuestionId &&
+    items.some(item => String(item.id) === initialOpenQuestionId)
+      ? initialOpenQuestionId
+      : undefined;
+
+  useEffect(() => {
+    if (!initialAccordionValue) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .getElementById(`qa-question-${initialAccordionValue}`)
+        ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [initialAccordionValue]);
 
   const refreshCachedTerms = useCallback(() => {
     const terms = getCachedTerms().map(normalizeCachedTerm);
@@ -439,6 +458,7 @@ export default function AccordionList({
       <Accordion
         type="single"
         collapsible
+        defaultValue={initialAccordionValue}
         className="w-full"
         onValueChange={handleAccordionChange}
       >
@@ -464,6 +484,7 @@ export default function AccordionList({
           return (
             <AccordionItem
               key={key}
+              id={questionId ? `qa-question-${questionId}` : undefined}
               value={accordionValue}
               className="qa-accordion-item animate-in fade-in slide-in-from-bottom-2 mb-3 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors duration-500 last:mb-0 last:border-b motion-reduce:animate-none dark:border-white/10 dark:bg-neutral-900/80"
               style={itemStyle}

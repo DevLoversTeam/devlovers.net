@@ -14,6 +14,7 @@ export type DashboardQuestionProgressItem = {
   totalQuestions: number;
   viewedCount: number;
   bookmarkedCount: number;
+  lastOpenedQuestionId: string | null;
 };
 
 type QuestionProgressSectionProps = {
@@ -90,6 +91,9 @@ export function QuestionProgressSection({
           const categoryStyle = getCategoryTabStyle(item.categorySlug);
           const categoryTitle = item.categoryTitle ?? item.categorySlug;
           const categoryHref = `/q&a?category=${encodeURIComponent(item.categorySlug)}`;
+          const resumeHref = item.lastOpenedQuestionId
+            ? `${categoryHref}&question=${encodeURIComponent(item.lastOpenedQuestionId)}`
+            : categoryHref;
           const savedHref = `${categoryHref}&filter=bookmarked`;
           const isComplete =
             item.totalQuestions > 0 && item.viewedCount >= item.totalQuestions;
@@ -100,7 +104,7 @@ export function QuestionProgressSection({
               className="flex items-stretch gap-2 rounded-xl border border-gray-100 bg-white/60 p-2 transition-all duration-300 hover:-translate-y-0.5 hover:border-(--accent-primary)/30 hover:shadow-md dark:border-white/5 dark:bg-neutral-900/60 dark:hover:border-(--accent-primary)/30"
             >
               <Link
-                href={categoryHref}
+                href={resumeHref}
                 className="group grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_20px] items-center gap-3 rounded-lg px-2 py-1.5 focus-visible:ring-2 focus-visible:ring-(--accent-primary)/40 focus-visible:outline-none md:grid-cols-[minmax(0,3fr)_minmax(150px,1.5fr)_120px_28px] md:gap-4"
                 aria-label={t('continueTopic', { topic: categoryTitle })}
               >
@@ -116,11 +120,8 @@ export function QuestionProgressSection({
                     <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
                       {categoryTitle}
                     </p>
-                    <p
-                      className="truncate text-xs md:hidden"
-                      style={{ color: categoryStyle.accent }}
-                    >
-                      {t('viewed', {
+                    <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                      {t(item.lastOpenedQuestionId ? 'resume' : 'viewed', {
                         viewed: item.viewedCount,
                         total: item.totalQuestions,
                       })}
