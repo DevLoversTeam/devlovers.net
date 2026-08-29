@@ -12,6 +12,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { categories } from './categories';
+import { userQuestionProgress } from './questionProgress';
 
 export const questions = pgTable(
   'questions',
@@ -58,6 +59,7 @@ export const questionsRelations = relations(questions, ({ one, many }) => ({
     references: [categories.id],
   }),
   translations: many(questionTranslations),
+  userProgress: many(userQuestionProgress),
 }));
 
 export const questionTranslationsRelations = relations(
