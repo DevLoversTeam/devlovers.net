@@ -1,9 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import AccordionList from '@/components/q&a/AccordionList';
+import { GuestProgressPrompt } from '@/components/q&a/GuestProgressPrompt';
 import { Pagination } from '@/components/q&a/Pagination';
 import { QuestionProgressToolbar } from '@/components/q&a/QuestionProgressToolbar';
 import type { CategorySlug } from '@/components/q&a/types';
@@ -37,6 +38,19 @@ export default function TabsSection() {
     totalPages,
   } = useQaTabs();
   const questionProgress = useQuestionProgress(active);
+  const {
+    isAuthenticated,
+    isLoading: isProgressLoading,
+    markAsViewed,
+  } = questionProgress;
+  const [isGuestPromptRequested, setIsGuestPromptRequested] = useState(false);
+  const [isGuestPromptDismissed, setIsGuestPromptDismissed] = useState(false);
+  const [guestReturnTo, setGuestReturnTo] = useState('');
+  const isGuestPromptOpen =
+    isGuestPromptRequested &&
+    !isGuestPromptDismissed &&
+    !isProgressLoading &&
+    !isAuthenticated;
   const activeCategoryLabel = useMemo(() => {
     const category = categoryData.find(item => item.slug === active);
     return (
@@ -79,6 +93,21 @@ export default function TabsSection() {
       handlePageChange(page);
     },
     [clearSelection, handlePageChange, scrollToTop]
+  );
+
+  const handleQuestionOpened = useCallback(
+    async (questionId: string) => {
+      const result = await markAsViewed(questionId);
+      if (result !== 'unauthenticated' || isGuestPromptRequested) return;
+
+      setGuestReturnTo(
+        typeof window === 'undefined'
+          ? `/${localeKey}/q&a`
+          : `${window.location.pathname}${window.location.search}`
+      );
+      setIsGuestPromptRequested(true);
+    },
+    [isGuestPromptRequested, localeKey, markAsViewed]
   );
 
   useEffect(() => {
@@ -163,7 +192,7 @@ export default function TabsSection() {
                   items={items}
                   viewedItems={questionProgress.viewedItems}
                   bookmarkedItems={questionProgress.bookmarkedItems}
-                  onQuestionOpened={questionProgress.markAsViewed}
+                  onQuestionOpened={handleQuestionOpened}
                   onToggleBookmark={questionProgress.toggleBookmark}
                 />
               ) : (
@@ -208,6 +237,12 @@ export default function TabsSection() {
           accentColor={getCategoryTabStyle(active).accent}
         />
       )}
+
+      <GuestProgressPrompt
+        isOpen={isGuestPromptOpen}
+        returnTo={guestReturnTo}
+        onClose={() => setIsGuestPromptDismissed(true)}
+      />
     </div>
   );
 }

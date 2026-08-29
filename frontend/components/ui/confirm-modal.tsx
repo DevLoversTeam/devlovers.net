@@ -8,6 +8,7 @@ interface ConfirmModalProps {
   isOpen: boolean;
   title: string;
   message: string;
+  role?: 'dialog' | 'alertdialog';
   confirmText?: string;
   cancelText?: string;
   variant?: 'danger' | 'warning' | 'default';
@@ -20,6 +21,7 @@ export function ConfirmModal({
   isOpen,
   title,
   message,
+  role = 'alertdialog',
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   variant = 'default',
@@ -102,7 +104,7 @@ export function ConfirmModal({
       />
       <div
         ref={dialogRef}
-        role="alertdialog"
+        role={role}
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}

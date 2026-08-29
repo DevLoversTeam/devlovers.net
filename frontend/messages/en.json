@@ -145,6 +145,12 @@
       "confirm": "Reset progress",
       "cancel": "Cancel"
     },
+    "guestProgress": {
+      "title": "Save your learning progress",
+      "description": "Log in or create an account to keep viewed questions and bookmarks in your dashboard and continue learning on any device.",
+      "login": "Log in to save progress",
+      "continue": "Continue without saving"
+    },
     "noResults": "Nothing found for \"{query}\"",
     "noQuestions": "No questions yet…\nBut they’re already in development.\nStay tuned - new content coming soon!",
     "metaTitle": "Q&A | DevLovers",

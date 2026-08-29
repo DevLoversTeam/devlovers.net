@@ -145,6 +145,12 @@
       "confirm": "Resetuj postęp",
       "cancel": "Anuluj"
     },
+    "guestProgress": {
+      "title": "Zapisuj swoje postępy w nauce",
+      "description": "Zaloguj się lub utwórz konto, aby zachowywać wyświetlone pytania i zakładki w panelu oraz kontynuować naukę na dowolnym urządzeniu.",
+      "login": "Zaloguj się i zapisz postęp",
+      "continue": "Kontynuuj bez zapisywania"
+    },
     "noResults": "Nic nie znaleziono dla \"{query}\"",
     "noQuestions": "Brak pytań na ten moment…\nAle już są w przygotowaniu.\nBądź na bieżąco - wkrótce pojawią się nowe materiały!",
     "metaTitle": "Q&A | DevLovers",
