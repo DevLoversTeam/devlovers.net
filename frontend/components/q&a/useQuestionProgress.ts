@@ -31,6 +31,7 @@ type ProgressState = {
 };
 
 export type ProgressMutationResult = 'saved' | 'unauthenticated' | 'error';
+export type ProgressSyncError = 'load_failed' | 'save_failed' | 'reset_failed';
 
 const EMPTY_SET = new Set<string>();
 
@@ -57,7 +58,7 @@ export function useQuestionProgress(category: string) {
     lastOpenedQuestionId: null,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ProgressSyncError | null>(null);
   const stateRef = useRef(state);
 
   const updateState = useCallback(

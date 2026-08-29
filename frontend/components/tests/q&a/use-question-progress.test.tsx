@@ -81,6 +81,24 @@ describe('useQuestionProgress', () => {
     );
   });
 
+  it('clears a load error after a successful retry', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ code: 'INTERNAL_ERROR' }, 500))
+      .mockResolvedValueOnce(jsonResponse({ progress: emptyProgress }));
+
+    const { result } = renderHook(() => useQuestionProgress('git'));
+
+    await waitFor(() => expect(result.current.error).toBe('load_failed'));
+
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it('optimistically marks viewed and rolls back a failed mutation', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(fetch).mockResolvedValueOnce(

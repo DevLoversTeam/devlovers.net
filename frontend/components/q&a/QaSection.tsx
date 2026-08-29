@@ -169,8 +169,10 @@ export default function TabsSection() {
           filter={filter}
           isAuthenticated={questionProgress.isAuthenticated}
           isLoading={questionProgress.isLoading}
+          error={questionProgress.error}
           onFilterChange={handleFilterChange}
           onResetProgress={questionProgress.resetProgress}
+          onRetry={questionProgress.refresh}
         />
 
         {categoryData.map(category => (

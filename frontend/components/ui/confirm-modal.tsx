@@ -8,6 +8,7 @@ interface ConfirmModalProps {
   isOpen: boolean;
   title: string;
   message: string;
+  errorMessage?: string | null;
   role?: 'dialog' | 'alertdialog';
   confirmText?: string;
   cancelText?: string;
@@ -21,6 +22,7 @@ export function ConfirmModal({
   isOpen,
   title,
   message,
+  errorMessage = null,
   role = 'alertdialog',
   confirmText = 'Confirm',
   cancelText = 'Cancel',
@@ -119,6 +121,14 @@ export function ConfirmModal({
         <p id={descriptionId} className="mb-6 text-gray-600 dark:text-gray-400">
           {message}
         </p>
+        {errorMessage ? (
+          <p
+            role="alert"
+            className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
+          >
+            {errorMessage}
+          </p>
+        ) : null}
         <div className="flex gap-3">
           <Button
             ref={cancelButtonRef}

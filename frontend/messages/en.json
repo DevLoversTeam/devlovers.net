@@ -151,6 +151,12 @@
       "login": "Log in to save progress",
       "continue": "Continue without saving"
     },
+    "syncError": {
+      "load": "We couldn't load your saved progress. Check your connection and try again.",
+      "save": "Your latest progress change wasn't saved. We restored the previous state.",
+      "reset": "We couldn't reset your progress. Nothing was removed.",
+      "retry": "Try again"
+    },
     "noResults": "Nothing found for \"{query}\"",
     "noQuestions": "No questions yet…\nBut they’re already in development.\nStay tuned - new content coming soon!",
     "metaTitle": "Q&A | DevLovers",

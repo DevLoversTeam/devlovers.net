@@ -40,6 +40,8 @@ const questionProgressState = {
   markAsViewed: vi.fn(),
   toggleBookmark: vi.fn(),
   resetProgress: vi.fn(),
+  refresh: vi.fn(),
+  error: null,
 };
 
 vi.mock('@/components/q&a/useQuestionProgress', () => ({

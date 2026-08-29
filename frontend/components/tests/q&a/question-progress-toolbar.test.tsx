@@ -20,6 +20,7 @@ const defaultProps = {
   isAuthenticated: true,
   onFilterChange: vi.fn(),
   onResetProgress: vi.fn().mockResolvedValue('saved' as const),
+  onRetry: vi.fn().mockResolvedValue(undefined),
 };
 
 describe('QuestionProgressToolbar', () => {
@@ -77,5 +78,41 @@ describe('QuestionProgressToolbar', () => {
 
     expect(screen.queryByText('filters.bookmarked:2')).toBeNull();
     expect(screen.queryByText('resetProgress')).toBeNull();
+  });
+
+  it('announces sync errors and retries loading progress', () => {
+    const onRetry = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <QuestionProgressToolbar
+        {...defaultProps}
+        error="load_failed"
+        onRetry={onRetry}
+      />
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent('syncError.load');
+
+    fireEvent.click(screen.getByRole('button', { name: 'syncError.retry' }));
+
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the reset dialog open and explains a failed reset', async () => {
+    render(
+      <QuestionProgressToolbar
+        {...defaultProps}
+        error="reset_failed"
+        onResetProgress={vi.fn().mockResolvedValue('error')}
+      />
+    );
+
+    fireEvent.click(screen.getByText('resetProgress'));
+    fireEvent.click(screen.getByText('reset.confirm'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alertdialog')).toBeTruthy();
+      expect(screen.getByRole('alert')).toHaveTextContent('syncError.reset');
+    });
   });
 });

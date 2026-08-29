@@ -50,4 +50,19 @@ describe('ConfirmModal', () => {
       'true'
     );
   });
+
+  it('announces an inline confirmation error', () => {
+    render(
+      <ConfirmModal
+        isOpen
+        title="Clear progress?"
+        message="This cannot be undone."
+        errorMessage="Reset failed."
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Reset failed.');
+  });
 });

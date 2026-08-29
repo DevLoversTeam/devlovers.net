@@ -1,11 +1,14 @@
 'use client';
 
-import { Bookmark, RotateCcw } from 'lucide-react';
+import { AlertTriangle, Bookmark, RefreshCw, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type CSSProperties, useState } from 'react';
 
 import type { QaQuestionFilter } from '@/components/q&a/types';
-import type { ProgressMutationResult } from '@/components/q&a/useQuestionProgress';
+import type {
+  ProgressMutationResult,
+  ProgressSyncError,
+} from '@/components/q&a/useQuestionProgress';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { cn } from '@/lib/utils';
 
@@ -18,8 +21,10 @@ type QuestionProgressToolbarProps = {
   filter: QaQuestionFilter;
   isAuthenticated: boolean;
   isLoading?: boolean;
+  error?: ProgressSyncError | null;
   onFilterChange: (filter: QaQuestionFilter) => void;
   onResetProgress: () => Promise<ProgressMutationResult>;
+  onRetry: () => Promise<unknown>;
 };
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -40,12 +45,15 @@ export function QuestionProgressToolbar({
   filter,
   isAuthenticated,
   isLoading = false,
+  error = null,
   onFilterChange,
   onResetProgress,
+  onRetry,
 }: QuestionProgressToolbarProps) {
   const t = useTranslations('qa');
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [resetFailed, setResetFailed] = useState(false);
   const progressPercentage =
     totalQuestions > 0
       ? Math.min(100, Math.round((viewedCount / totalQuestions) * 100))
@@ -55,9 +63,14 @@ export function QuestionProgressToolbar({
 
   const confirmReset = async () => {
     setIsResetting(true);
+    setResetFailed(false);
     try {
       const result = await onResetProgress();
-      if (result !== 'error') setIsResetOpen(false);
+      if (result === 'error') {
+        setResetFailed(true);
+      } else {
+        setIsResetOpen(false);
+      }
     } finally {
       setIsResetting(false);
     }
@@ -81,6 +94,15 @@ export function QuestionProgressToolbar({
       {label}
     </button>
   );
+  const errorMessageKey = error
+    ? (
+        {
+          load_failed: 'syncError.load',
+          save_failed: 'syncError.save',
+          reset_failed: 'syncError.reset',
+        } as const
+      )[error]
+    : null;
 
   return (
     <section className="mb-4" aria-label={t('progressControls')}>
@@ -120,7 +142,10 @@ export function QuestionProgressToolbar({
             <button
               type="button"
               disabled={viewedCount === 0 || isLoading}
-              onClick={() => setIsResetOpen(true)}
+              onClick={() => {
+                setResetFailed(false);
+                setIsResetOpen(true);
+              }}
               className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--qa-progress-border)] px-3 text-xs font-medium text-[var(--qa-progress-accent)] transition-colors hover:border-red-500 hover:text-red-500 focus-visible:ring-2 focus-visible:ring-red-500/30 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45"
               style={
                 {
@@ -150,6 +175,33 @@ export function QuestionProgressToolbar({
         />
       </div>
 
+      {errorMessageKey && (!isResetOpen || error !== 'reset_failed') ? (
+        <div
+          role="alert"
+          className="mt-3 flex flex-col gap-2 rounded-xl border border-amber-300/50 bg-amber-50/80 px-3 py-2.5 text-sm text-amber-800 sm:flex-row sm:items-center sm:justify-between dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-200"
+        >
+          <span className="inline-flex items-start gap-2">
+            <AlertTriangle
+              aria-hidden="true"
+              className="mt-0.5 h-4 w-4 shrink-0"
+            />
+            <span>{t(errorMessageKey)}</span>
+          </span>
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={() => void onRetry()}
+            className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1.5 rounded-full border border-current/30 px-3 text-xs font-semibold transition-colors hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:outline-none disabled:cursor-wait disabled:opacity-60 dark:hover:bg-amber-900/40"
+          >
+            <RefreshCw
+              aria-hidden="true"
+              className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`}
+            />
+            {t('syncError.retry')}
+          </button>
+        </div>
+      ) : null}
+
       <ConfirmModal
         isOpen={isResetOpen}
         title={t('reset.title', { category: categoryLabel })}
@@ -157,6 +209,7 @@ export function QuestionProgressToolbar({
           viewed: viewedCount,
           bookmarks: bookmarkedCount,
         })}
+        errorMessage={resetFailed ? t('syncError.reset') : null}
         confirmText={t('reset.confirm')}
         cancelText={t('reset.cancel')}
         variant="danger"
