@@ -1651,6 +1651,22 @@
       "date": "Date",
       "status": "Status"
     },
+    "questionProgress": {
+      "title": "Question Progress",
+      "subtitle": "Topics you are currently learning",
+      "topic": "Topic",
+      "progress": "Progress",
+      "saved": "Saved",
+      "status": "Status",
+      "viewed": "{viewed} of {total} viewed",
+      "inProgress": "In progress",
+      "complete": "Complete",
+      "continueTopic": "Continue learning {topic}",
+      "topicProgress": "Progress for {topic}",
+      "openSaved": "Open {count} saved questions in {topic}",
+      "emptyDescription": "Open your first Q&A answer to start tracking learning progress here.",
+      "browseQuestions": "Browse questions"
+    },
     "quizReview": {
       "title": "Error Analysis",
       "subtitle": "{incorrect} of {total} — incorrect",

@@ -1656,6 +1656,22 @@
       "date": "Дата",
       "status": "Статус"
     },
+    "questionProgress": {
+      "title": "Прогрес у питаннях",
+      "subtitle": "Теми, які ви зараз вивчаєте",
+      "topic": "Тема",
+      "progress": "Прогрес",
+      "saved": "Збережено",
+      "status": "Статус",
+      "viewed": "Переглянуто {viewed} із {total}",
+      "inProgress": "Вивчається",
+      "complete": "Завершено",
+      "continueTopic": "Продовжити вивчення теми {topic}",
+      "topicProgress": "Прогрес у темі {topic}",
+      "openSaved": "Відкрити збережені питання ({count}) у темі {topic}",
+      "emptyDescription": "Відкрийте першу відповідь у Q&A, щоб тут почав зберігатися ваш навчальний прогрес.",
+      "browseQuestions": "Перейти до питань"
+    },
     "quizReview": {
       "title": "Аналіз помилок",
       "subtitle": "{incorrect} з {total} — неправильно",

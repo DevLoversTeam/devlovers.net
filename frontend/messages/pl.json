@@ -1654,6 +1654,22 @@
       "date": "Data",
       "status": "Status"
     },
+    "questionProgress": {
+      "title": "Postęp w pytaniach",
+      "subtitle": "Tematy, których obecnie się uczysz",
+      "topic": "Temat",
+      "progress": "Postęp",
+      "saved": "Zapisane",
+      "status": "Status",
+      "viewed": "Wyświetlono {viewed} z {total}",
+      "inProgress": "W trakcie",
+      "complete": "Ukończono",
+      "continueTopic": "Kontynuuj naukę tematu {topic}",
+      "topicProgress": "Postęp w temacie {topic}",
+      "openSaved": "Otwórz zapisane pytania ({count}) w temacie {topic}",
+      "emptyDescription": "Otwórz pierwszą odpowiedź w Q&A, aby zacząć zapisywać tutaj swoje postępy.",
+      "browseQuestions": "Przejdź do pytań"
+    },
     "quizReview": {
       "title": "Analiza błędów",
       "subtitle": "{incorrect} z {total} — niepoprawnie",
