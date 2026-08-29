@@ -24,6 +24,7 @@ type ProgressApiSnapshot = {
 
 type ProgressState = {
   category: string;
+  totalQuestions: number;
   viewedItems: Set<string>;
   bookmarkedItems: Set<string>;
   lastOpenedQuestionId: string | null;
@@ -39,6 +40,7 @@ function stateFromApi(
 ): ProgressState {
   return {
     category,
+    totalQuestions: progress.totalQuestions,
     viewedItems: new Set(progress.viewedQuestionIds),
     bookmarkedItems: new Set(progress.bookmarkedQuestionIds),
     lastOpenedQuestionId: progress.lastOpenedQuestionId,
@@ -49,6 +51,7 @@ export function useQuestionProgress(category: string) {
   const { loading: authLoading, refresh: refreshAuth, userExists } = useAuth();
   const [state, setState] = useState<ProgressState>({
     category,
+    totalQuestions: 0,
     viewedItems: new Set(),
     bookmarkedItems: new Set(),
     lastOpenedQuestionId: null,
@@ -71,6 +74,7 @@ export function useQuestionProgress(category: string) {
   const clearForCategory = useCallback(() => {
     updateState(() => ({
       category,
+      totalQuestions: 0,
       viewedItems: new Set(),
       bookmarkedItems: new Set(),
       lastOpenedQuestionId: null,
@@ -172,6 +176,7 @@ export function useQuestionProgress(category: string) {
             ? previous
             : {
                 category: mutationCategory,
+                totalQuestions: 0,
                 viewedItems: new Set<string>(),
                 bookmarkedItems: new Set<string>(),
                 lastOpenedQuestionId: null,
@@ -344,6 +349,7 @@ export function useQuestionProgress(category: string) {
     () => ({
       viewedItems,
       bookmarkedItems,
+      totalQuestions: visibleState?.totalQuestions ?? 0,
       viewedCount: viewedItems.size,
       bookmarkedCount: bookmarkedItems.size,
       lastOpenedQuestionId: visibleState?.lastOpenedQuestionId ?? null,
@@ -367,6 +373,7 @@ export function useQuestionProgress(category: string) {
       userExists,
       viewedItems,
       visibleState?.lastOpenedQuestionId,
+      visibleState?.totalQuestions,
     ]
   );
 }

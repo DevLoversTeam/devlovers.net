@@ -128,7 +128,23 @@
     "searchPlaceholder": "Search questions...",
     "clearSearch": "Clear search",
     "progressLabel": "Progress",
+    "progressControls": "Question progress and filters",
+    "bookmarkedCount": "Saved: {count}",
     "resetProgress": "Reset progress",
+    "filters": {
+      "label": "Question filters",
+      "all": "All questions",
+      "bookmarked": "Saved {count}",
+      "emptyTitle": "No saved questions in this topic",
+      "emptyDescription": "Open a question and select the bookmark icon to save it for later.",
+      "showAll": "Show all questions"
+    },
+    "reset": {
+      "title": "Reset {category} progress?",
+      "description": "Viewed status for {viewed} questions will be cleared. Your {bookmarks} bookmarks will remain saved. This action cannot be undone.",
+      "confirm": "Reset progress",
+      "cancel": "Cancel"
+    },
     "noResults": "Nothing found for \"{query}\"",
     "noQuestions": "No questions yet…\nBut they’re already in development.\nStay tuned - new content coming soon!",
     "metaTitle": "Q&A | DevLovers",

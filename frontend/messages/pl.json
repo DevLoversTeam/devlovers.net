@@ -128,7 +128,23 @@
     "searchPlaceholder": "Szukaj pytań...",
     "clearSearch": "Wyczyść wyszukiwanie",
     "progressLabel": "Postęp",
+    "progressControls": "Postęp i filtry pytań",
+    "bookmarkedCount": "Zapisane: {count}",
     "resetProgress": "Resetuj postęp",
+    "filters": {
+      "label": "Filtry pytań",
+      "all": "Wszystkie pytania",
+      "bookmarked": "Zapisane {count}",
+      "emptyTitle": "Brak zapisanych pytań w tym temacie",
+      "emptyDescription": "Otwórz pytanie i wybierz ikonę zakładki, aby zachować je na później.",
+      "showAll": "Pokaż wszystkie pytania"
+    },
+    "reset": {
+      "title": "Zresetować postęp w temacie {category}?",
+      "description": "Status wyświetlenia dla {viewed} pytań zostanie wyczyszczony. Twoje zakładki ({bookmarks}) pozostaną zapisane. Tej operacji nie można cofnąć.",
+      "confirm": "Resetuj postęp",
+      "cancel": "Anuluj"
+    },
     "noResults": "Nic nie znaleziono dla \"{query}\"",
     "noQuestions": "Brak pytań na ten moment…\nAle już są w przygotowaniu.\nBądź na bieżąco - wkrótce pojawią się nowe materiały!",
     "metaTitle": "Q&A | DevLovers",

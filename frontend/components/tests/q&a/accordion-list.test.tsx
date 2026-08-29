@@ -209,8 +209,6 @@ describe('AccordionList', () => {
 
     expect(screen.getByText('What is CSS?')).toBeTruthy();
     expect(screen.getByText('CSS styles pages.')).toBeTruthy();
-    expect(screen.getByText('progressLabel:')).toBeTruthy();
-    expect(screen.getByText('0/1')).toBeTruthy();
   });
 
   it('marks an accordion as viewed after opening it', () => {
@@ -248,44 +246,11 @@ describe('AccordionList', () => {
         items={items}
         totalItems={1}
         viewedItems={new Set(['q1'])}
-        viewedCount={1}
         onQuestionOpened={onQuestionOpened}
       />
     );
 
     expect(screen.getByRole('button', { name: 'Add bookmark' })).toBeTruthy();
-    expect(screen.getByText('1/1')).toBeTruthy();
-  });
-
-  it('delegates reset progress to the parent state', () => {
-    const onResetProgress = vi.fn();
-    const items: QuestionEntry[] = [
-      {
-        id: 'q1',
-        question: 'What is CSS?',
-        category: 'css',
-        answerBlocks: [
-          {
-            type: 'paragraph',
-            children: [{ text: 'CSS styles pages.' }],
-          },
-        ],
-      },
-    ];
-
-    render(
-      <AccordionList
-        items={items}
-        totalItems={1}
-        viewedItems={new Set(['q1'])}
-        viewedCount={1}
-        onResetProgress={onResetProgress}
-      />
-    );
-
-    fireEvent.click(screen.getByText('resetProgress'));
-
-    expect(onResetProgress).toHaveBeenCalledOnce();
   });
 
   it('delegates bookmark changes and renders controlled state', () => {
@@ -309,7 +274,6 @@ describe('AccordionList', () => {
         items={items}
         totalItems={1}
         viewedItems={new Set(['q1'])}
-        viewedCount={1}
         onToggleBookmark={onToggleBookmark}
       />
     );
@@ -324,7 +288,6 @@ describe('AccordionList', () => {
         totalItems={1}
         viewedItems={new Set(['q1'])}
         bookmarkedItems={new Set(['q1'])}
-        viewedCount={1}
         onToggleBookmark={onToggleBookmark}
       />
     );

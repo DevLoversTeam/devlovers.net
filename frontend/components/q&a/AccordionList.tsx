@@ -1,7 +1,6 @@
 'use client';
 
 import { Bookmark, CheckCircle } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import {
   type CSSProperties,
   type ReactNode,
@@ -337,25 +336,18 @@ function renderBlock(
 
 export default function AccordionList({
   items,
-  totalItems,
   viewedItems = EMPTY_QUESTION_IDS,
   bookmarkedItems = EMPTY_QUESTION_IDS,
-  viewedCount = viewedItems.size,
   onQuestionOpened,
   onToggleBookmark,
-  onResetProgress,
 }: {
   items: QuestionEntry[];
   totalItems?: number;
   viewedItems?: ReadonlySet<string>;
   bookmarkedItems?: ReadonlySet<string>;
-  viewedCount?: number;
   onQuestionOpened?: (questionId: string) => void | Promise<unknown>;
   onToggleBookmark?: (questionId: string) => void | Promise<unknown>;
-  onResetProgress?: () => void | Promise<unknown>;
 }) {
-  const resolvedTotalItems = totalItems ?? items.length;
-  const t = useTranslations('qa');
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [buttonPosition, setButtonPosition] = useState<{
     x: number;
@@ -434,17 +426,6 @@ export default function AccordionList({
     }
   }, []);
 
-  const viewedPercentage =
-    resolvedTotalItems > 0
-      ? Math.round((viewedCount / resolvedTotalItems) * 100)
-      : 0;
-  const progressAccent = items[0]?.category
-    ? (categoryTabStyles[items[0].category as keyof typeof categoryTabStyles]
-        ?.accent ?? 'var(--accent-primary)')
-    : 'var(--accent-primary)';
-  const progressTrackBorder = hexToRgba(progressAccent, 0.38);
-  const progressFill = `linear-gradient(90deg, ${hexToRgba(progressAccent, 0.72)} 0%, ${hexToRgba(progressAccent, 0.18)} 100%)`;
-
   const handleAccordionChange = useCallback(
     (value: string) => {
       if (!value || value.startsWith('fallback-')) return;
@@ -455,43 +436,6 @@ export default function AccordionList({
 
   return (
     <>
-      <div className="mb-4">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {t('progressLabel')}:{' '}
-            <span className="font-semibold text-gray-900 dark:text-gray-100">
-              {viewedCount}/{resolvedTotalItems}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => void onResetProgress?.()}
-            className="inline-flex h-8 items-center rounded-full border border-[var(--qa-progress-border)] px-3 text-xs font-medium text-[var(--qa-progress-accent)] transition-colors hover:border-red-500 hover:text-red-500 focus-visible:border-red-500 focus-visible:text-red-500 focus-visible:outline-none"
-            style={
-              {
-                '--qa-progress-accent': progressAccent,
-                '--qa-progress-border': progressTrackBorder,
-              } as React.CSSProperties
-            }
-          >
-            {t('resetProgress')}
-          </button>
-        </div>
-        <div
-          className="h-3 overflow-hidden rounded-full border bg-white/5 dark:bg-white/5"
-          style={{ borderColor: progressTrackBorder }}
-        >
-          <div
-            className="h-full rounded-full transition-[width] duration-500"
-            style={{
-              width: `${viewedPercentage}%`,
-              background: progressFill,
-              boxShadow: `0 0 24px ${hexToRgba(progressAccent, 0.3)}`,
-            }}
-          />
-        </div>
-      </div>
-
       <Accordion
         type="single"
         collapsible

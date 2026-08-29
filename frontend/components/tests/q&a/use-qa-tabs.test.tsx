@@ -164,4 +164,43 @@ describe('useQaTabs', () => {
       scroll: false,
     });
   });
+
+  it('loads bookmarked questions from the URL filter', async () => {
+    searchParamsValue = new URLSearchParams('filter=bookmarked');
+
+    const { result } = renderHook(() => useQaTabs());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.filter).toBe('bookmarked');
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/questions/git?page=1&limit=10&locale=en&filter=bookmarked',
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+  });
+
+  it('updates the URL and request when the filter changes', async () => {
+    const { result } = renderHook(() => useQaTabs());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.handleFilterChange('bookmarked');
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/questions/git?page=1&limit=10&locale=en&filter=bookmarked',
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
+    });
+
+    expect(routerReplace).toHaveBeenCalledWith('/q&a?filter=bookmarked', {
+      scroll: false,
+    });
+  });
 });

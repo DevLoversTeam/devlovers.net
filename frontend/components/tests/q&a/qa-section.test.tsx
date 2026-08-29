@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -10,11 +10,16 @@ vi.mock('next-intl', () => ({
 const qaState = {
   active: 'git',
   currentPage: 1,
+  filter: 'all' as 'all' | 'bookmarked',
   handleCategoryChange: vi.fn(),
+  handleFilterChange: vi.fn(),
   handlePageChange: vi.fn(),
+  handlePageSizeChange: vi.fn(),
   isLoading: false,
   items: [] as unknown[],
   localeKey: 'en',
+  pageSize: 10,
+  pageSizeOptions: [10, 20, 40],
   totalItems: 0,
   totalPages: 0,
 };
@@ -28,10 +33,18 @@ vi.mock('@/components/q&a/useQuestionProgress', () => ({
     viewedItems: new Set(),
     bookmarkedItems: new Set(),
     viewedCount: 0,
+    bookmarkedCount: 0,
+    totalQuestions: 0,
+    isAuthenticated: true,
+    isLoading: false,
     markAsViewed: vi.fn(),
     toggleBookmark: vi.fn(),
     resetProgress: vi.fn(),
   }),
+}));
+
+vi.mock('@/components/q&a/QuestionProgressToolbar', () => ({
+  QuestionProgressToolbar: () => <div data-testid="progress-toolbar" />,
 }));
 
 vi.mock('@/components/q&a/AccordionList', () => ({
@@ -63,6 +76,14 @@ import QaSection from '@/components/q&a/QaSection';
 import { categoryData } from '@/data/category';
 
 describe('QaSection', () => {
+  beforeEach(() => {
+    qaState.filter = 'all';
+    qaState.items = [];
+    qaState.totalItems = 0;
+    qaState.totalPages = 0;
+    qaState.handleFilterChange.mockClear();
+  });
+
   it('renders empty state when no questions', () => {
     qaState.totalPages = 0;
     render(<QaSection />);
@@ -79,5 +100,22 @@ describe('QaSection', () => {
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBe(categoryData.length);
     expect(screen.getByTestId('pagination')).toBeTruthy();
+  });
+
+  it('renders saved empty state and returns to all questions', () => {
+    qaState.filter = 'bookmarked';
+
+    render(<QaSection />);
+
+    expect(screen.getAllByText('filters.emptyTitle').length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText('filters.emptyDescription').length
+    ).toBeGreaterThan(0);
+
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'filters.showAll' })[0]
+    );
+
+    expect(qaState.handleFilterChange).toHaveBeenCalledWith('all');
   });
 });

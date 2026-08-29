@@ -8,6 +8,7 @@ import {
   type CategorySlug,
   type Locale,
   type PaginatedResponse,
+  type QaQuestionFilter,
   type QuestionApiItem,
   type QuestionEntry,
 } from '@/components/q&a/types';
@@ -28,6 +29,10 @@ function isQaPageSize(value: number): value is QaPageSize {
   return PAGE_SIZE_OPTIONS.includes(value as QaPageSize);
 }
 
+function isQaQuestionFilter(value: string): value is QaQuestionFilter {
+  return value === 'all' || value === 'bookmarked';
+}
+
 export function useQaTabs() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -43,23 +48,36 @@ export function useQaTabs() {
     ? parsedSize
     : DEFAULT_PAGE_SIZE;
   const categoryFromUrl = searchParams.get('category') || DEFAULT_CATEGORY;
+  const rawFilter = searchParams.get('filter') ?? 'all';
+  const filterFromUrl: QaQuestionFilter = isQaQuestionFilter(rawFilter)
+    ? rawFilter
+    : 'all';
   const [active, setActive] = useState<CategorySlug>(
     isCategorySlug(categoryFromUrl) ? categoryFromUrl : DEFAULT_CATEGORY
   );
   const [currentPage, setCurrentPage] = useState(safePageFromUrl);
   const [pageSize, setPageSize] = useState<QaPageSize>(safePageSizeFromUrl);
+  const [filter, setFilter] = useState<QaQuestionFilter>(filterFromUrl);
   const [items, setItems] = useState<QuestionEntry[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   const updateUrl = useCallback(
-    (category: CategorySlug, page: number, size: QaPageSize) => {
+    (
+      category: CategorySlug,
+      page: number,
+      size: QaPageSize,
+      questionFilter: QaQuestionFilter
+    ) => {
       const params = new URLSearchParams();
 
       if (category !== DEFAULT_CATEGORY) params.set('category', category);
       if (page > 1) params.set('page', String(page));
       if (size !== DEFAULT_PAGE_SIZE) params.set('size', String(size));
+      if (questionFilter === 'bookmarked') {
+        params.set('filter', questionFilter);
+      }
 
       const queryString = params.toString();
 
@@ -79,6 +97,10 @@ export function useQaTabs() {
   }, [safePageSizeFromUrl]);
 
   useEffect(() => {
+    setFilter(filterFromUrl);
+  }, [filterFromUrl]);
+
+  useEffect(() => {
     if (!isCategorySlug(categoryFromUrl)) {
       return;
     }
@@ -93,8 +115,9 @@ export function useQaTabs() {
       setIsLoading(true);
 
       try {
+        const filterQuery = filter === 'bookmarked' ? '&filter=bookmarked' : '';
         const res = await fetch(
-          `/api/questions/${active}?page=${currentPage}&limit=${pageSize}&locale=${localeKey}`,
+          `/api/questions/${active}?page=${currentPage}&limit=${pageSize}&locale=${localeKey}${filterQuery}`,
           { signal: controller.signal }
         );
 
@@ -134,7 +157,7 @@ export function useQaTabs() {
       isActive = false;
       controller.abort();
     };
-  }, [active, currentPage, localeKey, pageSize]);
+  }, [active, currentPage, filter, localeKey, pageSize]);
 
   const handleCategoryChange = useCallback(
     (category: string) => {
@@ -143,17 +166,17 @@ export function useQaTabs() {
       }
       setActive(category);
       setCurrentPage(1);
-      updateUrl(category, 1, pageSize);
+      updateUrl(category, 1, pageSize, filter);
     },
-    [pageSize, updateUrl]
+    [filter, pageSize, updateUrl]
   );
 
   const handlePageChange = useCallback(
     (page: number) => {
       setCurrentPage(page);
-      updateUrl(active, page, pageSize);
+      updateUrl(active, page, pageSize, filter);
     },
-    [active, pageSize, updateUrl]
+    [active, filter, pageSize, updateUrl]
   );
 
   const handlePageSizeChange = useCallback(
@@ -164,15 +187,27 @@ export function useQaTabs() {
 
       setPageSize(size);
       setCurrentPage(1);
-      updateUrl(active, 1, size);
+      updateUrl(active, 1, size, filter);
     },
-    [active, updateUrl]
+    [active, filter, updateUrl]
+  );
+
+  const handleFilterChange = useCallback(
+    (nextFilter: QaQuestionFilter) => {
+      setFilter(nextFilter);
+      setCurrentPage(1);
+      setItems([]);
+      updateUrl(active, 1, pageSize, nextFilter);
+    },
+    [active, pageSize, updateUrl]
   );
 
   return {
     active,
     currentPage,
+    filter,
     handleCategoryChange,
+    handleFilterChange,
     handlePageChange,
     handlePageSizeChange,
     isLoading,
