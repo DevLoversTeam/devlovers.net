@@ -14,6 +14,7 @@ import {
 } from '@/components/q&a/types';
 import { categoryData } from '@/data/category';
 import { useRouter } from '@/i18n/routing';
+import { subscribeToPageFocus } from '@/lib/page-focus';
 
 const CATEGORY_SLUGS = categoryData.map(category => category.slug);
 const DEFAULT_CATEGORY = CATEGORY_SLUGS[0] || 'html';
@@ -67,6 +68,7 @@ export function useQaTabs() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [focusRefreshVersion, setFocusRefreshVersion] = useState(0);
   const resolvedRequestRef = useRef<string | null>(null);
 
   const updateUrl = useCallback(
@@ -191,7 +193,23 @@ export function useQaTabs() {
       isActive = false;
       controller.abort();
     };
-  }, [active, currentPage, filter, focusedQuestionId, localeKey, pageSize]);
+  }, [
+    active,
+    currentPage,
+    filter,
+    focusRefreshVersion,
+    focusedQuestionId,
+    localeKey,
+    pageSize,
+  ]);
+
+  useEffect(() => {
+    if (filter !== 'bookmarked' || isLoading) return;
+
+    return subscribeToPageFocus(() => {
+      setFocusRefreshVersion(version => version + 1);
+    });
+  }, [filter, isLoading]);
 
   const handleCategoryChange = useCallback(
     (category: string) => {

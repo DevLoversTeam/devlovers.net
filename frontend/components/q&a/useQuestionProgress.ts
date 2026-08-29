@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
+import { subscribeToPageFocus } from '@/lib/page-focus';
 
 type ProgressApiItem = {
   questionId: string;
@@ -60,6 +61,7 @@ export function useQuestionProgress(category: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ProgressSyncError | null>(null);
   const stateRef = useRef(state);
+  const pendingMutationCountRef = useRef(0);
 
   const updateState = useCallback(
     (updater: (previous: ProgressState) => ProgressState) => {
@@ -158,9 +160,19 @@ export function useQuestionProgress(category: string) {
     return () => controller.abort();
   }, [loadProgress]);
 
+  useEffect(() => {
+    if (authLoading || !userExists || isLoading) return;
+
+    return subscribeToPageFocus(() => {
+      if (pendingMutationCountRef.current > 0) return;
+      void loadProgress();
+    });
+  }, [authLoading, isLoading, loadProgress, userExists]);
+
   const markAsViewed = useCallback(
     async (questionId: string): Promise<ProgressMutationResult> => {
       if (authLoading || !userExists) return 'unauthenticated';
+      pendingMutationCountRef.current += 1;
 
       const mutationCategory = category;
       const wasViewed =
@@ -230,6 +242,8 @@ export function useQuestionProgress(category: string) {
         });
 
         return 'error';
+      } finally {
+        pendingMutationCountRef.current -= 1;
       }
     },
     [authLoading, category, handleUnauthorized, updateState, userExists]
@@ -238,6 +252,7 @@ export function useQuestionProgress(category: string) {
   const toggleBookmark = useCallback(
     async (questionId: string): Promise<ProgressMutationResult> => {
       if (authLoading || !userExists) return 'unauthenticated';
+      pendingMutationCountRef.current += 1;
 
       const mutationCategory = category;
       const wasBookmarked =
@@ -285,6 +300,8 @@ export function useQuestionProgress(category: string) {
         });
 
         return 'error';
+      } finally {
+        pendingMutationCountRef.current -= 1;
       }
     },
     [authLoading, category, handleUnauthorized, updateState, userExists]
@@ -293,6 +310,7 @@ export function useQuestionProgress(category: string) {
   const resetProgress =
     useCallback(async (): Promise<ProgressMutationResult> => {
       if (authLoading || !userExists) return 'unauthenticated';
+      pendingMutationCountRef.current += 1;
 
       const mutationCategory = category;
       const previousState = stateRef.current;
@@ -339,6 +357,8 @@ export function useQuestionProgress(category: string) {
           current.category === mutationCategory ? previousState : current
         );
         return 'error';
+      } finally {
+        pendingMutationCountRef.current -= 1;
       }
     }, [authLoading, category, handleUnauthorized, updateState, userExists]);
 

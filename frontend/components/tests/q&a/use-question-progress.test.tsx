@@ -99,6 +99,72 @@ describe('useQuestionProgress', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
+  it('refreshes progress once when the page regains focus', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ progress: emptyProgress }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          progress: {
+            ...emptyProgress,
+            viewedCount: 1,
+            viewedQuestionIds: ['q2'],
+            lastOpenedQuestionId: 'q2',
+          },
+        })
+      );
+
+    const { result } = renderHook(() => useQuestionProgress('git'));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(result.current.viewedItems.has('q2')).toBe(true);
+    });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not refresh focus state during a pending mutation', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse({
+        progress: {
+          ...emptyProgress,
+          viewedCount: 1,
+          viewedQuestionIds: ['q1'],
+        },
+      })
+    );
+
+    const { result } = renderHook(() => useQuestionProgress('git'));
+    await waitFor(() => expect(result.current.viewedCount).toBe(1));
+
+    let resolveMutation!: (response: Response) => void;
+    vi.mocked(fetch).mockImplementationOnce(
+      () =>
+        new Promise<Response>(resolve => {
+          resolveMutation = resolve;
+        })
+    );
+
+    let mutation!: Promise<string>;
+    act(() => {
+      mutation = result.current.toggleBookmark('q1');
+    });
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      resolveMutation(jsonResponse({ success: true }));
+      await mutation;
+    });
+  });
+
   it('optimistically marks viewed and rolls back a failed mutation', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(fetch).mockResolvedValueOnce(

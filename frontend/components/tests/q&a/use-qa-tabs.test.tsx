@@ -182,6 +182,25 @@ describe('useQaTabs', () => {
     );
   });
 
+  it('refreshes the bookmarked list once when the page regains focus', async () => {
+    searchParamsValue = new URLSearchParams('filter=bookmarked');
+
+    const { result } = renderHook(() => useQaTabs());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('updates the URL and request when the filter changes', async () => {
     const { result } = renderHook(() => useQaTabs());
 
