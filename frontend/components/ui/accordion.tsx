@@ -31,11 +31,13 @@ function AccordionTrigger({
   leading,
   trailing,
   chevronOutside = false,
+  chevronLabel = 'Toggle accordion',
   ...props
 }: React.ComponentProps<typeof AccordionPrimitive.Trigger> & {
   leading?: React.ReactNode;
   trailing?: React.ReactNode;
   chevronOutside?: boolean;
+  chevronLabel?: string;
 }) {
   const triggerRef = React.useRef<HTMLButtonElement | null>(null);
 
@@ -63,7 +65,7 @@ function AccordionTrigger({
       {chevronOutside && (
         <button
           type="button"
-          aria-label="Toggle accordion"
+          aria-label={chevronLabel}
           className="text-muted-foreground mr-4 inline-flex size-6 shrink-0 items-center justify-center self-center rounded-sm transition-colors duration-200 hover:bg-black/5 dark:hover:bg-white/5"
           onClick={() => triggerRef.current?.click()}
         >

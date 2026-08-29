@@ -1,6 +1,7 @@
 'use client';
 
 import { Bookmark, CheckCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   type CSSProperties,
   type ReactNode,
@@ -350,6 +351,7 @@ export default function AccordionList({
   onQuestionOpened?: (questionId: string) => void | Promise<unknown>;
   onToggleBookmark?: (questionId: string) => void | Promise<unknown>;
 }) {
+  const t = useTranslations('qa.questionState');
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [buttonPosition, setButtonPosition] = useState<{
     x: number;
@@ -492,6 +494,7 @@ export default function AccordionList({
               <AccordionTrigger
                 className="px-4 hover:no-underline"
                 chevronOutside
+                chevronLabel={t('toggleAnswer')}
                 onPointerDown={clearSelection}
                 trailing={
                   <div className="mr-2 flex h-6 w-[80px] shrink-0 items-center justify-end gap-2 self-center sm:w-[118px] sm:gap-3">
@@ -502,21 +505,21 @@ export default function AccordionList({
                           ? 'h-6 rounded-full bg-transparent px-0 py-0 text-[11px] whitespace-nowrap text-emerald-500 shadow-none sm:bg-green-100 sm:px-2 sm:text-green-700 sm:text-inherit dark:bg-transparent dark:text-emerald-400 sm:dark:bg-green-900/30 sm:dark:text-green-400'
                           : 'invisible h-6 rounded-full bg-transparent px-0 py-0 text-[11px] whitespace-nowrap shadow-none sm:px-2 sm:text-inherit'
                       }
-                      aria-label={isViewed ? 'Viewed' : undefined}
+                      aria-label={isViewed ? t('viewed') : undefined}
                     >
                       <span className="inline-flex items-center sm:hidden">
                         <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
                       </span>
                       <span className="hidden items-center gap-1 sm:inline-flex">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Viewed
+                        {t('viewed')}
                       </span>
                     </Badge>
                     {isViewed || isBookmarked ? (
                       <button
                         type="button"
                         aria-label={
-                          isBookmarked ? 'Remove bookmark' : 'Add bookmark'
+                          isBookmarked ? t('removeBookmark') : t('addBookmark')
                         }
                         aria-pressed={isBookmarked}
                         className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-red-500 transition-colors hover:bg-red-500/10 focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:outline-none"

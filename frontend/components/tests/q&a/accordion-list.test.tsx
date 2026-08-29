@@ -51,11 +51,13 @@ vi.mock('@/components/ui/accordion', async () => {
       leading,
       trailing,
       chevronOutside,
+      chevronLabel,
     }: {
       children: React.ReactNode;
       leading?: React.ReactNode;
       trailing?: React.ReactNode;
       chevronOutside?: boolean;
+      chevronLabel?: string;
     }) => {
       const onValueChange = React.useContext(ChangeContext);
       const value = React.useContext(ValueContext);
@@ -66,7 +68,9 @@ vi.mock('@/components/ui/accordion', async () => {
             {children}
           </button>
           {trailing}
-          {chevronOutside ? <span data-testid="chevron-outside" /> : null}
+          {chevronOutside ? (
+            <span data-testid="chevron-outside" aria-label={chevronLabel} />
+          ) : null}
         </div>
       );
     },
@@ -267,7 +271,9 @@ describe('AccordionList', () => {
       />
     );
 
-    expect(screen.queryByRole('button', { name: 'Add bookmark' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'addBookmark' })
+    ).toBeNull();
 
     fireEvent.click(screen.getByText('What is CSS?'));
 
@@ -282,7 +288,10 @@ describe('AccordionList', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: 'Add bookmark' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'addBookmark' })
+    ).toBeTruthy();
+    expect(screen.getByLabelText('toggleAnswer')).toBeTruthy();
   });
 
   it('delegates bookmark changes and renders controlled state', () => {
@@ -310,7 +319,9 @@ describe('AccordionList', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add bookmark' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'addBookmark' })
+    );
 
     expect(onToggleBookmark).toHaveBeenCalledWith('q1');
 
@@ -325,7 +336,7 @@ describe('AccordionList', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: 'Remove bookmark' })
+      screen.getByRole('button', { name: 'removeBookmark' })
     ).toBeTruthy();
   });
 
@@ -352,9 +363,9 @@ describe('AccordionList', () => {
       />
     );
 
-    expect(screen.queryByLabelText('Viewed')).toBeNull();
+    expect(screen.queryByLabelText('viewed')).toBeNull();
     expect(
-      screen.getByRole('button', { name: 'Remove bookmark' })
+      screen.getByRole('button', { name: 'removeBookmark' })
     ).toBeTruthy();
   });
 

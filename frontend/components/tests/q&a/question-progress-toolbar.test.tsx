@@ -36,6 +36,11 @@ describe('QuestionProgressToolbar', () => {
 
     expect(screen.getByText('3/100')).toBeTruthy();
     expect(screen.getByText('bookmarkedCount:2')).toBeTruthy();
+    expect(
+      screen.getByRole('progressbar', {
+        name: 'questionState.progress',
+      })
+    ).toHaveAttribute('aria-valuetext', 'questionState.progressValue:3/100');
 
     fireEvent.click(screen.getByText('filters.bookmarked:2'));
 

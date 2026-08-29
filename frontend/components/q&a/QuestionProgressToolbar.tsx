@@ -164,6 +164,15 @@ export function QuestionProgressToolbar({
       <div
         className="h-3 overflow-hidden rounded-full border bg-white/5 dark:bg-white/5"
         style={{ borderColor: trackBorder }}
+        role="progressbar"
+        aria-label={t('questionState.progress')}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progressPercentage}
+        aria-valuetext={t('questionState.progressValue', {
+          viewed: viewedCount,
+          total: totalQuestions,
+        })}
       >
         <div
           className="h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"

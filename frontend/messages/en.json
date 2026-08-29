@@ -157,6 +157,14 @@
       "reset": "We couldn't reset your progress. Nothing was removed.",
       "retry": "Try again"
     },
+    "questionState": {
+      "viewed": "Viewed",
+      "addBookmark": "Add bookmark",
+      "removeBookmark": "Remove bookmark",
+      "toggleAnswer": "Toggle answer",
+      "progress": "Viewed question progress",
+      "progressValue": "{viewed} of {total} questions viewed"
+    },
     "noResults": "Nothing found for \"{query}\"",
     "noQuestions": "No questions yet…\nBut they’re already in development.\nStay tuned - new content coming soon!",
     "metaTitle": "Q&A | DevLovers",

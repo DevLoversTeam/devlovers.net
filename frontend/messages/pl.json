@@ -157,6 +157,14 @@
       "reset": "Nie udało się zresetować postępu. Żadne dane nie zostały usunięte.",
       "retry": "Spróbuj ponownie"
     },
+    "questionState": {
+      "viewed": "Wyświetlono",
+      "addBookmark": "Dodaj zakładkę",
+      "removeBookmark": "Usuń zakładkę",
+      "toggleAnswer": "Rozwiń lub zwiń odpowiedź",
+      "progress": "Postęp wyświetlania pytań",
+      "progressValue": "Wyświetlono {viewed} z {total} pytań"
+    },
     "noResults": "Nic nie znaleziono dla \"{query}\"",
     "noQuestions": "Brak pytań na ten moment…\nAle już są w przygotowaniu.\nBądź na bieżąco - wkrótce pojawią się nowe materiały!",
     "metaTitle": "Q&A | DevLovers",
