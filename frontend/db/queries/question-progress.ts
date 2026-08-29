@@ -54,6 +54,28 @@ const progressSelection = {
   updatedAt: userQuestionProgress.updatedAt,
 };
 
+export async function questionExists(questionId: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: questions.id })
+    .from(questions)
+    .where(eq(questions.id, questionId))
+    .limit(1);
+
+  return rows.length > 0;
+}
+
+export async function questionCategoryExists(
+  categorySlug: string
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(eq(categories.slug, categorySlug.toLowerCase()))
+    .limit(1);
+
+  return rows.length > 0;
+}
+
 export async function getQuestionProgressForCategory(
   userId: string,
   categorySlug: string

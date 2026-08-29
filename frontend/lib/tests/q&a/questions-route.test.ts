@@ -12,8 +12,13 @@ vi.mock('@/lib/cache/qa', () => ({
   setQaCache: vi.fn(async () => undefined),
 }));
 
+vi.mock('@/lib/auth', () => ({
+  getCurrentUser: vi.fn(),
+}));
+
 import { GET } from '@/app/api/questions/[category]/route';
 import { db } from '@/db';
+import { getCurrentUser } from '@/lib/auth';
 import { setQaCache } from '@/lib/cache/qa';
 
 type Builder = {
@@ -127,6 +132,62 @@ describe('GET /api/questions/[category]', () => {
     expect(data.total).toBe(0);
     expect(data.totalPages).toBe(0);
     consoleSpy.mockRestore();
+  });
+
+  it('requires authentication for the bookmarked filter', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/questions/git?filter=bookmarked&locale=en'
+      ),
+      { params: Promise.resolve({ category: 'git' }) }
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ code: 'UNAUTHORIZED' });
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(db.select).not.toHaveBeenCalled();
+  });
+
+  it('returns bookmarked questions without using the shared cache', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: 'user-1',
+      email: 'user@example.com',
+      role: 'user',
+      username: 'User',
+    });
+    const selectMock = db.select as ReturnType<typeof vi.fn>;
+    const setQaCacheMock = setQaCache as ReturnType<typeof vi.fn>;
+    selectMock
+      .mockReturnValueOnce(makeBuilder('limit', [{ id: 'cat-1' }]))
+      .mockReturnValueOnce(
+        makeBuilder('orderBy', [
+          {
+            id: 'q2',
+            categoryId: 'cat-1',
+            sortOrder: 2,
+            difficulty: null,
+            question: 'Bookmarked question',
+            answerBlocks: [],
+            locale: 'en',
+          },
+        ])
+      );
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/questions/git?filter=bookmarked&locale=en'
+      ),
+      { params: Promise.resolve({ category: 'git' }) }
+    );
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.items).toHaveLength(1);
+    expect(data.items[0].id).toBe('q2');
+    expect(response.headers.get('x-qa-cache')).toBe('BYPASS');
+    expect(setQaCacheMock).not.toHaveBeenCalled();
   });
 
   it('deduplicates repeated question texts in response payload', async () => {
