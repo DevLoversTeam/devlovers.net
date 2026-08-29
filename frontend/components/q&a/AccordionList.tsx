@@ -1,5 +1,7 @@
 'use client';
 
+import { Bookmark, CheckCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   type CSSProperties,
   type ReactNode,
@@ -7,10 +9,7 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { Bookmark, CheckCircle } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 
-import { Badge } from '@/components/ui/badge';
 import AIWordHelper from '@/components/q&a/AIWordHelper';
 import CodeBlock from '@/components/q&a/CodeBlock';
 import FloatingExplainButton from '@/components/q&a/FloatingExplainButton';
@@ -36,6 +35,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 import { categoryTabStyles } from '@/data/categoryStyles';
 import { CACHE_KEY, getCachedTerms } from '@/lib/ai/explainCache';
 
@@ -44,43 +44,7 @@ type QaItemStyle = CSSProperties & {
   '--qa-accent-soft': string;
 };
 
-const QA_VIEWED_STORAGE_KEY = 'devlovers_qa_viewed_questions';
-const QA_BOOKMARK_STORAGE_KEY = 'devlovers_qa_bookmarked_questions';
-
-function readStoredQuestionIds(storageKey: string): Set<string> {
-  if (typeof window === 'undefined') return new Set();
-
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-    if (!raw) return new Set();
-
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return new Set();
-
-    return new Set(
-      parsed.filter((value): value is string => typeof value === 'string')
-    );
-  } catch {
-    return new Set();
-  }
-}
-
-function writeStoredQuestionIds(storageKey: string, ids: Set<string>) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(storageKey, JSON.stringify([...ids]));
-  } catch {
-    // Ignore storage write failures in restricted environments.
-  }
-}
-
-function getQuestionStorageId(question: QuestionEntry): string {
-  if (question.id !== undefined && question.id !== null) {
-    return `${question.category}:${String(question.id)}`;
-  }
-
-  return `${question.category}:${question.question}`;
-}
+const EMPTY_QUESTION_IDS: ReadonlySet<string> = new Set();
 
 function normalizeCachedTerm(term: string): string {
   return term.toLowerCase().trim();
@@ -374,10 +338,23 @@ function renderBlock(
 export default function AccordionList({
   items,
   totalItems,
+  viewedItems = EMPTY_QUESTION_IDS,
+  bookmarkedItems = EMPTY_QUESTION_IDS,
+  viewedCount = viewedItems.size,
+  onQuestionOpened,
+  onToggleBookmark,
+  onResetProgress,
 }: {
   items: QuestionEntry[];
-  totalItems: number;
+  totalItems?: number;
+  viewedItems?: ReadonlySet<string>;
+  bookmarkedItems?: ReadonlySet<string>;
+  viewedCount?: number;
+  onQuestionOpened?: (questionId: string) => void | Promise<unknown>;
+  onToggleBookmark?: (questionId: string) => void | Promise<unknown>;
+  onResetProgress?: () => void | Promise<unknown>;
 }) {
+  const resolvedTotalItems = totalItems ?? items.length;
   const t = useTranslations('qa');
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [buttonPosition, setButtonPosition] = useState<{
@@ -391,8 +368,6 @@ export default function AccordionList({
   const [cachedTerms, setCachedTerms] = useState<Set<string>>(
     () => new Set(getCachedTerms().map(normalizeCachedTerm))
   );
-  const [viewedItems, setViewedItems] = useState<Set<string>>(new Set());
-  const [bookmarkedItems, setBookmarkedItems] = useState<Set<string>>(new Set());
 
   const refreshCachedTerms = useCallback(() => {
     const terms = getCachedTerms().map(normalizeCachedTerm);
@@ -400,20 +375,9 @@ export default function AccordionList({
   }, []);
 
   useEffect(() => {
-    setViewedItems(readStoredQuestionIds(QA_VIEWED_STORAGE_KEY));
-    setBookmarkedItems(readStoredQuestionIds(QA_BOOKMARK_STORAGE_KEY));
-  }, []);
-
-  useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === CACHE_KEY) {
         refreshCachedTerms();
-      }
-      if (e.key === null || e.key === QA_VIEWED_STORAGE_KEY) {
-        setViewedItems(readStoredQuestionIds(QA_VIEWED_STORAGE_KEY));
-      }
-      if (e.key === null || e.key === QA_BOOKMARK_STORAGE_KEY) {
-        setBookmarkedItems(readStoredQuestionIds(QA_BOOKMARK_STORAGE_KEY));
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -470,69 +434,24 @@ export default function AccordionList({
     }
   }, []);
 
-  const markAsViewed = useCallback((questionId: string) => {
-    setViewedItems(prev => {
-      if (prev.has(questionId)) {
-        return prev;
-      }
-
-      const next = new Set(prev);
-      next.add(questionId);
-      writeStoredQuestionIds(QA_VIEWED_STORAGE_KEY, next);
-      return next;
-    });
-  }, []);
-
-  const toggleBookmark = useCallback((questionId: string) => {
-    setBookmarkedItems(prev => {
-      const next = new Set(prev);
-
-      if (next.has(questionId)) {
-        next.delete(questionId);
-      } else {
-        next.add(questionId);
-      }
-
-      writeStoredQuestionIds(QA_BOOKMARK_STORAGE_KEY, next);
-      return next;
-    });
-  }, []);
-
-  const categoryKey = items[0]?.category ?? null;
-  const viewedCategoryCount = categoryKey
-    ? [...viewedItems].filter(id => id.startsWith(`${categoryKey}:`)).length
-    : 0;
   const viewedPercentage =
-    totalItems > 0
-      ? Math.round((viewedCategoryCount / totalItems) * 100)
+    resolvedTotalItems > 0
+      ? Math.round((viewedCount / resolvedTotalItems) * 100)
       : 0;
-  const progressAccent =
-    items[0]?.category
-      ? categoryTabStyles[items[0].category as keyof typeof categoryTabStyles]
-          ?.accent ?? 'var(--accent-primary)'
-      : 'var(--accent-primary)';
+  const progressAccent = items[0]?.category
+    ? (categoryTabStyles[items[0].category as keyof typeof categoryTabStyles]
+        ?.accent ?? 'var(--accent-primary)')
+    : 'var(--accent-primary)';
   const progressTrackBorder = hexToRgba(progressAccent, 0.38);
   const progressFill = `linear-gradient(90deg, ${hexToRgba(progressAccent, 0.72)} 0%, ${hexToRgba(progressAccent, 0.18)} 100%)`;
 
-  const resetVisibleProgress = useCallback(() => {
-    if (!categoryKey) return;
-
-    setViewedItems(prev => {
-      const next = new Set(
-        [...prev].filter(id => !id.startsWith(`${categoryKey}:`))
-      );
-      writeStoredQuestionIds(QA_VIEWED_STORAGE_KEY, next);
-      return next;
-    });
-
-    setBookmarkedItems(prev => {
-      const next = new Set(
-        [...prev].filter(id => !id.startsWith(`${categoryKey}:`))
-      );
-      writeStoredQuestionIds(QA_BOOKMARK_STORAGE_KEY, next);
-      return next;
-    });
-  }, [categoryKey]);
+  const handleAccordionChange = useCallback(
+    (value: string) => {
+      if (!value || value.startsWith('fallback-')) return;
+      void onQuestionOpened?.(value);
+    },
+    [onQuestionOpened]
+  );
 
   return (
     <>
@@ -541,12 +460,12 @@ export default function AccordionList({
           <div className="text-sm text-gray-500 dark:text-gray-400">
             {t('progressLabel')}:{' '}
             <span className="font-semibold text-gray-900 dark:text-gray-100">
-              {viewedCategoryCount}/{totalItems}
+              {viewedCount}/{resolvedTotalItems}
             </span>
           </div>
           <button
             type="button"
-            onClick={resetVisibleProgress}
+            onClick={() => void onResetProgress?.()}
             className="inline-flex h-8 items-center rounded-full border border-[var(--qa-progress-border)] px-3 text-xs font-medium text-[var(--qa-progress-accent)] transition-colors hover:border-red-500 hover:text-red-500 focus-visible:border-red-500 focus-visible:text-red-500 focus-visible:outline-none"
             style={
               {
@@ -573,16 +492,25 @@ export default function AccordionList({
         </div>
       </div>
 
-      <Accordion type="single" collapsible className="w-full">
+      <Accordion
+        type="single"
+        collapsible
+        className="w-full"
+        onValueChange={handleAccordionChange}
+      >
         {items.map((q, idx) => {
           const key = q.id ?? idx;
-          const questionId = getQuestionStorageId(q);
+          const questionId =
+            q.id !== undefined && q.id !== null ? String(q.id) : null;
+          const accordionValue = questionId ?? `fallback-${idx}`;
           const accentColor =
             categoryTabStyles[q.category as keyof typeof categoryTabStyles]
               ?.accent ?? '#A1A1AA';
           const animationDelay = `${Math.min(idx, 10) * 60}ms`;
-          const isViewed = viewedItems.has(questionId);
-          const isBookmarked = bookmarkedItems.has(questionId);
+          const isViewed = questionId ? viewedItems.has(questionId) : false;
+          const isBookmarked = questionId
+            ? bookmarkedItems.has(questionId)
+            : false;
           const itemStyle: QaItemStyle = {
             animationDelay,
             animationFillMode: 'both',
@@ -592,7 +520,7 @@ export default function AccordionList({
           return (
             <AccordionItem
               key={key}
-              value={String(key)}
+              value={accordionValue}
               className="qa-accordion-item animate-in fade-in slide-in-from-bottom-2 mb-3 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors duration-500 last:mb-0 last:border-b motion-reduce:animate-none dark:border-white/10 dark:bg-neutral-900/80"
               style={itemStyle}
             >
@@ -600,15 +528,14 @@ export default function AccordionList({
                 className="px-4 hover:no-underline"
                 chevronOutside
                 onPointerDown={clearSelection}
-                onClick={() => markAsViewed(questionId)}
                 trailing={
                   <div className="mr-2 flex h-6 w-[80px] shrink-0 items-center justify-end gap-2 self-center sm:w-[118px] sm:gap-3">
                     <Badge
                       variant="success"
                       className={
                         isViewed
-                          ? 'h-6 rounded-full px-0 py-0 text-[11px] whitespace-nowrap bg-transparent text-emerald-500 shadow-none dark:bg-transparent dark:text-emerald-400 sm:px-2 sm:text-inherit sm:bg-green-100 sm:text-green-700 sm:dark:bg-green-900/30 sm:dark:text-green-400'
-                          : 'invisible h-6 rounded-full px-0 py-0 text-[11px] whitespace-nowrap bg-transparent shadow-none sm:px-2 sm:text-inherit'
+                          ? 'h-6 rounded-full bg-transparent px-0 py-0 text-[11px] whitespace-nowrap text-emerald-500 shadow-none sm:bg-green-100 sm:px-2 sm:text-green-700 sm:text-inherit dark:bg-transparent dark:text-emerald-400 sm:dark:bg-green-900/30 sm:dark:text-green-400'
+                          : 'invisible h-6 rounded-full bg-transparent px-0 py-0 text-[11px] whitespace-nowrap shadow-none sm:px-2 sm:text-inherit'
                       }
                       aria-label={isViewed ? 'Viewed' : undefined}
                     >
@@ -620,16 +547,20 @@ export default function AccordionList({
                         Viewed
                       </span>
                     </Badge>
-                    {isViewed ? (
+                    {isViewed || isBookmarked ? (
                       <button
                         type="button"
-                        aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+                        aria-label={
+                          isBookmarked ? 'Remove bookmark' : 'Add bookmark'
+                        }
                         aria-pressed={isBookmarked}
                         className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-red-500 transition-colors hover:bg-red-500/10 focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:outline-none"
                         onClick={event => {
                           event.preventDefault();
                           event.stopPropagation();
-                          toggleBookmark(questionId);
+                          if (questionId) {
+                            void onToggleBookmark?.(questionId);
+                          }
                         }}
                       >
                         <Bookmark
@@ -638,13 +569,16 @@ export default function AccordionList({
                         />
                       </button>
                     ) : (
-                      <span aria-hidden="true" className="inline-flex h-6 w-6 shrink-0" />
+                      <span
+                        aria-hidden="true"
+                        className="inline-flex h-6 w-6 shrink-0"
+                      />
                     )}
                   </div>
                 }
               >
                 <span className="flex min-w-0 flex-1 items-center">
-                  <span className="min-w-0 flex-1 break-words whitespace-normal leading-snug sm:leading-normal">
+                  <span className="min-w-0 flex-1 leading-snug break-words whitespace-normal sm:leading-normal">
                     {q.question}
                   </span>
                 </span>

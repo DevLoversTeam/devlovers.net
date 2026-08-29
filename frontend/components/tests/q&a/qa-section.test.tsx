@@ -23,15 +23,20 @@ vi.mock('@/components/q&a/useQaTabs', () => ({
   useQaTabs: () => qaState,
 }));
 
+vi.mock('@/components/q&a/useQuestionProgress', () => ({
+  useQuestionProgress: () => ({
+    viewedItems: new Set(),
+    bookmarkedItems: new Set(),
+    viewedCount: 0,
+    markAsViewed: vi.fn(),
+    toggleBookmark: vi.fn(),
+    resetProgress: vi.fn(),
+  }),
+}));
+
 vi.mock('@/components/q&a/AccordionList', () => ({
   __esModule: true,
-  default: ({
-    items,
-    totalItems,
-  }: {
-    items: unknown[];
-    totalItems: number;
-  }) => (
+  default: ({ items }: { items: unknown[]; totalItems: number }) => (
     <div data-testid="accordion-list">{items.length}</div>
   ),
 }));

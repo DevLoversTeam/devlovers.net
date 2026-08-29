@@ -7,6 +7,7 @@ import AccordionList from '@/components/q&a/AccordionList';
 import { Pagination } from '@/components/q&a/Pagination';
 import type { CategorySlug } from '@/components/q&a/types';
 import { useQaTabs } from '@/components/q&a/useQaTabs';
+import { useQuestionProgress } from '@/components/q&a/useQuestionProgress';
 import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
 import { Loader } from '@/components/shared/Loader';
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
@@ -32,6 +33,7 @@ export default function TabsSection() {
     totalItems,
     totalPages,
   } = useQaTabs();
+  const questionProgress = useQuestionProgress(active);
   const animationKey = useMemo(
     () => `qa-${active}-${currentPage}`,
     [active, currentPage]
@@ -120,6 +122,12 @@ export default function TabsSection() {
                   key={animationKey}
                   items={items}
                   totalItems={totalItems}
+                  viewedItems={questionProgress.viewedItems}
+                  bookmarkedItems={questionProgress.bookmarkedItems}
+                  viewedCount={questionProgress.viewedCount}
+                  onQuestionOpened={questionProgress.markAsViewed}
+                  onToggleBookmark={questionProgress.toggleBookmark}
+                  onResetProgress={questionProgress.resetProgress}
                 />
               ) : (
                 <div className="py-20 text-center">

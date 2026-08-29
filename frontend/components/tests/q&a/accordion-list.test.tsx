@@ -3,23 +3,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getCachedTermsMock = vi.fn();
-const storage = new Map<string, string>();
-
-Object.defineProperty(window, 'localStorage', {
-  value: {
-    getItem: (key: string) => storage.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      storage.set(key, value);
-    },
-    removeItem: (key: string) => {
-      storage.delete(key);
-    },
-    clear: () => {
-      storage.clear();
-    },
-  },
-  configurable: true,
-});
 
 vi.mock('@/lib/ai/explainCache', () => ({
   getCachedTerms: () => getCachedTermsMock(),
@@ -29,39 +12,63 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-vi.mock('@/components/ui/accordion', () => ({
-  Accordion: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="accordion">{children}</div>
-  ),
-  AccordionItem: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  AccordionTrigger: ({
-    children,
-    leading,
-    trailing,
-    chevronOutside,
-    onClick,
-  }: {
-    children: React.ReactNode;
-    leading?: React.ReactNode;
-    trailing?: React.ReactNode;
-    chevronOutside?: boolean;
-    onClick?: () => void;
-  }) => (
-    <div>
-      {leading}
-      <button type="button" onClick={onClick}>
-        {children}
-      </button>
-      {trailing}
-      {chevronOutside ? <span data-testid="chevron-outside" /> : null}
-    </div>
-  ),
-  AccordionContent: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
+vi.mock('@/components/ui/accordion', async () => {
+  const React = await import('react');
+  const ChangeContext = React.createContext<(value: string) => void>(() => {});
+  const ValueContext = React.createContext('');
+
+  return {
+    Accordion: ({
+      children,
+      onValueChange,
+    }: {
+      children: React.ReactNode;
+      onValueChange?: (value: string) => void;
+    }) => (
+      <ChangeContext.Provider value={onValueChange ?? (() => {})}>
+        <div data-testid="accordion">{children}</div>
+      </ChangeContext.Provider>
+    ),
+    AccordionItem: ({
+      children,
+      value,
+    }: {
+      children: React.ReactNode;
+      value: string;
+    }) => (
+      <ValueContext.Provider value={value}>
+        <div>{children}</div>
+      </ValueContext.Provider>
+    ),
+    AccordionTrigger: ({
+      children,
+      leading,
+      trailing,
+      chevronOutside,
+    }: {
+      children: React.ReactNode;
+      leading?: React.ReactNode;
+      trailing?: React.ReactNode;
+      chevronOutside?: boolean;
+    }) => {
+      const onValueChange = React.useContext(ChangeContext);
+      const value = React.useContext(ValueContext);
+      return (
+        <div>
+          {leading}
+          <button type="button" onClick={() => onValueChange(value)}>
+            {children}
+          </button>
+          {trailing}
+          {chevronOutside ? <span data-testid="chevron-outside" /> : null}
+        </div>
+      );
+    },
+    AccordionContent: ({ children }: { children: React.ReactNode }) => (
+      <div>{children}</div>
+    ),
+  };
+});
 
 vi.mock('@/components/q&a/CodeBlock', () => ({
   __esModule: true,
@@ -153,10 +160,10 @@ import type { QuestionEntry } from '@/components/q&a/types';
 describe('AccordionList', () => {
   beforeEach(() => {
     getCachedTermsMock.mockReturnValue([]);
-    localStorage.clear();
   });
 
-  it('uses a stable fallback id when question id is missing', () => {
+  it('does not persist a fallback id when question id is missing', () => {
+    const onQuestionOpened = vi.fn();
     const items: QuestionEntry[] = [
       {
         question: 'What is CSS?',
@@ -170,15 +177,17 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} totalItems={1} />);
+    render(
+      <AccordionList
+        items={items}
+        totalItems={1}
+        onQuestionOpened={onQuestionOpened}
+      />
+    );
 
     fireEvent.click(screen.getByText('What is CSS?'));
 
-    expect(
-      JSON.parse(
-        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
-      )
-    ).toContain('css:What is CSS?');
+    expect(onQuestionOpened).not.toHaveBeenCalled();
   });
 
   it('renders questions and answer blocks', () => {
@@ -205,6 +214,7 @@ describe('AccordionList', () => {
   });
 
   it('marks an accordion as viewed after opening it', () => {
+    const onQuestionOpened = vi.fn();
     const items: QuestionEntry[] = [
       {
         id: 'q1',
@@ -219,26 +229,36 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} totalItems={1} />);
+    const { rerender } = render(
+      <AccordionList
+        items={items}
+        totalItems={1}
+        onQuestionOpened={onQuestionOpened}
+      />
+    );
 
-    expect(
-      screen.queryByRole('button', { name: 'Add bookmark' })
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add bookmark' })).toBeNull();
 
     fireEvent.click(screen.getByText('What is CSS?'));
 
-    expect(
-      screen.getByRole('button', { name: 'Add bookmark' })
-    ).toBeTruthy();
-    expect(
-      JSON.parse(
-        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
-      )
-    ).toContain('css:q1');
+    expect(onQuestionOpened).toHaveBeenCalledWith('q1');
+
+    rerender(
+      <AccordionList
+        items={items}
+        totalItems={1}
+        viewedItems={new Set(['q1'])}
+        viewedCount={1}
+        onQuestionOpened={onQuestionOpened}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Add bookmark' })).toBeTruthy();
     expect(screen.getByText('1/1')).toBeTruthy();
   });
 
-  it('resets progress for visible accordion items', () => {
+  it('delegates reset progress to the parent state', () => {
+    const onResetProgress = vi.fn();
     const items: QuestionEntry[] = [
       {
         id: 'q1',
@@ -253,20 +273,23 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} totalItems={1} />);
+    render(
+      <AccordionList
+        items={items}
+        totalItems={1}
+        viewedItems={new Set(['q1'])}
+        viewedCount={1}
+        onResetProgress={onResetProgress}
+      />
+    );
 
-    fireEvent.click(screen.getByText('What is CSS?'));
     fireEvent.click(screen.getByText('resetProgress'));
 
-    expect(screen.getByText('0/1')).toBeTruthy();
-    expect(
-      JSON.parse(
-        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
-      )
-    ).not.toContain('css:q1');
+    expect(onResetProgress).toHaveBeenCalledOnce();
   });
 
-  it('toggles bookmark state for viewed accordion', () => {
+  it('delegates bookmark changes and renders controlled state', () => {
+    const onToggleBookmark = vi.fn();
     const items: QuestionEntry[] = [
       {
         id: 'q1',
@@ -281,22 +304,37 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} totalItems={1} />);
+    const { rerender } = render(
+      <AccordionList
+        items={items}
+        totalItems={1}
+        viewedItems={new Set(['q1'])}
+        viewedCount={1}
+        onToggleBookmark={onToggleBookmark}
+      />
+    );
 
-    fireEvent.click(screen.getByText('What is CSS?'));
     fireEvent.click(screen.getByRole('button', { name: 'Add bookmark' }));
+
+    expect(onToggleBookmark).toHaveBeenCalledWith('q1');
+
+    rerender(
+      <AccordionList
+        items={items}
+        totalItems={1}
+        viewedItems={new Set(['q1'])}
+        bookmarkedItems={new Set(['q1'])}
+        viewedCount={1}
+        onToggleBookmark={onToggleBookmark}
+      />
+    );
 
     expect(
       screen.getByRole('button', { name: 'Remove bookmark' })
     ).toBeTruthy();
-    expect(
-      JSON.parse(
-        localStorage.getItem('devlovers_qa_bookmarked_questions') ?? '[]'
-      )
-    ).toContain('css:q1');
   });
 
-  it('marks an accordion as viewed after opening it', () => {
+  it('keeps a preserved bookmark visible after viewed progress is reset', () => {
     const items: QuestionEntry[] = [
       {
         id: 'q1',
@@ -311,52 +349,18 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} />);
+    render(
+      <AccordionList
+        items={items}
+        totalItems={1}
+        bookmarkedItems={new Set(['q1'])}
+      />
+    );
 
-    expect(
-      screen.queryByRole('button', { name: 'Add bookmark' })
-    ).toBeNull();
-
-    fireEvent.click(screen.getByText('What is CSS?'));
-
-    expect(
-      screen.getByRole('button', { name: 'Add bookmark' })
-    ).toBeTruthy();
-    expect(
-      JSON.parse(
-        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
-      )
-    ).toContain('q1');
-  });
-
-  it('toggles bookmark state for viewed accordion', () => {
-    const items: QuestionEntry[] = [
-      {
-        id: 'q1',
-        question: 'What is CSS?',
-        category: 'css',
-        answerBlocks: [
-          {
-            type: 'paragraph',
-            children: [{ text: 'CSS styles pages.' }],
-          },
-        ],
-      },
-    ];
-
-    render(<AccordionList items={items} />);
-
-    fireEvent.click(screen.getByText('What is CSS?'));
-    fireEvent.click(screen.getByRole('button', { name: 'Add bookmark' }));
-
+    expect(screen.queryByLabelText('Viewed')).toBeNull();
     expect(
       screen.getByRole('button', { name: 'Remove bookmark' })
     ).toBeTruthy();
-    expect(
-      JSON.parse(
-        localStorage.getItem('devlovers_qa_bookmarked_questions') ?? '[]'
-      )
-    ).toContain('q1');
   });
 
   it('opens AI helper from selection', () => {
