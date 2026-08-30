@@ -21,6 +21,7 @@ import { getUserGlobalRank, getUserProfile } from '@/db/queries/users';
 import { redirect } from '@/i18n/routing';
 import { computeAchievements } from '@/lib/achievements';
 import { getCurrentUser } from '@/lib/auth';
+import { loadQuestionProgressSafely } from '@/lib/dashboard-question-progress';
 import { getUserStatsForAchievements } from '@/lib/user-stats';
 
 export async function generateMetadata({
@@ -63,7 +64,11 @@ export default async function DashboardPage({
       getUserLastAttemptPerQuiz(session.id, locale),
       getUserGlobalRank(session.id),
       getUserStatsForAchievements(session.id),
-      getUserQuestionProgressForDashboard(session.id, locale),
+      loadQuestionProgressSafely(
+        getUserQuestionProgressForDashboard,
+        session.id,
+        locale
+      ),
     ]);
 
   const totalAttempts = attempts.length;
