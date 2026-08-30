@@ -1158,3 +1158,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added component coverage for the dashboard Question Progress section, guest prompt, progress toolbar, confirmation modal, and Q&A integration
 - Added hook coverage for authenticated loading, optimistic viewed/bookmark updates, rollback behavior, reset semantics, and focus synchronization
 - Added API coverage for topic progress, individual-question mutations, authentication guards, and saved-question filtering
+
+## [1.0.16] - 2026-08-30
+
+### Fixed
+
+- Applied the missing `0035_daffy_captain_cross.sql` production migration so authenticated Q&A viewed and bookmarked progress can load and persist
+- Isolated dashboard Q&A progress loading so a temporary failure in the optional learning-progress section no longer prevents the entire dashboard from rendering
+- Bumped the frontend package version to `1.0.16`
