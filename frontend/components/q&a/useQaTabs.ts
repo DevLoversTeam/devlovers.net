@@ -2,17 +2,19 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   type CategorySlug,
   type Locale,
   type PaginatedResponse,
+  type QaQuestionFilter,
   type QuestionApiItem,
   type QuestionEntry,
 } from '@/components/q&a/types';
 import { categoryData } from '@/data/category';
 import { useRouter } from '@/i18n/routing';
+import { subscribeToPageFocus } from '@/lib/page-focus';
 
 const CATEGORY_SLUGS = categoryData.map(category => category.slug);
 const DEFAULT_CATEGORY = CATEGORY_SLUGS[0] || 'html';
@@ -26,6 +28,10 @@ function isCategorySlug(value: string): value is CategorySlug {
 
 function isQaPageSize(value: number): value is QaPageSize {
   return PAGE_SIZE_OPTIONS.includes(value as QaPageSize);
+}
+
+function isQaQuestionFilter(value: string): value is QaQuestionFilter {
+  return value === 'all' || value === 'bookmarked';
 }
 
 export function useQaTabs() {
@@ -43,23 +49,43 @@ export function useQaTabs() {
     ? parsedSize
     : DEFAULT_PAGE_SIZE;
   const categoryFromUrl = searchParams.get('category') || DEFAULT_CATEGORY;
+  const rawFilter = searchParams.get('filter') ?? 'all';
+  const filterFromUrl: QaQuestionFilter = isQaQuestionFilter(rawFilter)
+    ? rawFilter
+    : 'all';
+  const rawFocusedQuestionId = searchParams.get('question')?.trim();
+  const focusedQuestionId =
+    rawFocusedQuestionId && rawFocusedQuestionId.length <= 100
+      ? rawFocusedQuestionId
+      : null;
   const [active, setActive] = useState<CategorySlug>(
     isCategorySlug(categoryFromUrl) ? categoryFromUrl : DEFAULT_CATEGORY
   );
   const [currentPage, setCurrentPage] = useState(safePageFromUrl);
   const [pageSize, setPageSize] = useState<QaPageSize>(safePageSizeFromUrl);
+  const [filter, setFilter] = useState<QaQuestionFilter>(filterFromUrl);
   const [items, setItems] = useState<QuestionEntry[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [focusRefreshVersion, setFocusRefreshVersion] = useState(0);
+  const resolvedRequestRef = useRef<string | null>(null);
 
   const updateUrl = useCallback(
-    (category: CategorySlug, page: number, size: QaPageSize) => {
+    (
+      category: CategorySlug,
+      page: number,
+      size: QaPageSize,
+      questionFilter: QaQuestionFilter
+    ) => {
       const params = new URLSearchParams();
 
       if (category !== DEFAULT_CATEGORY) params.set('category', category);
       if (page > 1) params.set('page', String(page));
       if (size !== DEFAULT_PAGE_SIZE) params.set('size', String(size));
+      if (questionFilter === 'bookmarked') {
+        params.set('filter', questionFilter);
+      }
 
       const queryString = params.toString();
 
@@ -79,6 +105,10 @@ export function useQaTabs() {
   }, [safePageSizeFromUrl]);
 
   useEffect(() => {
+    setFilter(filterFromUrl);
+  }, [filterFromUrl]);
+
+  useEffect(() => {
     if (!isCategorySlug(categoryFromUrl)) {
       return;
     }
@@ -86,6 +116,20 @@ export function useQaTabs() {
   }, [categoryFromUrl]);
 
   useEffect(() => {
+    const requestKey = [
+      active,
+      currentPage,
+      pageSize,
+      localeKey,
+      filter,
+      focusedQuestionId ?? '',
+    ].join(':');
+
+    if (resolvedRequestRef.current === requestKey) {
+      resolvedRequestRef.current = null;
+      return;
+    }
+
     let isActive = true;
     const controller = new AbortController();
 
@@ -93,8 +137,12 @@ export function useQaTabs() {
       setIsLoading(true);
 
       try {
+        const filterQuery = filter === 'bookmarked' ? '&filter=bookmarked' : '';
+        const focusedQuestionQuery = focusedQuestionId
+          ? `&question=${encodeURIComponent(focusedQuestionId)}`
+          : '';
         const res = await fetch(
-          `/api/questions/${active}?page=${currentPage}&limit=${pageSize}&locale=${localeKey}`,
+          `/api/questions/${active}?page=${currentPage}&limit=${pageSize}&locale=${localeKey}${filterQuery}${focusedQuestionQuery}`,
           { signal: controller.signal }
         );
 
@@ -114,6 +162,17 @@ export function useQaTabs() {
         );
         setTotalItems(data.total);
         setTotalPages(data.totalPages);
+        if (data.page !== currentPage) {
+          resolvedRequestRef.current = [
+            active,
+            data.page,
+            pageSize,
+            localeKey,
+            filter,
+            focusedQuestionId ?? '',
+          ].join(':');
+          setCurrentPage(data.page);
+        }
       } catch (error) {
         if (!isActive || controller.signal.aborted) {
           return;
@@ -134,7 +193,23 @@ export function useQaTabs() {
       isActive = false;
       controller.abort();
     };
-  }, [active, currentPage, localeKey, pageSize]);
+  }, [
+    active,
+    currentPage,
+    filter,
+    focusRefreshVersion,
+    focusedQuestionId,
+    localeKey,
+    pageSize,
+  ]);
+
+  useEffect(() => {
+    if (filter !== 'bookmarked' || isLoading) return;
+
+    return subscribeToPageFocus(() => {
+      setFocusRefreshVersion(version => version + 1);
+    });
+  }, [filter, isLoading]);
 
   const handleCategoryChange = useCallback(
     (category: string) => {
@@ -143,17 +218,19 @@ export function useQaTabs() {
       }
       setActive(category);
       setCurrentPage(1);
-      updateUrl(category, 1, pageSize);
+      resolvedRequestRef.current = null;
+      updateUrl(category, 1, pageSize, filter);
     },
-    [pageSize, updateUrl]
+    [filter, pageSize, updateUrl]
   );
 
   const handlePageChange = useCallback(
     (page: number) => {
       setCurrentPage(page);
-      updateUrl(active, page, pageSize);
+      resolvedRequestRef.current = null;
+      updateUrl(active, page, pageSize, filter);
     },
-    [active, pageSize, updateUrl]
+    [active, filter, pageSize, updateUrl]
   );
 
   const handlePageSizeChange = useCallback(
@@ -164,15 +241,30 @@ export function useQaTabs() {
 
       setPageSize(size);
       setCurrentPage(1);
-      updateUrl(active, 1, size);
+      resolvedRequestRef.current = null;
+      updateUrl(active, 1, size, filter);
     },
-    [active, updateUrl]
+    [active, filter, updateUrl]
+  );
+
+  const handleFilterChange = useCallback(
+    (nextFilter: QaQuestionFilter) => {
+      setFilter(nextFilter);
+      setCurrentPage(1);
+      setItems([]);
+      resolvedRequestRef.current = null;
+      updateUrl(active, 1, pageSize, nextFilter);
+    },
+    [active, pageSize, updateUrl]
   );
 
   return {
     active,
     currentPage,
+    filter,
+    focusedQuestionId,
     handleCategoryChange,
+    handleFilterChange,
     handlePageChange,
     handlePageSizeChange,
     isLoading,

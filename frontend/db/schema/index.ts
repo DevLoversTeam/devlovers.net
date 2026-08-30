@@ -5,6 +5,7 @@ export * from './emailVerificationTokens';
 export * from './notifications';
 export * from './passwordResetTokens';
 export * from './points';
+export * from './questionProgress';
 export * from './questions';
 export * from './quiz';
 export * from './sessions';

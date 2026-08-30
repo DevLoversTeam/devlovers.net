@@ -1,14 +1,19 @@
 'use client';
 
+import { useEffect, useId, useRef } from 'react';
+
 import { Button } from '@/components/ui/button';
 
 interface ConfirmModalProps {
   isOpen: boolean;
   title: string;
   message: string;
+  errorMessage?: string | null;
+  role?: 'dialog' | 'alertdialog';
   confirmText?: string;
   cancelText?: string;
   variant?: 'danger' | 'warning' | 'default';
+  isConfirming?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -17,12 +22,73 @@ export function ConfirmModal({
   isOpen,
   title,
   message,
+  errorMessage = null,
+  role = 'alertdialog',
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   variant = 'default',
+  isConfirming = false,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const onCancelRef = useRef(onCancel);
+  const titleId = useId();
+  const descriptionId = useId();
+
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      cancelButtonRef.current?.focus();
+    });
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCancelRef.current();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const confirmButtonClass = {
@@ -33,18 +99,50 @@ export function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
-      <div className="relative mx-4 max-w-sm rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
-        <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-black/50"
+        onClick={onCancel}
+      />
+      <div
+        ref={dialogRef}
+        role={role}
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        className="relative mx-4 w-full max-w-sm rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <h3
+          id={titleId}
+          className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100"
+        >
           {title}
         </h3>
-        <p className="mb-6 text-gray-600 dark:text-gray-400">{message}</p>
+        <p id={descriptionId} className="mb-6 text-gray-600 dark:text-gray-400">
+          {message}
+        </p>
+        {errorMessage ? (
+          <p
+            role="alert"
+            className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
+          >
+            {errorMessage}
+          </p>
+        ) : null}
         <div className="flex gap-3">
-          <Button variant="outline" onClick={onCancel} className="flex-1">
+          <Button
+            ref={cancelButtonRef}
+            variant="outline"
+            disabled={isConfirming}
+            onClick={onCancel}
+            className="flex-1"
+          >
             {cancelText}
           </Button>
           <Button
             onClick={onConfirm}
+            disabled={isConfirming}
+            aria-busy={isConfirming}
             className={`flex-1 ${confirmButtonClass}`}
           >
             {confirmText}

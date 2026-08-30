@@ -128,7 +128,43 @@
     "searchPlaceholder": "Szukaj pytań...",
     "clearSearch": "Wyczyść wyszukiwanie",
     "progressLabel": "Postęp",
+    "progressControls": "Postęp i filtry pytań",
+    "bookmarkedCount": "Zapisane: {count}",
     "resetProgress": "Resetuj postęp",
+    "filters": {
+      "label": "Filtry pytań",
+      "all": "Wszystkie pytania",
+      "bookmarked": "Zapisane {count}",
+      "emptyTitle": "Brak zapisanych pytań w tym temacie",
+      "emptyDescription": "Otwórz pytanie i wybierz ikonę zakładki, aby zachować je na później.",
+      "showAll": "Pokaż wszystkie pytania"
+    },
+    "reset": {
+      "title": "Zresetować postęp w temacie {category}?",
+      "description": "Status wyświetlenia dla {viewed} pytań zostanie wyczyszczony. Twoje zakładki ({bookmarks}) pozostaną zapisane. Tej operacji nie można cofnąć.",
+      "confirm": "Resetuj postęp",
+      "cancel": "Anuluj"
+    },
+    "guestProgress": {
+      "title": "Zapisuj swoje postępy w nauce",
+      "description": "Zaloguj się lub utwórz konto, aby zachowywać wyświetlone pytania i zakładki w panelu oraz kontynuować naukę na dowolnym urządzeniu.",
+      "login": "Zaloguj się i zapisz postęp",
+      "continue": "Kontynuuj bez zapisywania"
+    },
+    "syncError": {
+      "load": "Nie udało się wczytać zapisanego postępu. Sprawdź połączenie i spróbuj ponownie.",
+      "save": "Ostatnia zmiana postępu nie została zapisana. Przywróciliśmy poprzedni stan.",
+      "reset": "Nie udało się zresetować postępu. Żadne dane nie zostały usunięte.",
+      "retry": "Spróbuj ponownie"
+    },
+    "questionState": {
+      "viewed": "Wyświetlono",
+      "addBookmark": "Dodaj zakładkę",
+      "removeBookmark": "Usuń zakładkę",
+      "toggleAnswer": "Rozwiń lub zwiń odpowiedź",
+      "progress": "Postęp wyświetlania pytań",
+      "progressValue": "Wyświetlono {viewed} z {total} pytań"
+    },
     "noResults": "Nic nie znaleziono dla \"{query}\"",
     "noQuestions": "Brak pytań na ten moment…\nAle już są w przygotowaniu.\nBądź na bieżąco - wkrótce pojawią się nowe materiały!",
     "metaTitle": "Q&A | DevLovers",
@@ -1631,6 +1667,23 @@
       "study": "Nauka",
       "date": "Data",
       "status": "Status"
+    },
+    "questionProgress": {
+      "title": "Postęp w pytaniach",
+      "subtitle": "Tematy, których obecnie się uczysz",
+      "topic": "Temat",
+      "progress": "Postęp",
+      "saved": "Zapisane",
+      "status": "Status",
+      "viewed": "Wyświetlono {viewed} z {total}",
+      "resume": "Kontynuuj od ostatniego pytania · {viewed}/{total}",
+      "inProgress": "W trakcie",
+      "complete": "Ukończono",
+      "continueTopic": "Kontynuuj naukę tematu {topic}",
+      "topicProgress": "Postęp w temacie {topic}",
+      "openSaved": "Otwórz zapisane pytania ({count}) w temacie {topic}",
+      "emptyDescription": "Otwórz pierwszą odpowiedź w Q&A, aby zacząć zapisywać tutaj swoje postępy.",
+      "browseQuestions": "Przejdź do pytań"
     },
     "quizReview": {
       "title": "Analiza błędów",

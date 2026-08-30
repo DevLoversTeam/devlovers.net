@@ -128,7 +128,43 @@
     "searchPlaceholder": "Search questions...",
     "clearSearch": "Clear search",
     "progressLabel": "Progress",
+    "progressControls": "Question progress and filters",
+    "bookmarkedCount": "Saved: {count}",
     "resetProgress": "Reset progress",
+    "filters": {
+      "label": "Question filters",
+      "all": "All questions",
+      "bookmarked": "Saved {count}",
+      "emptyTitle": "No saved questions in this topic",
+      "emptyDescription": "Open a question and select the bookmark icon to save it for later.",
+      "showAll": "Show all questions"
+    },
+    "reset": {
+      "title": "Reset {category} progress?",
+      "description": "Viewed status for {viewed} questions will be cleared. Your {bookmarks} bookmarks will remain saved. This action cannot be undone.",
+      "confirm": "Reset progress",
+      "cancel": "Cancel"
+    },
+    "guestProgress": {
+      "title": "Save your learning progress",
+      "description": "Log in or create an account to keep viewed questions and bookmarks in your dashboard and continue learning on any device.",
+      "login": "Log in to save progress",
+      "continue": "Continue without saving"
+    },
+    "syncError": {
+      "load": "We couldn't load your saved progress. Check your connection and try again.",
+      "save": "Your latest progress change wasn't saved. We restored the previous state.",
+      "reset": "We couldn't reset your progress. Nothing was removed.",
+      "retry": "Try again"
+    },
+    "questionState": {
+      "viewed": "Viewed",
+      "addBookmark": "Add bookmark",
+      "removeBookmark": "Remove bookmark",
+      "toggleAnswer": "Toggle answer",
+      "progress": "Viewed question progress",
+      "progressValue": "{viewed} of {total} questions viewed"
+    },
     "noResults": "Nothing found for \"{query}\"",
     "noQuestions": "No questions yet…\nBut they’re already in development.\nStay tuned - new content coming soon!",
     "metaTitle": "Q&A | DevLovers",
@@ -1628,6 +1664,23 @@
       "study": "Study",
       "date": "Date",
       "status": "Status"
+    },
+    "questionProgress": {
+      "title": "Question Progress",
+      "subtitle": "Topics you are currently learning",
+      "topic": "Topic",
+      "progress": "Progress",
+      "saved": "Saved",
+      "status": "Status",
+      "viewed": "{viewed} of {total} viewed",
+      "resume": "Continue from your last question · {viewed}/{total}",
+      "inProgress": "In progress",
+      "complete": "Complete",
+      "continueTopic": "Continue learning {topic}",
+      "topicProgress": "Progress for {topic}",
+      "openSaved": "Open {count} saved questions in {topic}",
+      "emptyDescription": "Open your first Q&A answer to start tracking learning progress here.",
+      "browseQuestions": "Browse questions"
     },
     "quizReview": {
       "title": "Error Analysis",

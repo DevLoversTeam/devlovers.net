@@ -1,12 +1,15 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import AccordionList from '@/components/q&a/AccordionList';
+import { GuestProgressPrompt } from '@/components/q&a/GuestProgressPrompt';
 import { Pagination } from '@/components/q&a/Pagination';
+import { QuestionProgressToolbar } from '@/components/q&a/QuestionProgressToolbar';
 import type { CategorySlug } from '@/components/q&a/types';
 import { useQaTabs } from '@/components/q&a/useQaTabs';
+import { useQuestionProgress } from '@/components/q&a/useQuestionProgress';
 import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
 import { Loader } from '@/components/shared/Loader';
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
@@ -21,7 +24,10 @@ export default function TabsSection() {
   const {
     active,
     currentPage,
+    filter,
+    focusedQuestionId,
     handleCategoryChange,
+    handleFilterChange,
     handlePageChange,
     handlePageSizeChange,
     isLoading,
@@ -32,6 +38,26 @@ export default function TabsSection() {
     totalItems,
     totalPages,
   } = useQaTabs();
+  const questionProgress = useQuestionProgress(active);
+  const {
+    isAuthenticated,
+    isLoading: isProgressLoading,
+    markAsViewed,
+  } = questionProgress;
+  const [isGuestPromptRequested, setIsGuestPromptRequested] = useState(false);
+  const [isGuestPromptDismissed, setIsGuestPromptDismissed] = useState(false);
+  const [guestReturnTo, setGuestReturnTo] = useState('');
+  const isGuestPromptOpen =
+    isGuestPromptRequested &&
+    !isGuestPromptDismissed &&
+    !isProgressLoading &&
+    !isAuthenticated;
+  const activeCategoryLabel = useMemo(() => {
+    const category = categoryData.find(item => item.slug === active);
+    return (
+      category?.translations[localeKey] ?? category?.translations.en ?? active
+    );
+  }, [active, localeKey]);
   const animationKey = useMemo(
     () => `qa-${active}-${currentPage}`,
     [active, currentPage]
@@ -70,6 +96,21 @@ export default function TabsSection() {
     [clearSelection, handlePageChange, scrollToTop]
   );
 
+  const handleQuestionOpened = useCallback(
+    async (questionId: string) => {
+      const result = await markAsViewed(questionId);
+      if (result !== 'unauthenticated' || isGuestPromptRequested) return;
+
+      setGuestReturnTo(
+        typeof window === 'undefined'
+          ? `/${localeKey}/q&a`
+          : `${window.location.pathname}${window.location.search}`
+      );
+      setIsGuestPromptRequested(true);
+    },
+    [isGuestPromptRequested, localeKey, markAsViewed]
+  );
+
   useEffect(() => {
     if (!pendingScrollRef.current || isLoading) return;
     pendingScrollRef.current = false;
@@ -78,6 +119,21 @@ export default function TabsSection() {
     });
     return () => window.cancelAnimationFrame(frame);
   }, [currentPage, isLoading, scrollToTop]);
+
+  useEffect(() => {
+    if (
+      !questionProgress.isLoading &&
+      !questionProgress.isAuthenticated &&
+      filter === 'bookmarked'
+    ) {
+      handleFilterChange('all');
+    }
+  }, [
+    filter,
+    handleFilterChange,
+    questionProgress.isAuthenticated,
+    questionProgress.isLoading,
+  ]);
 
   return (
     <div className="w-full" ref={sectionRef}>
@@ -101,6 +157,24 @@ export default function TabsSection() {
           })}
         </TabsList>
 
+        <QuestionProgressToolbar
+          categoryLabel={activeCategoryLabel}
+          accentColor={getCategoryTabStyle(active).accent}
+          totalQuestions={
+            questionProgress.totalQuestions ||
+            (filter === 'all' ? totalItems : 0)
+          }
+          viewedCount={questionProgress.viewedCount}
+          bookmarkedCount={questionProgress.bookmarkedCount}
+          filter={filter}
+          isAuthenticated={questionProgress.isAuthenticated}
+          isLoading={questionProgress.isLoading}
+          error={questionProgress.error}
+          onFilterChange={handleFilterChange}
+          onResetProgress={questionProgress.resetProgress}
+          onRetry={questionProgress.refresh}
+        />
+
         {categoryData.map(category => (
           <TabsContent key={category.slug} value={category.slug}>
             {isLoading && (
@@ -119,21 +193,32 @@ export default function TabsSection() {
                 <AccordionList
                   key={animationKey}
                   items={items}
-                  totalItems={totalItems}
+                  initialOpenQuestionId={focusedQuestionId}
+                  viewedItems={questionProgress.viewedItems}
+                  bookmarkedItems={questionProgress.bookmarkedItems}
+                  onQuestionOpened={handleQuestionOpened}
+                  onToggleBookmark={questionProgress.toggleBookmark}
                 />
               ) : (
                 <div className="py-20 text-center">
-                  {emptyStateLines[0] && (
+                  {filter === 'bookmarked' ? (
+                    <BookmarkEmptyState
+                      title={t('filters.emptyTitle')}
+                      description={t('filters.emptyDescription')}
+                      actionLabel={t('filters.showAll')}
+                      onShowAll={() => handleFilterChange('all')}
+                    />
+                  ) : emptyStateLines[0] ? (
                     <p className="motion-safe:animate-fade-up text-lg font-semibold text-gray-900 motion-reduce:opacity-100 dark:text-white">
                       {emptyStateLines[0]}
                     </p>
-                  )}
-                  {emptyStateLines[1] && (
+                  ) : null}
+                  {filter !== 'bookmarked' && emptyStateLines[1] && (
                     <p className="motion-safe:animate-fade-up mt-2 text-gray-400 motion-safe:[animation-delay:150ms] motion-reduce:opacity-100 dark:text-gray-300">
                       {emptyStateLines[1]}
                     </p>
                   )}
-                  {emptyStateLines[2] && (
+                  {filter !== 'bookmarked' && emptyStateLines[2] && (
                     <p className="motion-safe:animate-fade-up mt-1 text-gray-500 motion-safe:[animation-delay:300ms] motion-reduce:opacity-100 dark:text-gray-400">
                       {emptyStateLines[2]}
                     </p>
@@ -156,6 +241,40 @@ export default function TabsSection() {
           accentColor={getCategoryTabStyle(active).accent}
         />
       )}
+
+      <GuestProgressPrompt
+        isOpen={isGuestPromptOpen}
+        returnTo={guestReturnTo}
+        onClose={() => setIsGuestPromptDismissed(true)}
+      />
+    </div>
+  );
+}
+
+function BookmarkEmptyState({
+  title,
+  description,
+  actionLabel,
+  onShowAll,
+}: {
+  title: string;
+  description: string;
+  actionLabel: string;
+  onShowAll: () => void;
+}) {
+  return (
+    <div className="mx-auto flex max-w-md flex-col items-center">
+      <p className="text-lg font-semibold text-gray-900 dark:text-white">
+        {title}
+      </p>
+      <p className="mt-2 text-gray-500 dark:text-gray-400">{description}</p>
+      <button
+        type="button"
+        onClick={onShowAll}
+        className="mt-5 inline-flex min-h-10 items-center rounded-full bg-(--accent-primary) px-5 text-sm font-semibold text-white transition-colors hover:bg-(--accent-hover) focus-visible:ring-2 focus-visible:ring-(--accent-primary)/40 focus-visible:outline-none"
+      >
+        {actionLabel}
+      </button>
     </div>
   );
 }

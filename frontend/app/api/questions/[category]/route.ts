@@ -1,8 +1,10 @@
-import { and, eq, ilike } from 'drizzle-orm';
+import { and, eq, ilike, isNotNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { categories, questions, questionTranslations } from '@/db/schema';
+import { userQuestionProgress } from '@/db/schema/questionProgress';
+import { getCurrentUser } from '@/lib/auth';
 import { buildQaCacheKey, getQaCache, setQaCache } from '@/lib/cache/qa';
 
 export const dynamic = 'force-dynamic';
@@ -27,16 +29,28 @@ type QaApiResponse = {
   locale: string;
 };
 
+const questionSelection = {
+  id: questions.id,
+  categoryId: questions.categoryId,
+  sortOrder: questions.sortOrder,
+  difficulty: questions.difficulty,
+  question: questionTranslations.question,
+  answerBlocks: questionTranslations.answerBlocks,
+  locale: questionTranslations.locale,
+};
+
 function dedupeItems(items: QaApiResponse['items']) {
   const seenById = new Set<string>();
+  const seenByQuestion = new Set<string>();
   const unique: QaApiResponse['items'] = [];
 
   for (const item of items) {
-    if (seenById.has(item.id)) {
+    if (seenById.has(item.id) || seenByQuestion.has(item.question)) {
       continue;
     }
 
     seenById.add(item.id);
+    seenByQuestion.add(item.question);
     unique.push(item);
   }
 
@@ -74,14 +88,37 @@ export async function GET(
       100,
       Math.max(1, Number(searchParams.get('limit') ?? DEFAULT_LIMIT))
     );
-    const offset = (page - 1) * limit;
-
     const locale =
       searchParams.get('locale') ||
       req.headers.get('x-locale') ||
       DEFAULT_LOCALE;
 
     const search = searchParams.get('search')?.trim();
+    const filter = searchParams.get('filter') ?? 'all';
+    const rawQuestionId = searchParams.get('question')?.trim();
+    const focusedQuestionId =
+      rawQuestionId && rawQuestionId.length <= 100 ? rawQuestionId : null;
+
+    if (filter !== 'all' && filter !== 'bookmarked') {
+      const response = NextResponse.json(
+        { code: 'INVALID_FILTER' },
+        { status: 400 }
+      );
+      response.headers.set('Cache-Control', 'no-store');
+      return response;
+    }
+
+    const currentUser = filter === 'bookmarked' ? await getCurrentUser() : null;
+
+    if (filter === 'bookmarked' && !currentUser) {
+      const response = NextResponse.json(
+        { code: 'UNAUTHORIZED' },
+        { status: 401 }
+      );
+      response.headers.set('Cache-Control', 'no-store');
+      return response;
+    }
+
     const cacheKey = buildQaCacheKey({
       category,
       locale,
@@ -90,7 +127,10 @@ export async function GET(
       search,
     });
 
-    const cached = await getQaCache<QaApiResponse>(cacheKey);
+    const shouldUseSharedCache = filter === 'all' && !focusedQuestionId;
+    const cached = shouldUseSharedCache
+      ? await getQaCache<QaApiResponse>(cacheKey)
+      : null;
 
     if (cached) {
       const normalizedCached = normalizeResponse(cached, limit);
@@ -132,41 +172,65 @@ export async function GET(
       ? and(baseCondition, ilike(questionTranslations.question, `%${search}%`))
       : baseCondition;
 
-    const allItems = await db
-      .select({
-        id: questions.id,
-        categoryId: questions.categoryId,
-        sortOrder: questions.sortOrder,
-        difficulty: questions.difficulty,
-        question: questionTranslations.question,
-        answerBlocks: questionTranslations.answerBlocks,
-        locale: questionTranslations.locale,
-      })
-      .from(questions)
-      .innerJoin(
-        questionTranslations,
-        eq(questions.id, questionTranslations.questionId)
-      )
-      .where(whereCondition)
-      .orderBy(questions.sortOrder, questions.id);
+    const allItems =
+      filter === 'bookmarked' && currentUser
+        ? await db
+            .select(questionSelection)
+            .from(questions)
+            .innerJoin(
+              questionTranslations,
+              eq(questions.id, questionTranslations.questionId)
+            )
+            .innerJoin(
+              userQuestionProgress,
+              and(
+                eq(userQuestionProgress.questionId, questions.id),
+                eq(userQuestionProgress.userId, currentUser.id),
+                isNotNull(userQuestionProgress.bookmarkedAt)
+              )
+            )
+            .where(whereCondition)
+            .orderBy(questions.sortOrder, questions.id)
+        : await db
+            .select(questionSelection)
+            .from(questions)
+            .innerJoin(
+              questionTranslations,
+              eq(questions.id, questionTranslations.questionId)
+            )
+            .where(whereCondition)
+            .orderBy(questions.sortOrder, questions.id);
 
     const uniqueItems = dedupeItems(allItems);
     const total = uniqueItems.length;
     const totalPages = Math.ceil(total / limit);
+    const focusedQuestionIndex = focusedQuestionId
+      ? uniqueItems.findIndex(item => item.id === focusedQuestionId)
+      : -1;
+    const resolvedPage =
+      focusedQuestionIndex >= 0
+        ? Math.floor(focusedQuestionIndex / limit) + 1
+        : page;
+    const offset = (resolvedPage - 1) * limit;
     const items = uniqueItems.slice(offset, offset + limit);
 
     const payload = {
       items,
       total,
-      page,
+      page: resolvedPage,
       totalPages,
       locale,
     } satisfies QaApiResponse;
     const response = NextResponse.json(payload);
     response.headers.set('Cache-Control', 'no-store');
-    response.headers.set('x-qa-cache', 'MISS');
+    response.headers.set(
+      'x-qa-cache',
+      filter === 'bookmarked' || focusedQuestionId ? 'BYPASS' : 'MISS'
+    );
 
-    await setQaCache(cacheKey, payload);
+    if (shouldUseSharedCache) {
+      await setQaCache(cacheKey, payload);
+    }
 
     return response;
   } catch (error) {
@@ -180,7 +244,7 @@ export async function GET(
         totalPages: 0,
         locale: DEFAULT_LOCALE,
       },
-      { status: 500 }
+      { status: 500, headers: { 'Cache-Control': 'no-store' } }
     );
   }
 }

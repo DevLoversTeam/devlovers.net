@@ -6,6 +6,7 @@ const SUPPORTED_LOCALES = ['uk', 'en', 'pl'] as const;
 
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 export type CategorySlug = (typeof categoryData)[number]['slug'];
+export type QaQuestionFilter = 'all' | 'bookmarked';
 
 export type TextNode = {
   text: string;

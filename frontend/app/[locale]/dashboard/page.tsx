@@ -7,10 +7,12 @@ import { ActivityHeatmapCard } from '@/components/dashboard/ActivityHeatmapCard'
 import { ExplainedTermsCard } from '@/components/dashboard/ExplainedTermsCard';
 import { FeedbackForm } from '@/components/dashboard/FeedbackForm';
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
+import { QuestionProgressSection } from '@/components/dashboard/QuestionProgressSection';
 import { QuizResultsSection } from '@/components/dashboard/QuizResultsSection';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { getUserQuestionProgressForDashboard } from '@/db/queries/question-progress';
 import {
   getUserLastAttemptPerQuiz,
   getUserQuizStats,
@@ -55,8 +57,14 @@ export default async function DashboardPage({
 
   const t = await getTranslations('dashboard');
 
-  const attempts = await getUserQuizStats(session.id);
-  const lastAttempts = await getUserLastAttemptPerQuiz(session.id, locale);
+  const [attempts, lastAttempts, globalRank, userStats, questionProgress] =
+    await Promise.all([
+      getUserQuizStats(session.id),
+      getUserLastAttemptPerQuiz(session.id, locale),
+      getUserGlobalRank(session.id),
+      getUserStatsForAchievements(session.id),
+      getUserQuestionProgressForDashboard(session.id, locale),
+    ]);
 
   const totalAttempts = attempts.length;
 
@@ -72,8 +80,6 @@ export default async function DashboardPage({
     totalAttempts > 0
       ? new Date(attempts[0].completedAt).toLocaleDateString(locale)
       : null;
-
-  const globalRank = await getUserGlobalRank(session.id);
 
   // 1. Calculate Daily Streak (using calendar-day strings to avoid DST issues)
   const toDateStr = (d: Date) =>
@@ -157,8 +163,16 @@ export default async function DashboardPage({
     trendPercentage,
   };
 
-  const userStats = await getUserStatsForAchievements(session.id);
   const achievements = userStats ? computeAchievements(userStats) : [];
+  const questionProgressItems = questionProgress.map(item => ({
+    categoryId: item.categoryId,
+    categorySlug: item.categorySlug,
+    categoryTitle: item.categoryTitle,
+    totalQuestions: item.totalQuestions,
+    viewedCount: item.viewedCount,
+    bookmarkedCount: item.bookmarkedCount,
+    lastOpenedQuestionId: item.lastOpenedQuestionId,
+  }));
 
   const isMatchedSponsor = userStats ? userStats.sponsorCount > 0 : false;
 
@@ -232,6 +246,9 @@ export default async function DashboardPage({
           </div>
           <div id="quiz-results" className="mt-8 scroll-mt-8">
             <QuizResultsSection attempts={lastAttempts} locale={locale} />
+          </div>
+          <div id="question-progress" className="mt-8 scroll-mt-8">
+            <QuestionProgressSection progress={questionProgressItems} />
           </div>
           <div className="mt-8">
             <ExplainedTermsCard />
