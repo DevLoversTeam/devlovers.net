@@ -1107,3 +1107,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Hardened post-login redirect validation against duplicate query values, external URLs, protocol-relative URLs, backslashes, and control-character normalization bypasses
 - Added accessible descriptions linking the “Last used” badge to email and OAuth login buttons
+
+## [1.0.15] - 2026-08-30
+
+### Added
+
+- Account-backed Q&A learning progress:
+  - Added the `user_question_progress` schema and Drizzle migration for per-user viewed, bookmarked, and last-opened question state
+  - Added authenticated progress APIs for loading topic state, updating individual questions, and resetting viewed progress
+  - Stored progress in PostgreSQL instead of relying on browser-local persistence
+- Q&A saved-question workflow:
+  - Added bookmark controls and a per-topic Saved counter
+  - Added URL-backed All questions and Saved filters
+  - Added an empty state with a direct return to the complete question list
+  - Added reset confirmation with explicit viewed and bookmark counts
+- Guest onboarding:
+  - Added a one-time prompt after a guest opens their first answer
+  - Added login return navigation so users can come back to the same Q&A context
+  - Kept a clear Continue without saving option for unauthenticated study
+- Dashboard learning overview:
+  - Added a Question Progress section grouped by topic
+  - Added viewed totals, completion percentage, bookmark counts, and learning status
+  - Added Continue from the last opened question and direct Saved-question navigation
+- Project documentation:
+  - Added an English end-user guide in `INSTRUCTIONS.md`
+  - Added an English production runbook covering Netlify, Neon, Drizzle migrations, releases, rollback, provider operations, smoke tests, and incident response
+
+### Changed
+
+- Opening a Q&A accordion now records the question as viewed for authenticated users
+- Reset progress now clears only viewed state and deliberately preserves bookmarks
+- Q&A progress and bookmark mutations now use optimistic UI updates with server confirmation
+- Topic, pagination, focused-question, and Saved-filter context remain represented in the URL
+- Progress refreshes when the browser tab regains focus to synchronize changes from another tab or device
+- Question APIs now support authenticated saved-question filtering while preserving public access to the full list
+- Added localized progress, bookmark, guest prompt, reset, error, and accessibility copy for English, Ukrainian, and Polish
+- Bumped the frontend package version to `1.0.15`
+
+### Fixed
+
+- Restored the previous UI state when a progress or bookmark mutation fails
+- Added recoverable loading, save, and reset error states with a retry action
+- Prevented guest users from entering an account-only Saved filter state
+- Preserved bookmarks after viewed progress is reset
+- Improved accordion semantics and localized screen-reader labels for viewed, bookmark, toggle, and progress controls
+- Re-synchronized saved-question lists and counters after the page returns to focus
+
+### Tests
+
+- Added component coverage for the dashboard Question Progress section, guest prompt, progress toolbar, confirmation modal, and Q&A integration
+- Added hook coverage for authenticated loading, optimistic viewed/bookmark updates, rollback behavior, reset semantics, and focus synchronization
+- Added API coverage for topic progress, individual-question mutations, authentication guards, and saved-question filtering
