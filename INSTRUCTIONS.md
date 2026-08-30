@@ -2,7 +2,7 @@
 
 This guide covers everyday use of DevLovers: preparing for technical interviews with Q&A and quizzes, saving learning progress, using the personal dashboard, browsing the leaderboard and blog, and placing orders in the shop.
 
-> DevLovers is an open-source, multilingual learning platform for developers. The production version is available at [devlovers.net](https://devlovers.net). See [`README.md`](./README.md) for a feature overview and technical information. Security issues must be reported according to [`SECURITY.md`](./SECURITY.md).
+> DevLovers is an open-source, multilingual learning platform for developers. The production version is available at [devlovers.net](https://devlovers.net). See [`README.md`](./README.md) for a feature overview and technical information, and [`RUNBOOK.md`](./RUNBOOK.md) for deployment, migration, recovery, and incident procedures. Security issues must be reported according to [`SECURITY.md`](./SECURITY.md).
 
 ## Contents
 
