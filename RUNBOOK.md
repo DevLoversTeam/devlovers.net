@@ -120,7 +120,7 @@ flowchart LR
 - The `main` branch is the production/release branch and deploys to Vercel.
 - The `develop` branch is the integration branch and deploys to Netlify staging at [develop-devlovers.netlify.app](https://develop-devlovers.netlify.app).
 - The Netlify staging build base is `frontend`.
-- Netlify staging uses Node.js `20.19.0` from [`netlify.toml`](./netlify.toml).
+- Netlify staging uses Node.js `24` from [`netlify.toml`](./netlify.toml).
 - The Netlify staging build command is `npm ci --include=optional && node scripts/generate-env-runtime.mjs && npm run build`.
 - The Vercel production project must use `frontend` as its Root Directory and a supported Node.js version compatible with the repository lockfile and Next.js version.
 - Neither Vercel nor Netlify applies database migrations automatically.
@@ -852,7 +852,7 @@ Actions:
 
 1. Confirm the failure belongs to the staging site and `develop` branch.
 2. Open the full Netlify deploy log.
-3. Reproduce with Node `20.19.0` and `npm ci --include=optional`.
+3. Reproduce with Node `24` and `npm ci --include=optional`.
 4. Check `APP_ENV=develop`, staging variables, and the generated runtime environment step.
 5. Fix in a feature/fix branch, merge into `develop`, and verify the next staging deploy.
 6. Do not change Vercel Production variables to repair a staging-only failure.
