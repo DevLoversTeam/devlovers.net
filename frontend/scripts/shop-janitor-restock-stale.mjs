@@ -1,4 +1,3 @@
-import http from 'node:http';
 import https from 'node:https';
 
 const url = process.env.JANITOR_URL;
@@ -52,12 +51,11 @@ try {
   // Node fetch adds Sec-Fetch-Mode, which the non-browser guard rejects.
   // Native requests also avoid forwarding the secret through redirects.
   const target = new URL(url);
-  if (!['http:', 'https:'].includes(target.protocol)) {
-    throw new Error('JANITOR_URL must use HTTP or HTTPS');
+  if (target.protocol !== 'https:') {
+    throw new Error('JANITOR_URL must use HTTPS');
   }
-  const transport = target.protocol === 'https:' ? https : http;
   const { status, text } = await new Promise((resolve, reject) => {
-    const req = transport.request(target, {
+    const req = https.request(target, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',

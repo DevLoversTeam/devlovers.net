@@ -1,18 +1,36 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import http from 'node:http';
-import { test } from 'node:test';
+import https from 'node:https';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { after, test } from 'node:test';
 
 const script = new URL('./shop-janitor-restock-stale.mjs', import.meta.url);
 
-async function run(t, handler, timeout = '2000') {
-  const server = http.createServer(handler);
+// Generate an ephemeral localhost certificate; keep TLS verification enabled.
+const fixtureDir = mkdtempSync(join(tmpdir(), 'janitor-tls-'));
+after(() => rmSync(fixtureDir, { recursive: true, force: true }));
+const keyPath = join(fixtureDir, 'key.pem');
+const certPath = join(fixtureDir, 'cert.pem');
+execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes',
+  '-keyout', keyPath, '-out', certPath, '-days', '1', '-subj', '/CN=localhost',
+  '-addext', 'subjectAltName=IP:127.0.0.1'], { stdio: 'ignore' });
+const tls = { key: readFileSync(keyPath), cert: readFileSync(certPath) };
+
+async function run(t, handler, timeout = '2000', protocol = 'https', trust = true) {
+  const server = protocol === 'https'
+    ? https.createServer(tls, handler)
+    : http.createServer(handler);
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => { server.closeAllConnections(); server.close(); });
   const child = spawn(process.execPath, [script.pathname], {
     env: {
       ...process.env,
-      JANITOR_URL: `http://127.0.0.1:${server.address().port}/janitor`,
+      NODE_EXTRA_CA_CERTS: trust ? certPath : '',
+      NODE_TLS_REJECT_UNAUTHORIZED: '1',
+      JANITOR_URL: `${protocol}://127.0.0.1:${server.address().port}/janitor`,
       INTERNAL_JANITOR_SECRET: 'test-only-secret',
       JANITOR_TIMEOUT_MS: timeout,
     },
@@ -71,4 +89,26 @@ test('aborts when the server does not finish its response', async t => {
   }, '1000');
   assert.equal(result.code, 1, result.output);
   assert.match(result.output, /request failed/);
+});
+
+test('rejects HTTP before sending credentials', async t => {
+  let requests = 0;
+  const result = await run(t, (_req, res) => {
+    requests++;
+    res.end('{}');
+  }, '2000', 'http');
+  assert.equal(result.code, 1, result.output);
+  assert.match(result.output, /JANITOR_URL must use HTTPS/);
+  assert.equal(requests, 0);
+});
+
+test('rejects an untrusted TLS certificate before sending credentials', async t => {
+  let requests = 0;
+  const result = await run(t, (_req, res) => {
+    requests++;
+    res.end('{}');
+  }, '2000', 'https', false);
+  assert.equal(result.code, 1, result.output);
+  assert.match(result.output, /certificate/i);
+  assert.equal(requests, 0);
 });
