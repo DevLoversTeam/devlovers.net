@@ -10,52 +10,55 @@
 
 ### Home
 
-- Minimal first landing page
-- Multi-language support
-- Theme switching
+- Interview preparation landing page with a clear call to action
+- Navigation to Q&A, quizzes, leaderboard, blog, and shop
+- English, Ukrainian, and Polish interfaces with light, dark, and system themes
 
-![Home](./assets/01-screencapture.png)
+![DevLovers home page with the interview preparation introduction and Take the First Step button](./assets/01-screencapture.png)
 
 ### Q&A
 
-- Categorized technical questions
-- AI-powered Word Helper for explanations
-- Multi-language content
+- Technical questions organized by language, framework, and tool
+- Viewed-question tracking, saved questions, and progress reset
+- Paginated question lists with adjustable page size
+- AI-powered Word Helper for explanations and multi-language content
 
-![Q&A](./assets/02-screencapture.png)
+![Q&A page with technology filters, viewed and saved questions, a progress bar, and pagination](./assets/02-screencapture.png)
 
 ### Quiz System
 
+- Quiz catalog filtered by technology, with question counts and time limits
 - Multiple-choice quizzes with countdown timer
 - Anti-cheat protection (tab switch detection, copy prevention)
 - Guest mode with post-auth sync
 - Per-quiz progress tracking
 
-![Quiz System](./assets/03-screencapture.png)
+![Quiz catalog showing Angular Fundamentals and Angular Advanced cards with question counts and time limits](./assets/03-screencapture.png)
 
 ### Leaderboard
 
 - Points system with improvement-based scoring
-- Top players podium
+- Top-three podium and a ranked table with player scores
 - Integrity-filtered rankings
 
-![Leaderboard](./assets/04-screencapture.png)
+![All-time leaderboard with a top-three podium and ranked player scores](./assets/04-screencapture.png)
 
 ### About
 
-- Mission-driven page explaining DevLovers vision, values, and interview-first approach
-- Highlights platform impact, community growth, and real preparation over guessing
+- Interview preparation mission centered on structured practice and practical skills
+- Community highlights for quizzes passed, active users, GitHub stars, and LinkedIn followers
 
-![About](./assets/05-screencapture.png)
+![About page with the Debug your skills before the recruiter does headline and community statistics](./assets/05-screencapture.png)
 
 ### Blog
 
-- Technical articles via custom in-house admin panel
+- Featured articles and a post grid covering Tech, Career, Insights, and News
+- Article previews with author, category, and publication date
 - Category and tag filtering
 - Search with pagination
 - Multi-language content (uk/en/pl)
 
-![Blog](./assets/06-screencapture.png)
+![Blog page with a featured article, category filters, and article cards](./assets/06-screencapture.png)
 
 ### Shop
 
@@ -63,23 +66,24 @@
 - Stripe checkout
 - Admin panel for orders and inventory
 
-![Shop](./assets/07-screencapture.png)
+![Shop preview with a Coming soon banner and new-arrival product cards showing prices and availability](./assets/07-screencapture.png)
 
 ### Authentication
 
 - Email/password with verification
-- OAuth (Google, GitHub)
+- Google and GitHub sign-in with a last-used provider indicator
 - Password reset flow
 
-![Shop](./assets/08-screencapture.png)
+![Login page with Google and GitHub sign-in, email and password fields, and the language selector](./assets/08-screencapture.png)
 
-## Dashboard
+### Dashboard
 
-- Personal learning dashboard with progress insights
-- Quiz history and performance overview
-- Quick access to key account activity
+- Score distribution with Mastered, Review, and Study categories
+- Activity heatmap and achievement badges
+- Quiz results with scores, accuracy, integrity, earned points, and status
+- Q&A progress by topic, saved-question counts, and links to continue learning
 
-![Dashboard](./assets/09-screencapture.png)
+![Personal dashboard showing score distribution, an activity heatmap, achievements, quiz results, and question progress by topic](./assets/09-screencapture.png)
 
 > [!IMPORTANT]
 > **Contact me:** [contact@devlovers.net](mailto:contact@devlovers.net)
