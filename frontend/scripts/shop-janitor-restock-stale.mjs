@@ -1,3 +1,6 @@
+import http from 'node:http';
+import https from 'node:https';
+
 const url = process.env.JANITOR_URL;
 const secret = process.env.INTERNAL_JANITOR_SECRET;
 
@@ -46,26 +49,43 @@ const controller = new AbortController();
 const timer = setTimeout(() => controller.abort(), timeoutMs);
 
 try {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-internal-janitor-secret': secret,
-      authorization: `Bearer ${secret}`,
-    },
-    body: '{}',
-    signal: controller.signal,
+  // Node fetch adds Sec-Fetch-Mode, which the non-browser guard rejects.
+  // Native requests also avoid forwarding the secret through redirects.
+  const target = new URL(url);
+  if (!['http:', 'https:'].includes(target.protocol)) {
+    throw new Error('JANITOR_URL must use HTTP or HTTPS');
+  }
+  const transport = target.protocol === 'https:' ? https : http;
+  const { status, text } = await new Promise((resolve, reject) => {
+    const req = transport.request(target, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-length': Buffer.byteLength('{}'),
+        'x-internal-janitor-secret': secret,
+        authorization: `Bearer ${secret}`,
+      },
+      signal: controller.signal,
+    }, res => {
+      res.setEncoding('utf8');
+      let text = '';
+      res.on('data', chunk => { text += chunk; });
+      res.on('error', reject);
+      res.on('end', () => resolve({ status: res.statusCode, text }));
+    });
+    req.on('error', reject);
+    req.end('{}');
   });
 
-  const text = await res.text();
-  console.log(`[janitor] status=${res.status}`);
+  console.log(`[janitor] status=${status}`);
   if (text) console.log(text);
 
-  if (res.status === 429) process.exit(0);
-  if (!res.ok) process.exit(1);
+  if (status !== 429 && !(status >= 200 && status < 300)) {
+    process.exitCode = 1;
+  }
 } catch (err) {
   console.error('[janitor] request failed', err?.message ?? err);
-  process.exit(1);
+  process.exitCode = 1;
 } finally {
   clearTimeout(timer);
 }
