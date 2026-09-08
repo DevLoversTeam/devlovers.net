@@ -1188,7 +1188,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- Fixed scheduled stale-order cleanup receiving `403 ORIGIN_BLOCKED`: the caller now uses native HTTP/HTTPS requests without the browser metadata added by Node.js fetch
+- Fixed scheduled stale-order cleanup receiving `403 ORIGIN_BLOCKED`: the caller now uses native HTTPS requests without the browser metadata added by Node.js fetch
 - Preserved janitor secret authentication and timeout handling; redirects are rejected instead of forwarding credentials
 - Fixed production builds blocked by outdated blog, quiz, and AI-helper test contracts without disabling TypeScript checks
 - Migrated blog test fixtures to current IDs, string slugs, category objects, and Tiptap content; consolidated navigation coverage around the current component
@@ -1201,3 +1201,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Verified local production and Netlify-style staging builds with synthetic configuration; confirmed a published Netlify staging deployment
 - Production dependency audit reported no known vulnerabilities; four moderate development-tool findings remain in the Drizzle Kit/esbuild dependency chain
 - No database schema changes or migrations are included in this release
+
+- Required HTTPS with certificate verification for janitor credentials; added tests rejecting plaintext HTTP and untrusted certificates
+- Disabled checkout credential persistence in the security workflow
