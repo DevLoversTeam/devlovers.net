@@ -12,10 +12,14 @@ vi.mock('next-intl', () => ({
       'categories.insights': 'Інсайти',
       'categories.news': 'Новини',
       'categories.growth': "Кар'єра",
-      home: 'Головна',
+      blog: 'Блог',
     };
     return map[key] || key;
   },
+}));
+
+vi.mock('@/components/header/MobileMenuContext', () => ({
+  useMobileMenu: () => ({ startNavigation: vi.fn() }),
 }));
 
 vi.mock('@/i18n/routing', () => ({
@@ -43,15 +47,23 @@ describe('BlogCategoryLinks', () => {
     render(
       <BlogCategoryLinks
         categories={[
-          { _id: '1', title: 'Tech' },
-          { _id: '2', title: 'Growth' },
+          { id: '1', slug: 'tech', title: 'Tech' },
+          { id: '2', slug: 'career', title: 'Growth' },
         ]}
       />
     );
 
-    expect(screen.getByText('Головна')).toBeInTheDocument();
+    expect(screen.getByText('Блог')).toBeInTheDocument();
     expect(screen.getByText('Технології')).toBeInTheDocument();
     expect(screen.getByText("Кар'єра")).toBeInTheDocument();
+    expect(screen.getByText('Технології').closest('a')).toHaveAttribute(
+      'data-active',
+      'true'
+    );
+    expect(screen.getByText("Кар'єра").closest('a')).toHaveAttribute(
+      'data-active',
+      'false'
+    );
     expect(screen.getByText('Технології').closest('a')).toHaveAttribute(
       'href',
       '/blog/category/tech'

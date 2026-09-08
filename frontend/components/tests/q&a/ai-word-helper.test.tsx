@@ -3,6 +3,9 @@ import { act, render, screen } from '@testing-library/react';
 import type React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const authState = vi.hoisted(() => ({ userExists: true, loading: false }));
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => authState }));
+
 const getCachedExplanationMock = vi.fn();
 const setCachedExplanationMock = vi.fn();
 
@@ -10,6 +13,10 @@ vi.mock('@/lib/ai/explainCache', () => ({
   getCachedExplanation: (term: string) => getCachedExplanationMock(term),
   setCachedExplanation: (term: string, value: unknown) =>
     setCachedExplanationMock(term, value),
+}));
+
+vi.mock('@/actions/ai', () => ({
+  saveLearnedTerm: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('next-intl', () => ({
@@ -45,6 +52,7 @@ function mockFetchSequence(
 
 describe('AIWordHelper', () => {
   beforeEach(() => {
+    authState.userExists = true;
     getCachedExplanationMock.mockReset();
     setCachedExplanationMock.mockReset();
   });
@@ -54,6 +62,7 @@ describe('AIWordHelper', () => {
   });
 
   it('shows guest CTA when user is not authenticated', async () => {
+    authState.userExists = false;
     mockFetchSequence([
       {
         ok: true,
@@ -74,27 +83,16 @@ describe('AIWordHelper', () => {
       pl: 'Cached-pl',
     });
 
-    const fetchMock = mockFetchSequence([
-      {
-        ok: true,
-        status: 200,
-        json: async () => ({ user: { id: 'u1' } }),
-      },
-    ]);
+    const fetchMock = mockFetchSequence([]);
 
     render(<AIWordHelper term="Git" isOpen onClose={vi.fn()} />);
 
     expect(await screen.findByText('Cached')).toBeTruthy();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('renders explanation from API', async () => {
     mockFetchSequence([
-      {
-        ok: true,
-        status: 200,
-        json: async () => ({ user: { id: 'u1' } }),
-      },
       {
         ok: true,
         status: 200,
@@ -115,11 +113,6 @@ describe('AIWordHelper', () => {
   it('shows rate limit state for 429 responses', async () => {
     mockFetchSequence([
       {
-        ok: true,
-        status: 200,
-        json: async () => ({ user: { id: 'u1' } }),
-      },
-      {
         ok: false,
         status: 429,
         json: async () => ({ code: 'RATE_LIMITED', resetIn: 60000 }),
@@ -134,11 +127,6 @@ describe('AIWordHelper', () => {
   it('shows service error state for 503 responses', async () => {
     mockFetchSequence([
       {
-        ok: true,
-        status: 200,
-        json: async () => ({ user: { id: 'u1' } }),
-      },
-      {
         ok: false,
         status: 503,
         json: async () => ({ code: 'SERVICE_UNAVAILABLE' }),
@@ -152,11 +140,6 @@ describe('AIWordHelper', () => {
 
   it('retries after rate limit and eventually renders content', async () => {
     mockFetchSequence([
-      {
-        ok: true,
-        status: 200,
-        json: async () => ({ user: { id: 'u1' } }),
-      },
       {
         ok: false,
         status: 429,
@@ -186,14 +169,9 @@ describe('AIWordHelper', () => {
   });
 
   it('renders loading state while fetching', async () => {
-    let resolveJson: (value: unknown) => void;
+    let resolveJson!: (value: unknown) => void;
 
     const fetchMock = mockFetchSequence([
-      {
-        ok: true,
-        status: 200,
-        json: async () => ({ user: { id: 'u1' } }),
-      },
       {
         ok: true,
         status: 200,
@@ -220,11 +198,6 @@ describe('AIWordHelper', () => {
 
   it('renders fallback content when payload is partial', async () => {
     mockFetchSequence([
-      {
-        ok: true,
-        status: 200,
-        json: async () => ({ user: { id: 'u1' } }),
-      },
       {
         ok: true,
         status: 200,

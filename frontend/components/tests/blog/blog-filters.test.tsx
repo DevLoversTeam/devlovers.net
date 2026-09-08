@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Author, Post } from '@/components/blog/BlogFilters';
 import BlogFilters from '@/components/blog/BlogFilters';
@@ -45,13 +45,29 @@ vi.mock('@/components/blog/BlogGrid', () => ({
   default: ({ posts }: { posts: Post[] }) => (
     <ul data-testid="blog-grid">
       {posts.map(post => (
-        <li key={post._id}>{post.title}</li>
+        <li key={post.id}>{post.title}</li>
       ))}
     </ul>
   ),
 }));
 
+beforeEach(() => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+  );
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: vi.fn(),
+  });
+});
+
 afterEach(() => {
+  vi.unstubAllGlobals();
   replaceMock.mockReset();
   searchParams = new URLSearchParams();
   vi.restoreAllMocks();
@@ -62,26 +78,32 @@ describe('BlogFilters', () => {
     searchParams = new URLSearchParams({ search: 'співбесіди' });
     const posts: Post[] = [
       {
-        _id: '1',
+        id: '1',
         title: 'Як підготуватися до співбесіди',
-        slug: { current: 'interview' },
-        body: [
-          {
-            _type: 'block',
-            children: [{ _type: 'span', text: 'Поради для співбесіди' }],
-          },
-        ],
+        slug: 'interview',
+        body: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'Поради для співбесіди' }],
+            },
+          ],
+        },
       },
       {
-        _id: '2',
+        id: '2',
         title: 'CSS підказки',
-        slug: { current: 'css-tips' },
-        body: [
-          {
-            _type: 'block',
-            children: [{ _type: 'span', text: 'Про Flexbox' }],
-          },
-        ],
+        slug: 'css-tips',
+        body: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'Про Flexbox' }],
+            },
+          ],
+        },
       },
     ];
 
@@ -96,15 +118,15 @@ describe('BlogFilters', () => {
     searchParams = new URLSearchParams({ author: 'Анна' });
     const posts: Post[] = [
       {
-        _id: '1',
+        id: '1',
         title: 'Пост Анни',
-        slug: { current: 'anna-post' },
+        slug: 'anna-post',
         author: { name: 'Анна' },
       },
       {
-        _id: '2',
+        id: '2',
         title: 'Пост Віктора',
-        slug: { current: 'viktor-post' },
+        slug: 'viktor-post',
         author: { name: 'Віктор' },
       },
     ];

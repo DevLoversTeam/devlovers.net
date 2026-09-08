@@ -22,8 +22,8 @@ describe('BlogGrid', () => {
 
   it('renders posts list', () => {
     const posts: Post[] = [
-      { _id: '1', title: 'Post 1', slug: { current: 'p1' } },
-      { _id: '2', title: 'Post 2', slug: { current: 'p2' } },
+      { id: '1', title: 'Post 1', slug: 'p1' },
+      { id: '2', title: 'Post 2', slug: 'p2' },
     ];
 
     render(<BlogGrid posts={posts} onAuthorSelect={() => {}} />);

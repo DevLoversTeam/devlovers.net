@@ -28,9 +28,7 @@ vi.mock('@/components/blog/BlogGrid', () => ({
 
 describe('BlogCategoryGrid', () => {
   it('pushes author filter when author selected', () => {
-    const posts: Post[] = [
-      { _id: '1', title: 'Post', slug: { current: 'post' } },
-    ];
+    const posts: Post[] = [{ id: '1', title: 'Post', slug: 'post' }];
 
     render(<BlogCategoryGrid posts={posts} />);
 
