@@ -11,19 +11,16 @@ vi.mock('next/image', () => ({
   default: (props: any) => <img alt={props.alt ?? ''} {...props} />,
 }));
 
-vi.mock('next/link', () => ({
+vi.mock('@/i18n/routing', () => ({
   __esModule: true,
-  default: ({
-    href,
-    children,
-  }: {
-    href: string;
-    children: React.ReactNode;
-  }) => <a href={href}>{children}</a>,
+  Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
 }));
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations: () => (key: string) =>
+    key === 'categories.career' ? 'Career' : key,
 }));
 
 vi.mock('@/lib/blog/date', () => ({
@@ -37,17 +34,20 @@ describe('BlogCard', () => {
       image: 'https://example.com/anna.jpg',
     };
     const post: Post = {
-      _id: '1',
+      id: '1',
       title: 'Пост про співбесіду',
-      slug: { current: 'interview' },
+      slug: 'interview',
       publishedAt: '2026-01-01',
-      categories: ['Growth'],
-      body: [
-        {
-          _type: 'block',
-          children: [{ _type: 'span', text: 'Опис поста' }],
-        },
-      ],
+      categories: [{ slug: 'career', title: 'Growth' }],
+      body: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Опис поста' }],
+          },
+        ],
+      },
       author,
       mainImage: 'https://example.com/image.jpg',
     };
@@ -66,9 +66,9 @@ describe('BlogCard', () => {
   it('calls onAuthorSelect when author is clicked', () => {
     const author: Author = { name: 'Анна' };
     const post: Post = {
-      _id: '1',
+      id: '1',
       title: 'Пост',
-      slug: { current: 'post' },
+      slug: 'post',
       author,
     };
 

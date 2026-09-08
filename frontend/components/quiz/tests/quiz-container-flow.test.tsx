@@ -18,6 +18,12 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+vi.mock('@/i18n/routing', () => ({
+  Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
+}));
+
 vi.mock('sonner', () => ({ toast: toastMock }));
 
 vi.mock('@/hooks/useAntiCheat', () => ({
@@ -41,6 +47,7 @@ vi.mock('@/components/quiz/CountdownTimer', () => ({
 }));
 
 vi.mock('@/actions/quiz', () => ({
+  initializeQuizCache: vi.fn(async () => ({ success: true })),
   submitQuizAttempt: vi.fn(async () => ({ success: true, pointsAwarded: 10 })),
 }));
 
@@ -50,6 +57,10 @@ describe('QuizContainer flow', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    Object.defineProperty(Element.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: vi.fn(),
+    });
     fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ isCorrect: true }),
@@ -84,7 +95,6 @@ describe('QuizContainer flow', () => {
         quizId="quiz-1"
         quizSlug="quiz-1"
         questions={questions}
-        encryptedAnswers="encrypted"
         userId={null}
         timeLimitSeconds={60}
         seed={123}
@@ -92,7 +102,7 @@ describe('QuizContainer flow', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'startButton' }));
+    fireEvent.click(screen.getByRole('button', { name: 'continueAsGuest' }));
 
     expect(await screen.findByText('Question 1')).toBeTruthy();
 
@@ -107,8 +117,9 @@ describe('QuizContainer flow', () => {
 
     expect(url).toBe('/api/quiz/verify-answer');
     expect(payload.questionId).toBe('q1');
-    expect(payload.answerId).toBe('a1');
-    expect(payload.encryptedAnswers).toBe('encrypted');
+    expect(payload.selectedAnswerId).toBe('a1');
+    expect(payload.quizId).toBe('quiz-1');
+    expect(payload).not.toHaveProperty('encryptedAnswers');
 
     fireEvent.click(await screen.findByRole('button', { name: 'nextButton' }));
 

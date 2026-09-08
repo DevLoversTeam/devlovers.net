@@ -1,10 +1,11 @@
-# DevLovers Production Runbook
+# DevLovers Production and Staging Runbook
 
 Operational guide for the DevLovers production and development environments.
 
 Current infrastructure:
 
-- **Netlify** — Next.js application hosting, builds, branch deploys, and runtime logs;
+- **Vercel** — production Next.js hosting, builds, runtime logs, and rollbacks from `main`;
+- **Netlify** — staging Next.js hosting, builds, and runtime logs from `develop`;
 - **Neon PostgreSQL** — application and shop database;
 - **Drizzle ORM / Drizzle Kit** — runtime queries and schema migrations;
 - **GitHub Actions** — security checks and selected scheduled shop jobs;
@@ -16,7 +17,7 @@ Current infrastructure:
 - **Groq** — AI Term Helper provider;
 - **Upstash Redis** — distributed rate limiting and selected transient controls when configured.
 
-> DevLovers is deployed on Netlify. Do not apply Vercel deployment, rollback, environment-variable, log, or cron procedures to this project merely because some compatibility variables in the code still use `VERCEL_*` names.
+> DevLovers production is deployed on Vercel from `main`. The staging environment is deployed on Netlify from `develop`. Always confirm the branch, platform, project, URL, and database target before an operational change.
 
 ## Contents
 
@@ -46,7 +47,7 @@ Current infrastructure:
 Use this runbook for:
 
 - production and development releases;
-- Netlify build and runtime investigation;
+- Vercel production and Netlify staging build/runtime investigation;
 - applying Drizzle migrations to Neon;
 - application rollback;
 - database backup and restore coordination;
@@ -59,7 +60,7 @@ This runbook does not authorize deletion or rewriting of production data. Destru
 
 ### Safety rules
 
-- Confirm the Netlify site, deploy context, Neon project, and Neon branch before any change.
+- Confirm the Vercel production project or Netlify staging site, Git branch, deploy target, Neon project, and Neon branch before any change.
 - Never copy production secrets into commits, tickets, screenshots, chat, or incident documents.
 - Prefer read-only verification before mutation.
 - Keep application rollback and database recovery as separate decisions.
@@ -73,32 +74,39 @@ This runbook does not authorize deletion or rewriting of production data. Destru
 
 ```mermaid
 flowchart LR
-    User["Users"] --> Netlify["Netlify · Next.js"]
-    GitHub["GitHub · main/develop"] --> Netlify
-    Netlify --> Neon["Neon PostgreSQL"]
-    Netlify --> Groq["Groq AI"]
-    Netlify --> Email["Gmail SMTP"]
-    Netlify --> Redis["Upstash Redis"]
-    Netlify --> Cloudinary["Cloudinary"]
-    Netlify --> Stripe["Stripe"]
-    Netlify --> Mono["Monobank"]
-    Netlify --> NP["Nova Poshta"]
+    User["Production users"] --> Vercel["Vercel production · main"]
+    Tester["Staging testers"] --> Netlify["Netlify staging · develop"]
+    GitHub["GitHub"] --> Main["main"]
+    GitHub --> Develop["develop"]
+    Main --> Vercel
+    Develop --> Netlify
+    Vercel --> NeonProd["Neon production"]
+    Netlify --> NeonStage["Neon staging"]
+    Vercel --> Groq["Groq AI"]
+    Vercel --> Email["Gmail SMTP"]
+    Vercel --> Redis["Upstash Redis"]
+    Vercel --> Cloudinary["Cloudinary"]
+    Vercel --> Stripe["Stripe"]
+    Vercel --> Mono["Monobank"]
+    Vercel --> NP["Nova Poshta"]
     Stripe --> Webhooks["Verified webhook routes"]
     Mono --> Webhooks
-    Webhooks --> Netlify
+    Webhooks --> Vercel
     Actions["GitHub Actions jobs"] --> Internal["Authenticated internal routes"]
-    Internal --> Netlify
-    Netlify --> Sentry["Sentry telemetry"]
+    Internal --> Vercel
+    Vercel --> Sentry["Sentry telemetry"]
+    Netlify --> Sentry
 ```
 
 ### Production components
 
 | Component | Source of truth | Operational surface |
 |---|---|---|
-| Application code | GitHub `main` | Netlify production deploys |
-| Integration code | GitHub `develop` | Netlify develop branch deploy |
-| Build configuration | [`netlify.toml`](./netlify.toml) | Netlify build settings and logs |
-| Runtime configuration | Netlify environment variables | Netlify project configuration |
+| Production application | GitHub `main` | Vercel production project, deploys, logs, and rollbacks |
+| Staging application | GitHub `develop` | Netlify staging site, deploys, and logs |
+| Staging build configuration | [`netlify.toml`](./netlify.toml) | Netlify build settings |
+| Production runtime configuration | Vercel environment variables | Vercel project settings, Production scope |
+| Staging runtime configuration | Netlify environment variables | Netlify site settings, staging/develop scope |
 | Database schema | `frontend/db/schema` + `frontend/drizzle` | Drizzle Kit and Neon |
 | Application data | Neon production branch | Neon console and SQL editor |
 | Scheduled janitor | `.github/workflows/shop-janitor-restock-stale.yml` | GitHub Actions |
@@ -109,12 +117,13 @@ flowchart LR
 ### Runtime rules
 
 - Production traffic is served from [devlovers.net](https://devlovers.net).
-- The `main` branch is the production/release branch.
-- The `develop` branch is the integration branch and is deployed to [develop-devlovers.netlify.app](https://develop-devlovers.netlify.app).
-- The Netlify build base is `frontend`.
-- Netlify uses Node.js `20.19.0` from [`netlify.toml`](./netlify.toml).
-- The build command is `npm ci --include=optional && node scripts/generate-env-runtime.mjs && npm run build`.
-- The build does not apply database migrations automatically.
+- The `main` branch is the production/release branch and deploys to Vercel.
+- The `develop` branch is the integration branch and deploys to Netlify staging at [develop-devlovers.netlify.app](https://develop-devlovers.netlify.app).
+- The Netlify staging build base is `frontend`.
+- Netlify staging uses Node.js `24` from [`netlify.toml`](./netlify.toml).
+- The Netlify staging build command is `npm ci --include=optional && node scripts/generate-env-runtime.mjs && npm run build`.
+- The Vercel production project must use `frontend` as its Root Directory and a supported Node.js version compatible with the repository lockfile and Next.js version.
+- Neither Vercel nor Netlify applies database migrations automatically.
 - Runtime database access uses `DATABASE_URL` with Neon HTTP through `@neondatabase/serverless`.
 - Local development uses `DATABASE_URL_LOCAL` only when `APP_ENV=local` and no production `DATABASE_URL` is selected.
 - Environment-variable changes affect only builds or functions that receive the new configuration. Trigger a fresh deploy after changing build-time or public variables.
@@ -128,8 +137,8 @@ flowchart LR
 | Environment | Expected `APP_ENV` | Code source | Database |
 |---|---|---|---|
 | Local | `local` | Developer branch | Local PostgreSQL through `DATABASE_URL_LOCAL` |
-| Develop | `develop` | `develop` | Dedicated non-production Neon branch/database |
-| Production | `production` | `main` | Neon production branch/database |
+| Develop/staging | `develop` | `develop` on Netlify | Dedicated non-production Neon branch/database |
+| Production | `production` | `main` on Vercel | Neon production branch/database |
 
 Do not point develop or Preview deploys to the production database unless an incident owner explicitly approves the temporary risk and documents why it is necessary.
 
@@ -144,15 +153,15 @@ Detailed contribution rules live in [`.github/CONTRIBUTING.md`](./.github/CONTRI
 
 ### Generated runtime environment file
 
-`frontend/scripts/generate-env-runtime.mjs` writes `frontend/lib/env/runtime-env.generated.ts` during Netlify builds.
+`frontend/scripts/generate-env-runtime.mjs` writes `frontend/lib/env/runtime-env.generated.ts` during the configured Netlify staging build.
 
 - For `APP_ENV=develop`, selected environment values can be embedded as a server-only fallback.
 - For any other `APP_ENV`, the generated map is deliberately empty.
 - The file is generated from keys listed in `frontend/.env.example`.
 - Never commit generated secret values.
-- Production must receive secrets from the Netlify runtime/build environment, not from the generated fallback file.
+- Production must receive secrets from the Vercel Production environment, not from the generated fallback file.
 
-If develop works but production reports missing variables, check `APP_ENV`, Netlify variable scopes, and the generated-env build log before changing application code.
+If staging works but production reports missing variables, compare Vercel Production variables with the Netlify staging configuration, confirm `APP_ENV`, and inspect the Vercel build/runtime logs before changing application code.
 
 ---
 
@@ -161,7 +170,8 @@ If develop works but production reports missing variables, check `APP_ENV`, Netl
 Production operators should have only the access required for their role:
 
 - GitHub repository and protected branches;
-- Netlify site, deploys, environment variables, and logs;
+- Vercel production project, deploys, environment variables, and logs;
+- Netlify staging site, deploys, environment variables, and logs;
 - Neon project and production branch;
 - Sentry project;
 - Stripe and/or Monobank merchant consoles;
@@ -207,7 +217,7 @@ OAuth callback URLs must match the locale-independent API routes and the exact d
 | `CLOUDINARY_UPLOAD_FOLDER` | Cloudinary folder, default `products` |
 | `LOG_LEVEL` | Structured application log threshold |
 
-Sentry initialization currently recognizes `NODE_ENV=production` and also reads several `VERCEL_*` compatibility variables for environment/release labels. On Netlify, verify that events arrive with useful environment and release metadata after every telemetry-related change; do not assume those compatibility values are populated automatically.
+Sentry initialization recognizes `NODE_ENV=production` and reads several `VERCEL_*` variables for environment/release labels. Verify production events from Vercel and staging events from Netlify carry distinct, useful environment and release metadata after every telemetry-related change.
 
 ### Shop payments and internal jobs
 
@@ -240,12 +250,12 @@ Production Stripe configuration is fail-closed: `STRIPE_MODE` must be `live`, an
 ### Secret handling
 
 - Never prefix server secrets with `NEXT_PUBLIC_`.
-- Do not print secret values in Netlify or GitHub Actions logs.
+- Do not print secret values in Vercel, Netlify, or GitHub Actions logs.
 - After rotating `AUTH_SECRET`, all existing sessions become invalid; announce the expected logout.
 - After rotating OAuth credentials, update the provider callback configuration and redeploy.
-- After rotating Stripe or Monobank webhook credentials, coordinate both the provider and Netlify change so events are not lost.
+- After rotating Stripe or Monobank webhook credentials, coordinate both the provider and Vercel Production change so events are not lost.
 - Keep old webhook secrets only for the shortest provider-supported overlap window.
-- Rotate `INTERNAL_JANITOR_SECRET` in Netlify and GitHub Actions together.
+- Rotate the production `INTERNAL_JANITOR_SECRET` in Vercel and GitHub Actions together; update Netlify separately only when staging jobs intentionally use that secret.
 - Redeploy after changing variables consumed during build or module initialization.
 
 ---
@@ -254,16 +264,17 @@ Production Stripe configuration is fail-closed: `STRIPE_MODE` must be `live`, an
 
 Recommended daily check:
 
-1. Open the Netlify production deploy and confirm the status is published/ready.
+1. Open the Vercel production deployment for `main` and confirm it is Ready.
 2. Open `https://devlovers.net/en` and verify a successful response.
 3. Check `/api/auth/me`; a signed-out request should return HTTP 200 with `null`.
 4. Open `/en/q&a`, `/en/quizzes`, `/en/blog`, and `/en/shop/products`.
-5. Review Netlify function logs for new 5xx spikes and repeated timeout patterns.
+5. Review Vercel runtime/function logs for new 5xx spikes and repeated timeout patterns.
 6. Review Sentry for new unresolved errors, regressions, and release spikes.
 7. Check the latest **Shop janitor - restock stale orders** GitHub Actions run.
 8. If payments are enabled, review webhook delivery health in Stripe and Monobank.
 9. Review admin orders for `needs_review`, stale `pending`, failed inventory, or shipping `needs_attention` states.
 10. Check Neon monitoring for unusual compute, connection, storage, or query changes.
+11. Confirm the latest Netlify staging deployment still tracks `develop`; investigate staging failures separately from production health.
 
 Do not run a real payment or a write-heavy worker as part of a routine daily check unless a dedicated test order and reconciliation procedure exist.
 
@@ -320,7 +331,7 @@ With a production test account:
 
 | Observation | Likely area |
 |---|---|
-| Static pages and API routes both fail | Netlify deploy, domain, routing, or broad runtime incident |
+| Static pages and API routes both fail | Vercel production deploy, domain, routing, or broad runtime incident |
 | Static page works; database-backed routes fail | Neon connectivity, schema, or query regression |
 | Public database routes work; dashboard fails | Auth cookie, user data, session secret, or protected query |
 | Platform works; shop fails | Payment/shipping env validation, shop schema, or catalog query |
@@ -359,42 +370,57 @@ npm run test:e2e:shop
 6. If schema files changed, verify the migration as described in [Drizzle migrations](#8-drizzle-migrations).
 7. If payment behavior changed, review [`frontend/docs/shop/payments-runbook.md`](./frontend/docs/shop/payments-runbook.md).
 8. If Monobank changed, follow [`frontend/docs/monobank-b3-verification.md`](./frontend/docs/monobank-b3-verification.md).
-9. Confirm Netlify production variables and provider webhook URLs before merging to `main`.
+9. Confirm Vercel Production variables and provider webhook URLs before merging to `main`; confirm the reviewed `develop` commit is healthy on Netlify staging.
 
 ### Safe release sequence
 
-1. Create or identify a Neon restore point for a risky database change.
-2. Apply backward-compatible pending migrations to the exact production database.
-3. Merge the reviewed release from `develop` into `main`.
-4. Wait for the Netlify production build to finish.
-5. Confirm the deploy commit SHA matches the release.
-6. Run the smoke test.
-7. Review Netlify logs, Sentry, provider webhooks, and GitHub Actions.
-8. Record the commit SHA, Netlify deploy ID, package version, migration files, and operator.
+1. Apply pending migrations to the dedicated staging Neon database and verify the `develop` deployment on Netlify.
+2. Create or identify a Neon restore point for a risky production database change.
+3. Apply backward-compatible pending migrations to the exact production database.
+4. Confirm the migration history and schema before releasing code that depends on it.
+5. Merge the reviewed release from `develop` into `main`.
+6. Wait for the Vercel production deployment to finish.
+7. Confirm the deploy commit SHA matches the release.
+8. Run the production smoke test.
+9. Review Vercel logs, Sentry, provider webhooks, and GitHub Actions.
+10. Record the commit SHA, Vercel deployment ID/URL, package version, migration files, and operator.
 
 For schema changes that cannot be made backward-compatible, do not use this sequence without a maintenance window and an explicit application/database coordination plan.
 
-### Netlify verification
+### Vercel production verification
 
 Check:
 
-- site and deploy context are correct;
-- deploy status is published/ready;
-- branch and commit match the intended release;
-- build used Node.js `20.19.0`;
-- dependency installation completed with optional packages;
-- `generate-env-runtime.mjs` ran with the expected `APP_ENV`;
+- Vercel project and Production environment are correct;
+- deployment status is Ready;
+- source branch is `main` and commit matches the intended release;
+- project Root Directory is `frontend`;
+- build uses the expected package manager, lockfile, and supported Node.js version;
+- `APP_ENV=production` and all Production-scoped variables are present;
 - Next.js build completed without missing-variable errors;
-- functions have no new sustained 5xx rate;
+- functions and runtime logs have no new sustained 5xx rate;
 - the custom domain still points to the new production deploy.
+
+### Netlify staging verification
+
+Check:
+
+- Netlify site and deploy context are the staging site;
+- source branch is `develop` and commit matches the intended integration build;
+- build base is `frontend` and Node.js is `24` from [`netlify.toml`](./netlify.toml);
+- dependency installation and `generate-env-runtime.mjs` completed with `APP_ENV=develop`;
+- staging uses the dedicated non-production Neon database;
+- staging functions have no new sustained 5xx rate;
+- [develop-devlovers.netlify.app](https://develop-devlovers.netlify.app) serves the expected commit.
 
 ### Build failure
 
 A failed production build should leave the previous published deploy serving traffic.
 
-1. Open the Netlify deploy log.
+1. Open the Vercel production deployment build log.
 2. Identify whether failure occurred during install, env generation, lint/type compilation, or Next.js build.
-3. Reproduce locally with the lockfile and Node version from `netlify.toml`.
+   Run `npm run typecheck` from `frontend` to reproduce TypeScript failures, including stale test fixtures. This check also runs in GitHub Actions; type errors can block both Netlify and Vercel builds.
+3. Reproduce locally with the lockfile and the Node.js version configured in Vercel.
 4. Correct the issue in a new commit.
 5. Do not edit built artifacts or generated output inside a failed deploy.
 
@@ -444,6 +470,8 @@ Check for:
 
 `npm run db:migrate` runs `drizzle-kit migrate --config drizzle.config.ts` using `DATABASE_URL`.
 
+Run staging and production migrations as two separate operations with two separately verified connection strings. Applying a migration to the Netlify staging database does not apply it to the Vercel production database.
+
 Before production apply:
 
 1. Confirm the shell contains the intended production `DATABASE_URL` without printing it.
@@ -460,7 +488,7 @@ npm run db:migrate
 7. Inspect the result and the Drizzle migration table.
 8. Run schema-specific read-only checks and the smoke test.
 
-The Netlify build does not run this command automatically.
+Neither the Vercel production deployment nor the Netlify staging deployment runs this command automatically.
 
 ### Prohibited production operations
 
@@ -548,8 +576,8 @@ Only the stale-order restock schedule is defined in this repository. If other jo
 
 1. Check GitHub Actions or the external scheduler.
 2. Confirm the target URL points to production, not develop or a stale deploy URL.
-3. Confirm the secret exists in both the caller and Netlify.
-4. Find the request ID in Netlify logs.
+3. Confirm the production secret exists in both the caller and Vercel.
+4. Find the request ID in Vercel runtime logs.
 5. Inspect `internal_job_state` and relevant business tables.
 6. Distinguish `FEATURE_DISABLED`, authentication failures, rate limiting, and worker errors.
 7. Fix configuration or data before a single controlled retry.
@@ -693,13 +721,13 @@ Check at least:
 - shipping shipments, quotes, events, and notification outbox;
 - `internal_job_state` and Drizzle migration history.
 
-Application rollback does not restore Neon data. Neon restore does not change Netlify code or provider configuration.
+Application rollback does not restore Neon data. Neon restore does not change Vercel production code, Netlify staging code, or provider configuration.
 
 ---
 
 ## 12. Application rollback
 
-### When a Netlify rollback is appropriate
+### When a Vercel production rollback is appropriate
 
 - frontend or routing regression;
 - API regression without incompatible schema changes;
@@ -710,14 +738,14 @@ Application rollback does not restore Neon data. Neon restore does not change Ne
 
 ### Procedure
 
-1. Confirm user impact and the current production deploy ID/commit.
-2. Review Netlify logs and Sentry evidence.
+1. Confirm user impact and the current Vercel production deployment ID/commit.
+2. Review Vercel logs and Sentry evidence.
 3. Confirm the previous deploy is compatible with the current Neon schema and provider contracts.
-4. In Netlify, publish/restore the last known-good production deploy using the supported deploy rollback control.
+4. In Vercel, promote or redeploy the last known-good production deployment using the supported rollback control.
 5. Confirm the custom production domain points to the restored deploy.
 6. Run the affected smoke tests.
 7. Watch logs, Sentry, webhooks, and scheduled jobs.
-8. Record the bad and good deploy IDs and commit SHAs.
+8. Record the bad and good Vercel deployment IDs/URLs and commit SHAs.
 9. Prepare a forward fix through the normal branch workflow.
 
 ### Do not perform a blind rollback
@@ -760,8 +788,8 @@ Restoring an older deploy may also restore code built with older public/build-ti
 1. Record start time in UTC and Europe/Kyiv.
 2. Identify affected routes, locales, users, orders, and providers.
 3. Determine whether the issue is static, runtime, database, auth, or provider-specific.
-4. Record the Netlify deploy ID and commit SHA.
-5. Search Netlify logs and Sentry by route, timestamp, order ID, and request ID.
+4. Record the Vercel production deployment ID/URL and commit SHA.
+5. Search Vercel logs and Sentry by route, timestamp, order ID, and request ID.
 6. Check Neon monitoring and recent operations.
 7. Check GitHub Actions for scheduled-job incidents.
 8. Stop repeat or destructive writes if data integrity is uncertain.
@@ -795,7 +823,7 @@ An incident is not resolved until:
 
 ## 14. Common incidents
 
-### Netlify build failed
+### Vercel production build failed
 
 Symptoms:
 
@@ -805,12 +833,29 @@ Symptoms:
 
 Actions:
 
-1. Confirm production still serves the previous published deploy.
+1. Confirm production still serves the previous Ready deployment.
 2. Open the full deploy log.
-3. Reproduce with Node `20.19.0` and `npm ci --include=optional`.
+3. Reproduce with the Node.js version configured in Vercel and `npm ci --include=optional`.
 4. Check `APP_ENV` and required variables.
 5. Run `npm run test:run` and `npm run build` locally.
 6. Fix in a new commit and redeploy.
+
+### Netlify staging build failed
+
+Symptoms:
+
+- the `develop` branch deploy is failed;
+- production on Vercel is unaffected;
+- Netlify logs show dependency, generated environment, TypeScript, or Next.js errors.
+
+Actions:
+
+1. Confirm the failure belongs to the staging site and `develop` branch.
+2. Open the full Netlify deploy log.
+3. Reproduce with Node `24` and `npm ci --include=optional`.
+4. Check `APP_ENV=develop`, staging variables, and the generated runtime environment step.
+5. Fix in a feature/fix branch, merge into `develop`, and verify the next staging deploy.
+6. Do not change Vercel Production variables to repair a staging-only failure.
 
 ### Runtime 5xx
 
@@ -823,7 +868,7 @@ Actions:
 ### Neon connection failure
 
 1. Check Neon project and compute status.
-2. Confirm `DATABASE_URL` exists in the production Netlify context.
+2. Confirm `DATABASE_URL` exists in the Vercel Production environment.
 3. Confirm it points to the intended production branch and uses required TLS parameters.
 4. Check Neon monitoring for connection, compute, or query anomalies.
 5. Check whether a migration or branch restore just occurred.
@@ -833,7 +878,7 @@ Actions:
 ### Login or OAuth failure
 
 1. Test email/password login separately from Google and GitHub.
-2. Check `/api/auth/*` Netlify logs.
+2. Check `/api/auth/*` Vercel runtime logs.
 3. Verify `AUTH_SECRET` and `APP_ENV`.
 4. Verify provider-specific client ID, secret, and exact callback URI for production.
 5. Check database access to the user record.
@@ -905,7 +950,7 @@ Actions:
 
 1. Check the latest scheduled GitHub Actions run.
 2. Verify `JANITOR_URL` and `INTERNAL_JANITOR_SECRET` in the caller.
-3. Find the janitor request in Netlify logs.
+3. Find the janitor request in Vercel runtime logs.
 4. Inspect order payment, inventory, sweep claim, and inventory moves.
 5. Treat 429 as a rate-limit outcome; wait for the next eligible window.
 6. Do not manually increase stock before checking whether a release move already exists.
@@ -991,12 +1036,13 @@ Use a documented test product/order only when the release affects checkout, paym
 
 ### Operational surfaces
 
-1. Netlify shows the expected production commit.
-2. Netlify logs have no new sustained error spike.
+1. Vercel shows the expected production commit from `main`.
+2. Vercel runtime logs have no new sustained error spike.
 3. Sentry receives events with correct environment/release context when configured.
 4. Neon shows no unexpected query or compute regression.
 5. Scheduled GitHub Actions remain enabled and target production.
 6. Provider webhook delivery is healthy.
+7. Netlify staging remains associated with `develop` and its non-production database.
 
 ---
 
@@ -1114,8 +1160,10 @@ User-visible impact:
 Affected routes/locales/users/orders:
 Data-loss risk:
 Payment/inventory risk:
-Netlify site/context:
-Netlify deploy ID:
+Vercel project/environment:
+Vercel deployment ID/URL:
+Netlify staging site/context (if relevant):
+Netlify staging deploy ID (if relevant):
 Git commit SHA:
 Application version:
 Neon project/branch:
@@ -1151,6 +1199,10 @@ Do not include credentials, tokens, connection strings, auth cookies, card data,
 
 ### Provider documentation
 
+- [Vercel deployments](https://vercel.com/docs/deployments)
+- [Vercel environment variables](https://vercel.com/docs/environment-variables)
+- [Vercel rolling releases and rollback](https://vercel.com/docs/rolling-releases)
+- [Vercel runtime logs](https://vercel.com/docs/logs)
 - [Netlify deploy management](https://docs.netlify.com/deploy/manage-deploys/manage-deploys-overview/)
 - [Netlify build configuration](https://docs.netlify.com/build/configure-builds/overview/)
 - [Netlify environment variables](https://docs.netlify.com/environment-variables/overview/)

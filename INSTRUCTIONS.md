@@ -36,6 +36,15 @@ DevLovers helps developers prepare for technical interviews in a structured way.
 
 The interface and available content support three languages: English, Ukrainian, and Polish.
 
+### Service environments
+
+DevLovers uses separate deployment environments:
+
+- **Production:** [devlovers.net](https://devlovers.net), deployed on Vercel from the `main` branch. This is the public service for real user accounts, learning progress, and supported shop activity.
+- **Staging:** [develop-devlovers.netlify.app](https://develop-devlovers.netlify.app), deployed on Netlify from the `develop` branch. This environment is intended for testing upcoming changes and may be temporarily unavailable or contain non-production data.
+
+Do not enter real payment details or rely on staging data as a backup of production. Accounts, progress, orders, provider configuration, and database contents may differ between the two environments.
+
 ### Main sections
 
 | Section | URL | Purpose |
