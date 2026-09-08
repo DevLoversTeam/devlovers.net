@@ -58,3 +58,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --include=dev
+
+      - name: Check application and test types
+        run: npm run typecheck

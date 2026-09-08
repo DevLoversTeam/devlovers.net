@@ -20,7 +20,8 @@
     "test:run": "vitest run",
     "test:e2e:shop": "playwright test --config=playwright.config.ts tests/e2e/shop-minimal-phase9.spec.ts --workers=1",
     "test:blog": "vitest run components/tests/blog/*.test.tsx lib/tests/blog/*.test.ts",
-    "test:blog:coverage": "vitest run --coverage \"--coverage.include=components/blog/**\" \"--coverage.include=app/api/blog-*/**\" components/tests/blog/*.test.tsx lib/tests/blog/*.test.ts"
+    "test:blog:coverage": "vitest run --coverage \"--coverage.include=components/blog/**\" \"--coverage.include=app/api/blog-*/**\" components/tests/blog/*.test.tsx lib/tests/blog/*.test.ts",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

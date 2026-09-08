@@ -407,7 +407,7 @@ Check:
 
 - Netlify site and deploy context are the staging site;
 - source branch is `develop` and commit matches the intended integration build;
-- build base is `frontend` and Node.js is `20.19.0` from [`netlify.toml`](./netlify.toml);
+- build base is `frontend` and Node.js is `24` from [`netlify.toml`](./netlify.toml);
 - dependency installation and `generate-env-runtime.mjs` completed with `APP_ENV=develop`;
 - staging uses the dedicated non-production Neon database;
 - staging functions have no new sustained 5xx rate;
@@ -419,6 +419,7 @@ A failed production build should leave the previous published deploy serving tra
 
 1. Open the Vercel production deployment build log.
 2. Identify whether failure occurred during install, env generation, lint/type compilation, or Next.js build.
+   Run `npm run typecheck` from `frontend` to reproduce TypeScript failures, including stale test fixtures. This check also runs in GitHub Actions; type errors can block both Netlify and Vercel builds.
 3. Reproduce locally with the lockfile and the Node.js version configured in Vercel.
 4. Correct the issue in a new commit.
 5. Do not edit built artifacts or generated output inside a failed deploy.
