@@ -1166,3 +1166,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Applied the missing `0035_daffy_captain_cross.sql` production migration so authenticated Q&A viewed and bookmarked progress can load and persist
 - Isolated dashboard Q&A progress loading so a temporary failure in the optional learning-progress section no longer prevents the entire dashboard from rendering
 - Bumped the frontend package version to `1.0.16`
+
+## [1.0.17] - 2026-09-08
+
+### Added
+
+- Janitor transport regression coverage for authenticated non-browser requests, HTTP errors, rate limits, redirects, and response timeouts
+- Nodemailer compatibility coverage that composes shop notification emails without sending messages
+- Server-side quiz answer cache tests replacing coverage for the retired encrypted-answer module
+- `npm run typecheck` to generate Next.js route types and check application and test TypeScript in GitHub Actions
+
+### Changed
+
+- Updated Next.js and its ESLint configuration to `16.3.4`, React and React DOM to `19.2.8`, Drizzle ORM to `0.45.2`, next-intl to `4.14.2`, Sentry to `10.73.0`, and the Tiptap packages to `3.31.3`
+- Updated Nodemailer to `10.0.1` and removed the obsolete standalone type package
+- Refreshed the lockfile with compatible transitive security patches
+- Upgraded GitHub checkout/setup-node actions to v6 and CI and Netlify staging to Node.js 24
+- Refreshed seven application screenshots and all nine README image descriptions, including the corrected login image label and expanded feature descriptions
+- Clarified Vercel production (`main`) and Netlify staging (`develop`) hosting, environment configuration, migrations, release verification, and rollback guidance
+- Bumped the frontend package and lockfile version to `1.0.17`
+
+### Fixed
+
+- Fixed scheduled stale-order cleanup receiving `403 ORIGIN_BLOCKED`: the caller now uses native HTTP/HTTPS requests without the browser metadata added by Node.js fetch
+- Preserved janitor secret authentication and timeout handling; redirects are rejected instead of forwarding credentials
+- Fixed production builds blocked by outdated blog, quiz, and AI-helper test contracts without disabling TypeScript checks
+- Migrated blog test fixtures to current IDs, string slugs, category objects, and Tiptap content; consolidated navigation coverage around the current component
+- Updated quiz guest-flow, session-state, and AI-helper authentication/action mocks to match current application behavior
+
+### Verification
+
+- Passed targeted janitor, email, blog, quiz, and AI-helper regression tests
+- Passed full application and test type checking and ESLint for the repaired test files
+- Verified local production and Netlify-style staging builds with synthetic configuration; confirmed a published Netlify staging deployment
+- Production dependency audit reported no known vulnerabilities; four moderate development-tool findings remain in the Drizzle Kit/esbuild dependency chain
+- No database schema changes or migrations are included in this release
