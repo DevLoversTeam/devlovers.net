@@ -4,10 +4,11 @@ import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { db } from '@/db';
-import { adminAuditLog, orders, shippingShipments } from '@/db/schema';
+import { orders, shippingShipments } from '@/db/schema';
 import { applyShippingAdminAction } from '@/lib/services/shop/shipping/admin-actions';
 import { ensureQueuedInitialShipment } from '@/lib/services/shop/shipping/ensure-queued-initial-shipment';
 import { toDbMoney } from '@/lib/shop/money';
+import { cleanupAdminTestOrder } from '@/lib/tests/helpers/cleanup-admin-test-order';
 
 type Action = 'recover_initial_shipment' | 'mark_shipped' | 'mark_delivered';
 
@@ -29,17 +30,9 @@ type Seeded = {
 
 const seededOrderIds = new Set<string>();
 
-async function cleanup(orderId: string) {
-  await db.delete(adminAuditLog).where(eq(adminAuditLog.orderId, orderId));
-  await db
-    .delete(shippingShipments)
-    .where(eq(shippingShipments.orderId, orderId));
-  await db.delete(orders).where(eq(orders.id, orderId));
-}
-
 afterEach(async () => {
   for (const orderId of seededOrderIds) {
-    await cleanup(orderId);
+    await cleanupAdminTestOrder(orderId);
   }
   seededOrderIds.clear();
 });

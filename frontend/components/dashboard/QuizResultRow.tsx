@@ -89,10 +89,13 @@ function getCategoryStyle(slug: string | null): CategoryTabStyle | null {
 
 export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
   const t = useTranslations('dashboard.quizResults');
+  const tQuizStatus = useTranslations('quiz.status');
   const router = useRouter();
 
   const pct = Number(attempt.percentage);
   const status = getStatus(pct);
+  const statusLabel =
+    status.label === 'mastered' ? tQuizStatus('mastered') : t(status.label);
   const isMastered = pct === 100;
   const catStyle = getCategoryStyle(attempt.categorySlug);
 
@@ -122,7 +125,6 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
             }
       }
     >
-      {/* Mobile layout: left content + right badge */}
       <div className="flex items-center gap-2 sm:grid sm:grid-cols-[auto_minmax(0,2fr)_1fr_auto_20px] sm:gap-3 md:hidden">
         {catStyle && (
           <Image
@@ -188,7 +190,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
             className="gap-1 rounded-full px-2 py-0.5 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs"
           >
             <span className={`h-1.5 w-1.5 rounded-full ${status.dotColor}`} />
-            {t(status.label)}
+            {statusLabel}
           </Badge>
         </div>
         {!isMastered ? (
@@ -222,12 +224,10 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
           </div>
         </div>
 
-        {/* Score */}
         <div className="text-center text-sm text-gray-600 tabular-nums dark:text-gray-400">
           {attempt.score}/{attempt.totalQuestions}
         </div>
 
-        {/* Percentage + bar */}
         <div className="flex items-center gap-1.5">
           <ProgressBar percentage={pct} />
           <span className="w-9 text-center text-xs text-gray-500 tabular-nums">
@@ -235,7 +235,6 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
           </span>
         </div>
 
-        {/* Integrity — visible on lg+ */}
         <div className="text-center text-sm text-gray-400">
           {attempt.integrityScore !== null && (
             <span className="inline-flex items-center justify-center gap-1">
@@ -245,7 +244,6 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
           )}
         </div>
 
-        {/* Points */}
         <div className="text-center text-sm">
           {attempt.pointsEarned > 0 ? (
             <span className="font-medium text-emerald-600 dark:text-emerald-400">
@@ -256,7 +254,6 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
           )}
         </div>
 
-        {/* Date — visible on lg+ */}
         <div
           className="hidden text-center text-xs text-gray-400 lg:block"
           suppressHydrationWarning
@@ -264,15 +261,13 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
           {formatRelativeTime(attempt.completedAt, locale)}
         </div>
 
-        {/* Status badge */}
         <div className="flex justify-center">
           <Badge variant={status.variant} className="gap-1.5 rounded-full">
             <span className={`h-1.5 w-1.5 rounded-full ${status.dotColor}`} />
-            {t(status.label)}
+            {statusLabel}
           </Badge>
         </div>
 
-        {/* Arrow */}
         <div className="text-center">
           {!isMastered && (
             <ChevronRight className="h-4 w-4 text-gray-300 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-(--accent-primary) dark:text-gray-600" />

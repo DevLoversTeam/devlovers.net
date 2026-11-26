@@ -65,12 +65,17 @@ describe('shop shipping np warehouses route (phase 2)', () => {
     vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'false');
 
     const req = new NextRequest(
-      'http://localhost/api/shop/shipping/np/warehouses?cityRef=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&q=12'
+      'http://localhost/api/shop/shipping/np/warehouses?cityRef=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&q=12',
+      { headers: { 'x-request-id': 'shipping-warehouses-test' } }
     );
     const res = await GET(req);
     const json: any = await res.json();
 
     expect(res.status).toBe(200);
+    expect(res.headers.get('Cache-Control')).toBe(
+      'public, max-age=30, s-maxage=60, stale-while-revalidate=120'
+    );
+    expect(res.headers.get('X-Request-Id')).toBe('shipping-warehouses-test');
     expect(json).toMatchObject({
       success: true,
       available: false,

@@ -1,11 +1,10 @@
-import crypto from 'node:crypto';
-
 import { and, eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
+import { getRequestId } from '@/lib/http/getRequestId';
 import { logError, logWarn } from '@/lib/logging';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import { InvalidPayloadError } from '@/lib/services/errors';
@@ -61,8 +60,7 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,
@@ -191,8 +189,7 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,

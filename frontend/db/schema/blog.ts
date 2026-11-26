@@ -12,8 +12,6 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 
-// ── Blog Categories ──────────────────────────────────────────────
-
 export const blogCategories = pgTable('blog_categories', {
   id: uuid('id').defaultRandom().primaryKey(),
   slug: varchar('slug', { length: 50 }).notNull().unique(),
@@ -37,8 +35,6 @@ export const blogCategoryTranslations = pgTable(
     pk: primaryKey({ columns: [table.categoryId, table.locale] }),
   })
 );
-
-// ── Blog Authors ─────────────────────────────────────────────────
 
 export const blogAuthors = pgTable('blog_authors', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -72,8 +68,6 @@ export const blogAuthorTranslations = pgTable(
     pk: primaryKey({ columns: [table.authorId, table.locale] }),
   })
 );
-
-// ── Blog Posts ───────────────────────────────────────────────────
 
 export const blogPosts = pgTable(
   'blog_posts',
@@ -119,8 +113,6 @@ export const blogPostTranslations = pgTable(
   })
 );
 
-// ── Blog Post ↔ Category junction ───────────────────────────────
-
 export const blogPostCategories = pgTable(
   'blog_post_categories',
   {
@@ -138,8 +130,6 @@ export const blogPostCategories = pgTable(
     ),
   })
 );
-
-// ── Relations ───────────────────────────────────────────────────
 
 export const blogCategoriesRelations = relations(
   blogCategories,

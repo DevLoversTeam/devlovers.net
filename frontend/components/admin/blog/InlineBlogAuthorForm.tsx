@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 
-import { slugify } from '@/lib/shop/slug';
+import { useAutoSlug } from '@/components/admin/useAutoSlug';
+import { type Locale, locales } from '@/i18n/config';
 
 interface InlineBlogAuthorFormProps {
   csrfToken: string;
@@ -15,17 +16,14 @@ export function InlineBlogAuthorForm({
   onCreated,
   onCancel,
 }: InlineBlogAuthorFormProps) {
-  const [slug, setSlug] = useState('');
-  const [slugTouched, setSlugTouched] = useState(false);
+  const { slug, updateFromTitle, setManualSlug } = useAutoSlug();
   const [names, setNames] = useState({ en: '', uk: '', pl: '' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  function handleNameChange(locale: 'en' | 'uk' | 'pl', value: string) {
+  function handleNameChange(locale: Locale, value: string) {
     setNames(prev => ({ ...prev, [locale]: value }));
-    if (locale === 'en' && !slugTouched) {
-      setSlug(slugify(value));
-    }
+    updateFromTitle(locale, value);
   }
 
   async function handleSubmit() {
@@ -79,7 +77,7 @@ export function InlineBlogAuthorForm({
       <p className="text-foreground text-sm font-medium">New Author</p>
 
       <div className="grid grid-cols-3 gap-3">
-        {(['en', 'uk', 'pl'] as const).map(locale => (
+        {locales.map(locale => (
           <div key={locale}>
             <label className="text-muted-foreground mb-1 block text-xs">
               Name ({locale.toUpperCase()})
@@ -100,10 +98,7 @@ export function InlineBlogAuthorForm({
         <input
           type="text"
           value={slug}
-          onChange={e => {
-            setSlug(e.target.value);
-            setSlugTouched(true);
-          }}
+          onChange={e => setManualSlug(e.target.value)}
           className="border-border bg-background text-foreground w-full max-w-xs rounded-md border px-3 py-1.5 text-sm"
           placeholder="author-slug"
         />

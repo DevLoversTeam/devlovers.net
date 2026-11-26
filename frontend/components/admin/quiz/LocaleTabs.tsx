@@ -1,14 +1,9 @@
 'use client';
 
+import { type Locale, locales } from '@/i18n/config';
 import { cn } from '@/lib/utils';
 
-const LOCALES = [
-  { code: 'en', label: 'EN' },
-  { code: 'uk', label: 'UK' },
-  { code: 'pl', label: 'PL' },
-] as const;
-
-export type AdminLocale = (typeof LOCALES)[number]['code'];
+export type AdminLocale = Locale;
 
 interface LocaleTabsProps {
   active: AdminLocale;
@@ -25,7 +20,7 @@ export function LocaleTabs({
 }: LocaleTabsProps) {
   return (
     <div className="flex gap-1">
-      {LOCALES.map(({ code, label }) => {
+      {locales.map(code => {
         const isDirty = dirtyLocales?.has(code);
         const isMissing = missingLocales?.has(code);
 
@@ -41,7 +36,7 @@ export function LocaleTabs({
                 : 'bg-muted text-muted-foreground hover:text-foreground'
             )}
           >
-            {label}
+            {code.toUpperCase()}
             {isDirty && (
               <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-400" />
             )}

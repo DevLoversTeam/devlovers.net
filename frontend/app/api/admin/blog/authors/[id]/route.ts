@@ -2,24 +2,18 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { deleteBlogAuthor, updateBlogAuthor } from '@/db/queries/blog/admin-blog';
+import { requireAdminApi } from '@/lib/auth/admin';
 import {
-  AdminApiDisabledError,
-  AdminForbiddenError,
-  AdminUnauthorizedError,
-  requireAdminApi,
-} from '@/lib/auth/admin';
+  getAdminBlogAccessErrorResponse,
+  readAdminBlogJson,
+} from '@/lib/blog/admin-route-responses';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import { updateBlogAuthorSchema } from '@/lib/validation/admin-blog';
 
 export const runtime = 'nodejs';
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
 
 export async function PUT(
   request: NextRequest,
@@ -42,17 +36,10 @@ export async function PUT(
 
     const { id } = await params;
 
-    let rawBody: unknown;
-    try {
-      rawBody = await request.json();
-    } catch {
-      return noStoreJson(
-        { error: 'Invalid JSON body', code: 'INVALID_BODY' },
-        { status: 400 }
-      );
-    }
+    const body = await readAdminBlogJson(request);
+    if (!body.ok) return body.response;
 
-    const parsed = updateBlogAuthorSchema.safeParse(rawBody);
+    const parsed = updateBlogAuthorSchema.safeParse(body.data);
     if (!parsed.success) {
       return noStoreJson(
         {
@@ -73,12 +60,8 @@ export async function PUT(
 
     return noStoreJson({ success: true });
   } catch (error) {
-    if (error instanceof AdminApiDisabledError)
-      return noStoreJson({ code: error.code }, { status: 403 });
-    if (error instanceof AdminUnauthorizedError)
-      return noStoreJson({ code: error.code }, { status: 401 });
-    if (error instanceof AdminForbiddenError)
-      return noStoreJson({ code: error.code }, { status: 403 });
+    const accessError = getAdminBlogAccessErrorResponse(error);
+    if (accessError) return accessError;
 
     logError('admin_blog_author_update_failed', error, {});
     return noStoreJson(
@@ -124,12 +107,8 @@ export async function DELETE(
       );
     }
 
-    if (error instanceof AdminApiDisabledError)
-      return noStoreJson({ code: error.code }, { status: 403 });
-    if (error instanceof AdminUnauthorizedError)
-      return noStoreJson({ code: error.code }, { status: 401 });
-    if (error instanceof AdminForbiddenError)
-      return noStoreJson({ code: error.code }, { status: 403 });
+    const accessError = getAdminBlogAccessErrorResponse(error);
+    if (accessError) return accessError;
 
     logError('admin_blog_author_delete_failed', error, {});
     return noStoreJson(

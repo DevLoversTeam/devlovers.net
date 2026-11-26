@@ -1,7 +1,5 @@
-import crypto from 'node:crypto';
-
 import { eq } from 'drizzle-orm';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema';
@@ -12,6 +10,8 @@ import {
   requireAdminApi,
 } from '@/lib/auth/admin';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
+import { getRequestId } from '@/lib/http/getRequestId';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -32,12 +32,6 @@ import { orderIdParamSchema, orderSummarySchema } from '@/lib/validation/shop';
 
 export const runtime = 'nodejs';
 
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
-
 const DEFAULT_ADMIN_REFUND_RATE_LIMIT_MAX = 5;
 const DEFAULT_ADMIN_REFUND_RATE_LIMIT_WINDOW_SECONDS = 60;
 
@@ -47,8 +41,7 @@ export async function POST(
 ) {
   const startedAtMs = Date.now();
 
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const blocked = guardBrowserSameOrigin(request);
   if (blocked) {

@@ -1,11 +1,10 @@
-import crypto from 'node:crypto';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { MoneyValueError } from '@/db/queries/shop/orders';
 import { getCurrentUser } from '@/lib/auth';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
+import { getRequestId } from '@/lib/http/getRequestId';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { MONO_MISMATCH, monoLogWarn } from '@/lib/logging/monobank';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -869,8 +868,7 @@ async function readJsonBody(request: NextRequest): Promise<unknown> {
 }
 
 export async function POST(request: NextRequest) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const baseMeta = {
     requestId,

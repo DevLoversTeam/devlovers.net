@@ -20,6 +20,10 @@ import BlogGrid from '@/components/blog/BlogGrid';
 import { BlogPagination } from '@/components/blog/BlogPagination';
 import { usePathname, useRouter } from '@/i18n/routing';
 import { Link } from '@/i18n/routing';
+import {
+  getBlogCategoryDisplayName,
+  getBlogCategoryLabel,
+} from '@/lib/blog/category-label';
 import { formatBlogDate } from '@/lib/blog/date';
 import { shouldBypassImageOptimization } from '@/lib/blog/image';
 import { extractPlainText } from '@/lib/blog/text';
@@ -103,13 +107,6 @@ function SocialIcon({ platform }: { platform?: string }) {
   return <LinkIcon className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
 }
 
-/**
- * Normalize a tag/search input:
- * - removes leading "#"
- * - trims spaces
- * - lowercases
- * - collapses multiple spaces
- */
 export function normalizeTag(input: string) {
   return (input || '')
     .replace(/^#/, '')
@@ -130,10 +127,6 @@ function plainTextExcerpt(value?: any): string {
   return extractPlainText(value).trim();
 }
 
-/**
- * BlogFilters
- * - Renders BlogGrid with filtered posts
- */
 export default function BlogFilters({
   posts,
   categories = [],
@@ -198,29 +191,12 @@ export default function BlogFilters({
     router.replace(nextPath);
   };
 
-  const getCategoryLabel = (categoryName: string): string => {
-    const key = categoryName.toLowerCase() as
-      | 'tech'
-      | 'career'
-      | 'insights'
-      | 'news'
-      | 'growth';
-    const categoryTranslations: Record<string, string> = {
-      tech: t('categories.tech'),
-      career: t('categories.career'),
-      insights: t('categories.insights'),
-      news: t('categories.news'),
-      growth: t('categories.growth'),
-    };
-    return categoryTranslations[key] || categoryName;
-  };
-
   const allCategories = useMemo(() => {
     if (categories.length) {
       return categories
         .map(category => ({
           norm: normalizeTag(category.title),
-          name: category.title === 'Growth' ? 'Career' : category.title,
+          name: getBlogCategoryDisplayName(category.title),
         }))
         .filter(category => category.norm);
     }
@@ -236,7 +212,7 @@ export default function BlogFilters({
     return Array.from(map.entries())
       .map(([norm, name]) => ({
         norm,
-        name: name === 'Growth' ? 'Career' : name,
+        name: getBlogCategoryDisplayName(name),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [posts, categories]);
@@ -472,11 +448,7 @@ export default function BlogFilters({
             <div className="relative flex h-full flex-col pt-8">
               {featuredPost.categories?.[0]?.title && (
                 <div className="absolute top-0 left-0 text-xs font-bold tracking-[0.2em] text-[var(--accent-primary)] uppercase">
-                  {getCategoryLabel(
-                    featuredPost.categories[0].title === 'Growth'
-                      ? 'Career'
-                      : featuredPost.categories[0].title
-                  )}
+                  {getBlogCategoryLabel(featuredPost.categories[0].title, t)}
                 </div>
               )}
               <div className="my-auto">
@@ -638,7 +610,7 @@ export default function BlogFilters({
                     : 'hover:bg-secondary hover:text-foreground rounded-full border border-transparent px-4 py-2 text-sm whitespace-nowrap text-gray-600 transition sm:border-gray-300 sm:text-gray-700 dark:text-gray-300 sm:dark:border-gray-700 sm:dark:text-gray-200'
                 }
               >
-                {getCategoryLabel(category.name)}
+                {getBlogCategoryLabel(category.name, t)}
               </button>
             ))}
           </div>

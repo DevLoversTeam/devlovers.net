@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readOptionalDbRows } from '@/db/readDbRows';
 import { getMonobankConfig } from '@/lib/env/monobank';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { MONO_EXPIRED_RECONCILED, monoLogInfo } from '@/lib/logging/monobank';
@@ -154,13 +155,6 @@ function parseEnvInt(
   return clampInt(base, min, max);
 }
 
-function readRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const anyRes = res as any;
-  if (Array.isArray(anyRes?.rows)) return anyRes.rows as T[];
-  return [];
-}
-
 function sha256Utf8(value: string): string {
   return crypto
     .createHash('sha256')
@@ -216,7 +210,7 @@ async function readDryRunCandidates(args: {
     limit ${args.limit}
   `);
 
-  return readRows<AttemptCandidateRow>(res);
+  return readOptionalDbRows<AttemptCandidateRow>(res);
 }
 
 async function claimJob1Attempts(args: {
@@ -262,7 +256,7 @@ async function claimJob1Attempts(args: {
     select * from claimed
   `);
 
-  return readRows<AttemptCandidateRow>(res);
+  return readOptionalDbRows<AttemptCandidateRow>(res);
 }
 
 async function releaseAttemptLease(args: { attemptId: string; runId: string }) {
@@ -367,7 +361,7 @@ async function readUnclaimedJob3Candidates(args: {
     limit ${args.limit}
   `);
 
-  return readRows<Job3CandidateRow>(res);
+  return readOptionalDbRows<Job3CandidateRow>(res);
 }
 
 async function claimJob3Events(args: {
@@ -409,7 +403,7 @@ async function claimJob3Events(args: {
     select * from claimed
   `);
 
-  return readRows<Job3CandidateRow>(res);
+  return readOptionalDbRows<Job3CandidateRow>(res);
 }
 async function clearAppliedEventClaim(args: {
   eventId: string;
@@ -442,7 +436,7 @@ async function readNeedsReviewCandidates(args: {
     limit ${args.limit}
   `);
 
-  return readRows<Job4CandidateRow>(res);
+  return readOptionalDbRows<Job4CandidateRow>(res);
 }
 
 function buildNeedsReviewTopReasons(rows: Job4CandidateRow[]): Array<{
@@ -488,7 +482,7 @@ async function readDryRunJob2Candidates(args: {
     limit ${args.limit}
   `);
 
-  return readRows<Job2CandidateRow>(res);
+  return readOptionalDbRows<Job2CandidateRow>(res);
 }
 
 async function claimJob2Attempts(args: {
@@ -531,7 +525,7 @@ async function claimJob2Attempts(args: {
     select * from claimed
   `);
 
-  return readRows<Job2CandidateRow>(res);
+  return readOptionalDbRows<Job2CandidateRow>(res);
 }
 
 async function atomicCancelOrderAndFailCreatingAttempt(args: {
@@ -591,7 +585,7 @@ async function atomicCancelOrderAndFailCreatingAttempt(args: {
       (select id from updated_attempt) as attempt_id
   `);
 
-  const row = readRows<{ order_id?: string; attempt_id?: string }>(res)[0];
+  const row = readOptionalDbRows<{ order_id?: string; attempt_id?: string }>(res)[0];
   if (!row?.order_id || !row?.attempt_id) return null;
   return row.order_id;
 }

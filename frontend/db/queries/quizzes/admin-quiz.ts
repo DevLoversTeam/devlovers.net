@@ -3,13 +3,16 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../../index';
 import { categories, categoryTranslations } from '../../schema/categories';
 import {
-  quizAnswers,
   quizAnswerTranslations,
   quizQuestionContent,
   quizQuestions,
   quizTranslations,
   quizzes,
 } from '../../schema/quiz';
+import {
+  getQuizAnswerRows,
+  groupQuizAnswersByQuestion,
+} from './quiz-question-data';
 
 const ADMIN_LOCALE = 'en';
 
@@ -57,8 +60,6 @@ export async function getAdminQuizList(): Promise<AdminQuizListItem[]> {
   return rows;
 }
 
-// ── Types for quiz editor ──
-
 export interface AdminQuizTranslation {
   title: string;
   description: string | null;
@@ -91,12 +92,9 @@ export interface AdminQuizFull {
   questions: AdminQuizQuestion[];
 }
 
-// ── Query ──
-
 export async function getAdminQuizFull(
   quizId: string
 ): Promise<AdminQuizFull | null> {
-  // 1. Quiz base data
   const [quiz] = await db
     .select({
       id: quizzes.id,
@@ -113,7 +111,6 @@ export async function getAdminQuizFull(
 
   if (!quiz) return null;
 
-  // 2. Quiz translations (all locales)
   const quizTrans = await db
     .select({
       locale: quizTranslations.locale,
@@ -128,7 +125,6 @@ export async function getAdminQuizFull(
     translations[t.locale] = { title: t.title, description: t.description };
   }
 
-  // 3. Questions
   const questionsData = await db
     .select({
       id: quizQuestions.id,
@@ -145,7 +141,6 @@ export async function getAdminQuizFull(
 
   const questionIds = questionsData.map(q => q.id);
 
-  // 4. Question content (all locales)
   const contentRows = await db
     .select({
       quizQuestionId: quizQuestionContent.quizQuestionId,
@@ -172,17 +167,7 @@ export async function getAdminQuizFull(
     };
   }
 
-  // 5. Answers + translations (all locales)
-  const answersData = await db
-    .select({
-      id: quizAnswers.id,
-      quizQuestionId: quizAnswers.quizQuestionId,
-      displayOrder: quizAnswers.displayOrder,
-      isCorrect: quizAnswers.isCorrect,
-    })
-    .from(quizAnswers)
-    .where(inArray(quizAnswers.quizQuestionId, questionIds))
-    .orderBy(quizAnswers.displayOrder);
+  const answersData = await getQuizAnswerRows(questionIds);
 
   const answerIds = answersData.map(a => a.id);
 
@@ -208,20 +193,16 @@ export async function getAdminQuizFull(
     map[row.locale] = { answerText: row.answerText };
   }
 
-  // 6. Group answers by question
-  const answersByQuestion = new Map<string, AdminQuizAnswer[]>();
-  for (const a of answersData) {
-    const arr = answersByQuestion.get(a.quizQuestionId) ?? [];
-    arr.push({
-      id: a.id,
-      displayOrder: a.displayOrder,
-      isCorrect: a.isCorrect,
-      translations: transById.get(a.id) ?? {},
-    });
-    answersByQuestion.set(a.quizQuestionId, arr);
-  }
+  const answersByQuestion = groupQuizAnswersByQuestion(
+    answersData,
+    (answer): AdminQuizAnswer => ({
+      id: answer.id,
+      displayOrder: answer.displayOrder,
+      isCorrect: answer.isCorrect,
+      translations: transById.get(answer.id) ?? {},
+    })
+  );
 
-  // 7. Assemble questions
   const questions: AdminQuizQuestion[] = questionsData.map(q => ({
     id: q.id,
     displayOrder: q.displayOrder,

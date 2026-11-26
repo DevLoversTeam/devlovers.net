@@ -4,21 +4,24 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
 import { Link } from '@/i18n/routing';
+import {
+  fetchCheckoutOrderStatus,
+  getCheckoutOrderStatusErrorCode,
+} from '@/lib/shop/checkout-order-status';
 import { formatMoneyCode } from '@/lib/shop/currency';
 import { formatGuestShipmentStatus } from '@/lib/shop/guest-shipment-status';
 import { type PaymentStatus } from '@/lib/shop/payments';
 import {
   SHOP_CTA_BASE,
-  SHOP_CTA_INSET,
   SHOP_CTA_INTERACTIVE,
-  SHOP_CTA_WAVE,
   SHOP_FOCUS,
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
-  shopCtaGradient,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 
 type Props = {
   orderId: string;
@@ -102,37 +105,6 @@ const SHOP_OUTLINE_BTN = cn(
   SHOP_FOCUS
 );
 
-function HeroCtaInner({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <span
-        className="absolute inset-0"
-        style={shopCtaGradient(
-          '--shop-hero-btn-bg',
-          '--shop-hero-btn-bg-hover'
-        )}
-        aria-hidden="true"
-      />
-      <span
-        className={SHOP_CTA_WAVE}
-        style={shopCtaGradient(
-          '--shop-hero-btn-bg-hover',
-          '--shop-hero-btn-bg'
-        )}
-        aria-hidden="true"
-      />
-      <span className={SHOP_CTA_INSET} aria-hidden="true" />
-      <span className="relative z-10">{children}</span>
-    </>
-  );
-}
-
-function normalizeToken(value: string | null | undefined): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length ? trimmed : null;
-}
-
 function parseOrderStatusPayload(payload: unknown): OrderStatusModel | null {
   if (!payload || typeof payload !== 'object') return null;
   const root = payload as Record<string, unknown>;
@@ -212,44 +184,17 @@ function parseOrderStatusPayload(payload: unknown): OrderStatusModel | null {
   };
 }
 
-function getStatusCode(payload: unknown): string {
-  if (!payload || typeof payload !== 'object') return 'INTERNAL_ERROR';
-  const code = (payload as Record<string, unknown>).code;
-  return typeof code === 'string' && code.trim()
-    ? code.trim()
-    : 'INTERNAL_ERROR';
-}
-
 async function fetchOrderStatus(args: {
   orderId: string;
   statusToken: string | null;
 }): Promise<StatusResult> {
   try {
-    const qp = new URLSearchParams();
-    qp.set('view', 'lite');
-    if (args.statusToken) {
-      qp.set('statusToken', args.statusToken);
+    const { ok, payload } = await fetchCheckoutOrderStatus(args);
+    if (!ok) {
+      return { ok: false, code: getCheckoutOrderStatusErrorCode(payload) };
     }
 
-    const query = qp.toString();
-    const endpoint = `/api/shop/orders/${encodeURIComponent(args.orderId)}/status${
-      query ? `?${query}` : ''
-    }`;
-
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-store' },
-      credentials: 'same-origin',
-    });
-
-    const body = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      return { ok: false, code: getStatusCode(body) };
-    }
-
-    const order = parseOrderStatusPayload(body);
+    const order = parseOrderStatusPayload(payload);
     if (!order) return { ok: false, code: 'INVALID_STATUS_RESPONSE' };
 
     return { ok: true, order };
@@ -264,7 +209,7 @@ function getStorageKey(orderId: string) {
 
 function readStatusToken(orderId: string): string | null {
   try {
-    return normalizeToken(sessionStorage.getItem(getStorageKey(orderId)));
+    return trimToNull(sessionStorage.getItem(getStorageKey(orderId)));
   } catch {
     return null;
   }
@@ -373,6 +318,7 @@ export default function MonobankRedirectStatus({
 }: Props) {
   const router = useRouter();
   const t = useTranslations('shop.checkout');
+  const tShop = useTranslations('shop');
   const tOrder = useTranslations('shop.orders.detail');
   const [order, setOrder] = useState<OrderStatusModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -417,7 +363,7 @@ export default function MonobankRedirectStatus({
       setIsLoading(true);
       setStatusCode(null);
 
-      const token = normalizeToken(tokenOverride ?? tokenRef.current);
+      const token = trimToNull(tokenOverride ?? tokenRef.current);
       try {
         const result = await fetchOrderStatus({
           orderId,
@@ -518,7 +464,7 @@ export default function MonobankRedirectStatus({
     if (initializedOrderIdRef.current === orderId) return;
     initializedOrderIdRef.current = orderId;
 
-    const queryToken = normalizeToken(initialStatusToken);
+    const queryToken = trimToNull(initialStatusToken);
     const storedToken = readStatusToken(orderId);
     const tokenForStatus = queryToken ?? storedToken;
 
@@ -590,7 +536,7 @@ export default function MonobankRedirectStatus({
       </p>
 
       <h1 id="order-title" className="text-foreground mt-2 text-3xl font-bold">
-        {t('success.orderLabel')} #{orderId}
+        {tShop('orders.orderLabel')} #{orderId}
       </h1>
 
       <p
@@ -630,7 +576,7 @@ export default function MonobankRedirectStatus({
       >
         <div className="border-border bg-muted/40 rounded-md border p-4">
           <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
-            {t('success.orderSummary')}
+            {tShop('orderSummary')}
           </h2>
 
           <dl className="mt-3 space-y-2 text-sm">
@@ -650,14 +596,14 @@ export default function MonobankRedirectStatus({
             </div>
 
             <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">{t('success.items')}</dt>
+              <dt className="text-muted-foreground">{tShop('items')}</dt>
               <dd className="text-foreground font-medium">
                 {order ? order.itemsCount : '...'}
               </dd>
             </div>
 
             <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">{t('success.status')}</dt>
+              <dt className="text-muted-foreground">{t('paymentStatusLabel')}</dt>
               <dd className="text-foreground font-semibold">
                 {localizedPaymentStatus}
               </dd>
@@ -701,7 +647,7 @@ export default function MonobankRedirectStatus({
         </button>
 
         <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
-          <HeroCtaInner>{t('success.continueShopping')}</HeroCtaInner>
+          <ShopCtaContent>{t('actions.continueShopping')}</ShopCtaContent>
         </Link>
 
         <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>

@@ -7,6 +7,7 @@ import { useMobileMenu } from '@/components/header/MobileMenuContext';
 import { AnimatedNavLink } from '@/components/shared/AnimatedNavLink';
 import { HeaderButton } from '@/components/shared/HeaderButton';
 import { usePathname } from '@/i18n/routing';
+import { getBlogCategoryLabel } from '@/lib/blog/category-label';
 import { cn } from '@/lib/utils';
 
 type Category = {
@@ -33,29 +34,7 @@ export function BlogCategoryLinks({
   const pathname = usePathname();
   const { startNavigation } = useMobileMenu();
 
-  const getCategoryLabel = (categoryName: string): string => {
-    const key = categoryName.toLowerCase() as
-      | 'tech'
-      | 'career'
-      | 'insights'
-      | 'news'
-      | 'growth';
-    const categoryTranslations: Record<string, string> = {
-      tech: t('categories.tech'),
-      career: t('categories.career'),
-      insights: t('categories.insights'),
-      news: t('categories.news'),
-      growth: t('categories.growth'),
-    };
-    return categoryTranslations[key] || categoryName;
-  };
-
-  const items = categories
-    .map(category => ({
-      ...category,
-      displayTitle: category.title === 'Growth' ? 'Career' : category.title,
-    }))
-    .filter(category => category.slug);
+  const items = categories.filter(category => category.slug);
 
   return (
     <nav
@@ -86,7 +65,7 @@ export function BlogCategoryLinks({
             onClick={onNavigate}
             className={linkClassName}
           >
-            {getCategoryLabel(category.displayTitle)}
+            {getBlogCategoryLabel(category.title, t)}
           </AnimatedNavLink>
         );
       })}

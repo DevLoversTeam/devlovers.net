@@ -4,18 +4,17 @@ import { z } from 'zod';
 
 import { db } from '@/db';
 import {
-  quizAnswers,
-  quizAnswerTranslations,
-  quizQuestionContent,
-  quizQuestions,
-  quizzes,
-} from '@/db/schema/quiz';
+  insertQuizQuestionDetails,
+  insertQuizQuestionRows,
+} from '@/db/queries/quizzes/write-quiz-questions';
+import { quizQuestions, quizzes } from '@/db/schema/quiz';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError } from '@/lib/logging';
 import { invalidateQuizCache } from '@/lib/quiz/quiz-answers-redis';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
@@ -24,19 +23,7 @@ import { addQuestionsSchema } from '@/lib/validation/admin-quiz';
 
 export const runtime = 'nodejs';
 
-const LOCALES = ['en', 'uk', 'pl'] as const;
-
 const paramsSchema = z.object({ id: z.string().uuid() });
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
-
-function textToExplanationBlocks(text: string) {
-  return [{ type: 'paragraph', children: [{ text }] }];
-}
 
 export async function POST(
   request: NextRequest,
@@ -68,7 +55,6 @@ export async function POST(
 
     const { id: quizId } = parsedParams.data;
 
-    // Verify quiz exists and is draft
     const [quiz] = await db
       .select({ id: quizzes.id, status: quizzes.status })
       .from(quizzes)
@@ -116,7 +102,6 @@ export async function POST(
 
     const { questions } = parsed.data;
 
-    // Get current max displayOrder for offset
     const [maxRow] = await db
       .select({ maxOrder: sql<number>`COALESCE(MAX(display_order), 0)::int` })
       .from(quizQuestions)
@@ -124,56 +109,14 @@ export async function POST(
 
     const orderOffset = maxRow?.maxOrder ?? 0;
 
-    // 1. Insert questions
-    const insertedQuestions = await db
-      .insert(quizQuestions)
-      .values(
-        questions.map((q, i) => ({
-          quizId,
-          displayOrder: orderOffset + i + 1,
-          difficulty: q.difficulty,
-        }))
-      )
-      .returning({ id: quizQuestions.id });
+    const insertedQuestions = await insertQuizQuestionRows(
+      quizId,
+      questions,
+      (_, index) => orderOffset + index + 1
+    );
+
     try {
-      // 2. Insert question content
-      await db.insert(quizQuestionContent).values(
-        insertedQuestions.flatMap((dbQ, i) =>
-          LOCALES.map(locale => ({
-            quizQuestionId: dbQ.id,
-            locale,
-            questionText: questions[i][locale].q,
-            explanation: textToExplanationBlocks(questions[i][locale].exp),
-          }))
-        )
-      );
-
-      // 3. Insert answers
-      const answerValues = insertedQuestions.flatMap((dbQ, i) =>
-        questions[i].answers.map((a, aIdx) => ({
-          quizQuestionId: dbQ.id,
-          displayOrder: aIdx + 1,
-          isCorrect: a.correct,
-        }))
-      );
-
-      const insertedAnswers = await db
-        .insert(quizAnswers)
-        .values(answerValues)
-        .returning({ id: quizAnswers.id });
-
-      // 4. Insert answer translations
-      await db.insert(quizAnswerTranslations).values(
-        insertedAnswers.flatMap((dbA, i) => {
-          const qIdx = Math.floor(i / 4);
-          const aIdx = i % 4;
-          return LOCALES.map(locale => ({
-            quizAnswerId: dbA.id,
-            locale,
-            answerText: questions[qIdx].answers[aIdx][locale],
-          }));
-        })
-      );
+      await insertQuizQuestionDetails(insertedQuestions);
     } catch (insertError) {
       // Delete inserted questions — CASCADE removes content, answers, translations
       const questionIds = insertedQuestions.map(q => q.id);
@@ -182,7 +125,6 @@ export async function POST(
         .where(inArray(quizQuestions.id, questionIds));
       throw insertError;
     }
-    // 5. Update questionsCount
     const [countRow] = await db
       .select({ count: sql<number>`COUNT(*)::int` })
       .from(quizQuestions)

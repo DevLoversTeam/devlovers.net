@@ -13,8 +13,6 @@ import type {
 import { db } from '../../index';
 import { categories, categoryTranslations } from '../../schema/categories';
 import {
-  quizAnswers,
-  quizAnswerTranslations,
   quizAttemptAnswers,
   quizAttempts,
   quizQuestionContent,
@@ -22,6 +20,10 @@ import {
   quizTranslations,
   quizzes,
 } from '../../schema/quiz';
+import {
+  getLocalizedQuizAnswersByQuestion,
+  loadLocalizedQuizQuestions,
+} from './quiz-question-data';
 export type {
   QuizAnswer,
   QuizQuestion,
@@ -223,67 +225,7 @@ export async function getQuizQuestions(
   locale: string = 'uk'
 ): Promise<QuizQuestionWithAnswers[]> {
   const cached = await getOrCreateQuestionsCache(quizId, locale);
-  if (cached !== null) {
-    return cached;
-  }
-  const questionsData = await db
-    .select({
-      id: quizQuestions.id,
-      displayOrder: quizQuestions.displayOrder,
-      difficulty: quizQuestions.difficulty,
-      questionText: quizQuestionContent.questionText,
-      explanation: quizQuestionContent.explanation,
-    })
-    .from(quizQuestions)
-    .leftJoin(
-      quizQuestionContent,
-      and(
-        eq(quizQuestionContent.quizQuestionId, quizQuestions.id),
-        eq(quizQuestionContent.locale, locale)
-      )
-    )
-    .where(eq(quizQuestions.quizId, quizId))
-    .orderBy(quizQuestions.displayOrder);
-
-  if (questionsData.length === 0) return [];
-
-  const questionIds = questionsData.map(q => q.id);
-
-  const allAnswers = await db
-    .select({
-      id: quizAnswers.id,
-      questionId: quizAnswers.quizQuestionId,
-      displayOrder: quizAnswers.displayOrder,
-      isCorrect: quizAnswers.isCorrect,
-      answerText: quizAnswerTranslations.answerText,
-    })
-    .from(quizAnswers)
-    .leftJoin(
-      quizAnswerTranslations,
-      and(
-        eq(quizAnswerTranslations.quizAnswerId, quizAnswers.id),
-        eq(quizAnswerTranslations.locale, locale)
-      )
-    )
-    .where(inArray(quizAnswers.quizQuestionId, questionIds))
-    .orderBy(quizAnswers.displayOrder);
-
-  const answersByQuestion = new Map<string, typeof allAnswers>();
-  for (const answer of allAnswers) {
-    const existing = answersByQuestion.get(answer.questionId) || [];
-    existing.push(answer);
-    answersByQuestion.set(answer.questionId, existing);
-  }
-
-  return questionsData.map(question => ({
-    ...question,
-    answers: (answersByQuestion.get(question.id) || []).map(a => ({
-      id: a.id,
-      displayOrder: a.displayOrder,
-      isCorrect: a.isCorrect,
-      answerText: a.answerText,
-    })),
-  }));
+  return cached ?? loadLocalizedQuizQuestions(quizId, locale);
 }
 
 export function randomizeQuizQuestions(
@@ -590,31 +532,10 @@ export async function getAttemptReviewDetails(
     )
     .where(inArray(quizQuestions.id, incorrectQuestionIds));
 
-  const allAnswersForQuestions = await db
-    .select({
-      id: quizAnswers.id,
-      questionId: quizAnswers.quizQuestionId,
-      displayOrder: quizAnswers.displayOrder,
-      isCorrect: quizAnswers.isCorrect,
-      answerText: quizAnswerTranslations.answerText,
-    })
-    .from(quizAnswers)
-    .leftJoin(
-      quizAnswerTranslations,
-      and(
-        eq(quizAnswerTranslations.quizAnswerId, quizAnswers.id),
-        eq(quizAnswerTranslations.locale, locale)
-      )
-    )
-    .where(inArray(quizAnswers.quizQuestionId, incorrectQuestionIds))
-    .orderBy(quizAnswers.displayOrder);
-
-  const answersByQuestion = new Map<string, typeof allAnswersForQuestions>();
-  for (const answer of allAnswersForQuestions) {
-    const arr = answersByQuestion.get(answer.questionId) || [];
-    arr.push(answer);
-    answersByQuestion.set(answer.questionId, arr);
-  }
+  const answersByQuestion = await getLocalizedQuizAnswersByQuestion(
+    incorrectQuestionIds,
+    locale
+  );
 
   const selectedByQuestion = new Map<string, string | null>();
   for (const ua of incorrectUserAnswers) {

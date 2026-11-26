@@ -76,7 +76,6 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
   const [displayedCode, setDisplayedCode] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
-  // Refs for cleanup
   const typeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -92,7 +91,6 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
       setDisplayedCode('');
       currentIndex = 0;
 
-      // Clear any existing interval just in case
       if (typeIntervalRef.current) clearInterval(typeIntervalRef.current);
 
       typeIntervalRef.current = setInterval(() => {

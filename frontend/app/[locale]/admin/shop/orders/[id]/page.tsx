@@ -19,6 +19,7 @@ import { getAdminOrderShippingEditAvailability } from '@/lib/services/shop/shipp
 import { evaluateOrderShippingEligibility } from '@/lib/services/shop/shipping/eligibility';
 import { type CurrencyCode, formatMoney } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
+import { createOrderDateFormatter } from '@/lib/shop/order-date';
 import {
   SHOP_FOCUS,
   SHOP_LINK_BASE,
@@ -26,6 +27,7 @@ import {
   SHOP_NAV_LINK_BASE,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 
 import { CancelPaymentButton } from './CancelPaymentButton';
@@ -82,16 +84,6 @@ function safeFormatMoneyMajor(
   }
 }
 
-function safeFormatDateTime(
-  value: Date | string | null,
-  dtf: Intl.DateTimeFormat
-): string {
-  if (!value) return DASH;
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return dtf.format(date);
-}
-
 function fulfillmentStageLabelKey(
   stage: AdminOrderDetail['fulfillmentStage']
 ): string {
@@ -100,12 +92,6 @@ function fulfillmentStageLabelKey(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-function toStringOrNull(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
 }
 
 function firstNonEmpty(
@@ -137,35 +123,35 @@ function normalizeCustomerSummary(
   const recipient = isRecord(root.recipient) ? root.recipient : {};
 
   const city = firstNonEmpty(
-    toStringOrNull(selection.cityNameUa),
-    toStringOrNull(selection.cityNameRu),
-    toStringOrNull(selection.cityRef)
+    trimToNull(selection.cityNameUa),
+    trimToNull(selection.cityNameRu),
+    trimToNull(selection.cityRef)
   );
 
   const pickupPoint = firstNonEmpty(
-    toStringOrNull(selection.warehouseName),
-    toStringOrNull(selection.warehouseRef)
+    trimToNull(selection.warehouseName),
+    trimToNull(selection.warehouseRef)
   );
 
   const address = joinNonEmpty([
-    toStringOrNull(selection.addressLine1),
-    toStringOrNull(selection.addressLine2),
+    trimToNull(selection.addressLine1),
+    trimToNull(selection.addressLine2),
   ]);
 
   return {
     accountName: order.customerAccountName,
     accountEmail: order.customerAccountEmail,
-    recipientName: toStringOrNull(recipient.fullName),
-    recipientPhone: toStringOrNull(recipient.phone),
-    recipientEmail: toStringOrNull(recipient.email),
-    recipientComment: toStringOrNull(recipient.comment),
+    recipientName: trimToNull(recipient.fullName),
+    recipientPhone: trimToNull(recipient.phone),
+    recipientEmail: trimToNull(recipient.email),
+    recipientComment: trimToNull(recipient.comment),
     shippingProvider: firstNonEmpty(
       order.shippingProvider,
-      toStringOrNull(root.provider)
+      trimToNull(root.provider)
     ),
     shippingMethod: firstNonEmpty(
       order.shippingMethodCode,
-      toStringOrNull(root.methodCode)
+      trimToNull(root.methodCode)
     ),
     city,
     pickupPoint,
@@ -181,7 +167,7 @@ function normalizeShippingEditInitialData(
   const recipient = isRecord(root.recipient) ? root.recipient : {};
   const methodCode = firstNonEmpty(
     order.shippingMethodCode,
-    toStringOrNull(root.methodCode)
+    trimToNull(root.methodCode)
   );
 
   if (
@@ -194,19 +180,19 @@ function normalizeShippingEditInitialData(
 
   return {
     methodCode,
-    cityRef: toStringOrNull(selection.cityRef) ?? '',
+    cityRef: trimToNull(selection.cityRef) ?? '',
     cityLabel: firstNonEmpty(
-      toStringOrNull(selection.cityNameUa),
-      toStringOrNull(selection.cityNameRu)
+      trimToNull(selection.cityNameUa),
+      trimToNull(selection.cityNameRu)
     ),
-    warehouseRef: toStringOrNull(selection.warehouseRef),
-    warehouseLabel: toStringOrNull(selection.warehouseName),
-    addressLine1: toStringOrNull(selection.addressLine1),
-    addressLine2: toStringOrNull(selection.addressLine2),
-    recipientFullName: toStringOrNull(recipient.fullName) ?? '',
-    recipientPhone: toStringOrNull(recipient.phone) ?? '',
-    recipientEmail: toStringOrNull(recipient.email),
-    recipientComment: toStringOrNull(recipient.comment),
+    warehouseRef: trimToNull(selection.warehouseRef),
+    warehouseLabel: trimToNull(selection.warehouseName),
+    addressLine1: trimToNull(selection.addressLine1),
+    addressLine2: trimToNull(selection.addressLine2),
+    recipientFullName: trimToNull(recipient.fullName) ?? '',
+    recipientPhone: trimToNull(recipient.phone) ?? '',
+    recipientEmail: trimToNull(recipient.email),
+    recipientComment: trimToNull(recipient.comment),
   };
 }
 
@@ -443,6 +429,8 @@ export default async function OrderDetailPage({
   const { locale, id } = await params;
   const sp = searchParams ? await searchParams : {};
   const t = await getTranslations('shop.orders.detail');
+  const tNavigation = await getTranslations('navigation');
+  const tShop = await getTranslations('shop');
   const paymentStatusT = await getTranslations('shop.orders.paymentStatus');
   const lifecycleCsrfToken = issueCsrfToken('admin:orders:lifecycle');
   const shippingCsrfToken = issueCsrfToken('admin:orders:shipping:action');
@@ -481,18 +469,15 @@ export default async function OrderDetailPage({
 
   const customerSummary = normalizeCustomerSummary(order);
   const currency: CurrencyCode = order.currency === 'UAH' ? 'UAH' : 'USD';
-  const dtf = new Intl.DateTimeFormat(locale, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  const formatOrderDateTime = createOrderDateFormatter(locale);
 
   const totalFormatted = safeFormatMoneyMajor(
     order.totalAmount,
     currency,
     locale
   );
-  const createdFormatted = safeFormatDateTime(order.createdAt, dtf);
-  const restockedFormatted = safeFormatDateTime(order.restockedAt, dtf);
+  const createdFormatted = formatOrderDateTime(order.createdAt);
+  const restockedFormatted = formatOrderDateTime(order.restockedAt);
   const shippingProviderLabel = humanizeShippingProvider(
     customerSummary.shippingProvider,
     t
@@ -579,7 +564,7 @@ export default async function OrderDetailPage({
             id="order-heading"
             className="text-foreground truncate text-2xl font-semibold"
           >
-            {t('title')}
+            {tShop('orders.orderLabel')}
           </h1>
           <div className="text-muted-foreground mt-1 truncate text-xs">
             {order.id}
@@ -594,7 +579,7 @@ export default async function OrderDetailPage({
             {t('myOrders')}
           </Link>
           <Link className={NAV_LINK} href="/admin/shop">
-            {t('shop')}
+            {tNavigation('shop')}
           </Link>
         </nav>
       </header>
@@ -779,18 +764,18 @@ export default async function OrderDetailPage({
             id="order-summary-heading"
             className="text-foreground text-lg font-semibold"
           >
-            {t('orderSummary')}
+            {tShop('orderSummary')}
           </h2>
 
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <dt className="text-muted-foreground text-xs">{t('total')}</dt>
+              <dt className="text-muted-foreground text-xs">{tShop('total')}</dt>
               <dd className="text-sm font-medium">{totalFormatted}</dd>
             </div>
 
             <div>
               <dt className="text-muted-foreground text-xs">
-                {t('paymentStatus')}
+                {tShop('orders.paymentStatusLabel')}
               </dt>
               <dd className="text-sm font-medium">
                 {humanizePaymentStatus(order.paymentStatus, paymentStatusT)}
@@ -825,7 +810,7 @@ export default async function OrderDetailPage({
             </div>
 
             <div>
-              <dt className="text-muted-foreground text-xs">{t('created')}</dt>
+              <dt className="text-muted-foreground text-xs">{tShop('orders.created')}</dt>
               <dd className="text-sm">{createdFormatted}</dd>
             </div>
 
@@ -1026,7 +1011,7 @@ export default async function OrderDetailPage({
             aria-label={t('history.heading')}
           >
             {history.map(entry => {
-              const occurredAtLabel = safeFormatDateTime(entry.occurredAt, dtf);
+              const occurredAtLabel = formatOrderDateTime(entry.occurredAt);
               const hasTransition =
                 entry.fromShippingStatus || entry.toShippingStatus;
 
@@ -1113,11 +1098,11 @@ export default async function OrderDetailPage({
             id="order-items-heading"
             className="text-foreground text-lg font-semibold"
           >
-            {t('items')}
+            {tShop('items')}
           </h2>
         </div>
 
-        <ul className="divide-border divide-y" aria-label={t('items')}>
+        <ul className="divide-border divide-y" aria-label={tShop('items')}>
           {order.items.map(it => (
             <li key={it.id} className="p-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">

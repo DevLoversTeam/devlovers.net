@@ -3,7 +3,6 @@ import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground
 import { computeAchievements } from '@/lib/achievements';
 
 export default function AchievementsDemoPage() {
-  // Mix of earned and unearned for a realistic preview
   const achievements = computeAchievements({
     totalAttempts: 4,
     averageScore: 78,
@@ -13,7 +12,7 @@ export default function AchievementsDemoPage() {
     uniqueQuizzes: 4,
     totalPoints: 80,
     topLeaderboard: false,
-    hasStarredRepo: true, // demo: show star_gazer as earned
+    hasStarredRepo: true,
     sponsorCount: 0,
     hasNightOwl: false,
   });

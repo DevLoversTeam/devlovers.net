@@ -328,6 +328,7 @@ export function ProductForm({
 }: ProductFormProps) {
   const router = useRouter();
   const t = useTranslations('shop.admin.products.form');
+  const tProduct = useTranslations('shop.product');
 
   const idBase = useMemo(() => {
     const pid =
@@ -1040,7 +1041,7 @@ export function ProductForm({
         >
           <div>
             <label className={LABEL_CLASS} htmlFor="category">
-              {t('fields.category')}
+              {tProduct('category')}
             </label>
             <select
               id="category"
@@ -1062,7 +1063,7 @@ export function ProductForm({
 
           <div>
             <label className={LABEL_CLASS} htmlFor="type">
-              {t('fields.type')}
+              {tProduct('type')}
             </label>
             <select
               id="type"

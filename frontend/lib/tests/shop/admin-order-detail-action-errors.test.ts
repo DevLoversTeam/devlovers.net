@@ -32,7 +32,7 @@ const translations: Record<string, string> = {
   'shop.orders.detail.shippingControls.markDelivered': 'Mark delivered',
   'shop.orders.detail.shippingControls.errors.network':
     'Shipping action failed to send. Try again.',
-  'shop.orders.detail.shippingControls.errors.security':
+  'shop.orders.detail.actionSecurityError':
     'Security check failed. Refresh the page and try again.',
   'shop.orders.detail.shippingControls.errors.recoverNotAvailable':
     'Shipment recovery is no longer available for this order.',
@@ -57,8 +57,6 @@ const translations: Record<string, string> = {
     'This action is only available for unpaid Monobank orders',
   'shop.orders.detail.paymentControls.errors.network':
     'Payment action failed to send. Try again.',
-  'shop.orders.detail.paymentControls.errors.security':
-    'Security check failed. Refresh the page and try again.',
   'shop.orders.detail.paymentControls.errors.refundNotAvailable':
     'Refund is no longer available for this order.',
   'shop.orders.detail.paymentControls.errors.cancelPaymentDisabled':
@@ -90,6 +88,49 @@ describe('admin order detail action error messages', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('fetch', vi.fn());
+  });
+
+  it.each([
+    {
+      label: 'Cancel unpaid payment',
+      button: createElement(CancelPaymentButton, {
+        orderId: 'order-1',
+        disabled: false,
+        csrfToken: 'csrf',
+      }),
+    },
+    {
+      label: 'Refund payment',
+      button: createElement(RefundButton, {
+        orderId: 'order-1',
+        disabled: false,
+        csrfToken: 'csrf',
+      }),
+    },
+    {
+      label: 'Mark shipped',
+      button: createElement(ShippingActions, {
+        orderId: 'order-1',
+        csrfToken: 'csrf',
+        shippingReady: true,
+        shippingStatus: 'label_created',
+        shipmentStatus: 'succeeded',
+      }),
+    },
+  ])('uses the shared security message for $label', async ({ label, button }) => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      Response.json({ code: 'CSRF_REJECTED' }, { status: 403 })
+    );
+    render(button);
+
+    fireEvent.click(screen.getByRole('button', { name: label }));
+
+    expect(
+      await screen.findByText(
+        'Security check failed. Refresh the page and try again.'
+      )
+    ).toBeInTheDocument();
+    expect(refreshMock).not.toHaveBeenCalled();
   });
 
   it('maps shipping backend codes to friendly admin copy', async () => {

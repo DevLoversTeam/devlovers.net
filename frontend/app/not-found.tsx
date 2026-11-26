@@ -1,12 +1,9 @@
 import { cookies } from 'next/headers';
 
+import { defaultLocale, isSupportedLocale } from '@/i18n/config';
 import enMessages from '@/messages/en.json';
 import plMessages from '@/messages/pl.json';
 import ukMessages from '@/messages/uk.json';
-
-type Locale = 'uk' | 'en' | 'pl';
-
-const locales: Locale[] = ['uk', 'en', 'pl'];
 
 const messages = {
   uk: ukMessages.notFound,
@@ -17,10 +14,7 @@ const messages = {
 export default async function NotFound() {
   const cookieStore = await cookies();
   const localeCookie = cookieStore.get('NEXT_LOCALE')?.value;
-  const locale: Locale =
-    localeCookie && locales.includes(localeCookie as Locale)
-      ? (localeCookie as Locale)
-      : 'en';
+  const locale = isSupportedLocale(localeCookie) ? localeCookie : defaultLocale;
   const t = messages[locale];
 
   return (

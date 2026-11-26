@@ -1,6 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readDbRows } from '@/db/readDbRows';
 import { orders } from '@/db/schema/shop';
 import { createRefund } from '@/lib/psp/stripe';
 import { closeShippingPipelineForOrder } from '@/lib/services/shop/shipping/pipeline-shutdown';
@@ -22,13 +23,6 @@ function makeRefundIdempotencyKey(
   currency: string
 ): string {
   return `refund:${orderId}:${amountMinor}:${currency}`.slice(0, 128);
-}
-
-function readRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const maybe = res as { rows?: unknown };
-  if (Array.isArray(maybe.rows)) return maybe.rows as T[];
-  return [];
 }
 
 export async function refundOrder(
@@ -121,7 +115,7 @@ export async function refundOrder(
     order by s.created_at desc nulls last
     limit 1
   `);
-  const latestShipment = readRows<{
+  const latestShipment = readDbRows<{
     shipment_id: string | null;
     shipment_status: string | null;
   }>(shipmentSnapshotRes)[0] ?? {

@@ -45,7 +45,6 @@ export function FlipCardQA() {
   const [isPaused, setIsPaused] = useState(false);
   const shouldReduceMotion = useReducedMotion();
 
-  // Refs for cleanup
   const flipTimerRef = useRef<NodeJS.Timeout | null>(null);
   const nextCardTimerRef = useRef<NodeJS.Timeout | null>(null);
   const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -146,7 +145,7 @@ export function FlipCardQA() {
       if (nextCardTimerRef.current) clearTimeout(nextCardTimerRef.current);
       if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
     };
-  }, [questions.length]); // Only depend on props/stable values
+  }, [questions.length]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === ' ' || e.key === 'Enter') {

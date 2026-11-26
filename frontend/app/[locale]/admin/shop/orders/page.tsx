@@ -12,6 +12,7 @@ import {
   resolveCurrencyFromLocale,
 } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
+import { createOrderDateFormatter } from '@/lib/shop/order-date';
 import { paymentStatusValues } from '@/lib/shop/payments';
 import {
   adminOrdersFilterInputSchema,
@@ -49,15 +50,6 @@ function orderCurrency(order: AdminOrderRow, locale: string): CurrencyCode {
   return c === 'UAH' ? 'UAH' : 'USD';
 }
 
-function formatDate(value: Date | null | undefined, locale: string): string {
-  if (!value) return '-';
-  return new Intl.DateTimeFormat(locale, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(value);
-}
-
 function formatPaymentStatusLabel(value: string): string {
   return value
     .split('_')
@@ -92,6 +84,7 @@ export default async function AdminOrdersPage({
   const { locale } = await params;
   const sp = await searchParams;
   const t = await getTranslations('shop.admin.orders');
+  const tShop = await getTranslations('shop');
   const csrfToken = issueCsrfToken('admin:orders:reconcile-stale');
 
   const page = parsePage(Array.isArray(sp.page) ? sp.page[0] : sp.page);
@@ -113,6 +106,7 @@ export default async function AdminOrdersPage({
 
   const hasNext = all.length > PAGE_SIZE;
   const items = all.slice(0, PAGE_SIZE);
+  const formatOrderDate = createOrderDateFormatter(locale, 'date');
 
   const viewModels = items.map(order => {
     const currency = orderCurrency(order, locale);
@@ -120,7 +114,7 @@ export default async function AdminOrdersPage({
 
     return {
       id: order.id,
-      createdAt: formatDate(order.createdAt, locale),
+      createdAt: formatOrderDate(order.createdAt),
       paymentStatus: order.paymentStatus,
       paymentStatusLabel: formatPaymentStatusLabel(order.paymentStatus),
       totalFormatted:
@@ -167,7 +161,7 @@ export default async function AdminOrdersPage({
               htmlFor="admin-orders-status"
               className="text-foreground text-sm font-medium"
             >
-              {t('filters.status')}
+              {tShop('orders.paymentStatusLabel')}
             </label>
             <select
               id="admin-orders-status"
@@ -226,7 +220,6 @@ export default async function AdminOrdersPage({
           </div>
         </form>
 
-        {/* Mobile cards */}
         <div className="md:hidden">
           {viewModels.length === 0 ? (
             <div className="border-border text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
@@ -261,7 +254,7 @@ export default async function AdminOrdersPage({
                   <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                     <div>
                       <dt className="text-muted-foreground">
-                        {t('table.items')}
+                        {tShop('items')}
                       </dt>
                       <dd className="text-foreground">{vm.itemCount}</dd>
                     </div>
@@ -306,7 +299,6 @@ export default async function AdminOrdersPage({
           )}
         </div>
 
-        {/* Desktop table */}
         <div className="hidden md:block">
           <div className="bg-background/80 overflow-hidden rounded-xl shadow-sm">
             <table className="divide-border min-w-full divide-y text-sm">
@@ -315,16 +307,16 @@ export default async function AdminOrdersPage({
               <thead className="bg-muted/50">
                 <tr>
                   <th scope="col" className={TH_BASE}>
-                    {t('table.created')}
+                    {tShop('orders.created')}
                   </th>
                   <th scope="col" className={TH_BASE}>
-                    {t('table.status')}
+                    {tShop('orders.paymentStatusLabel')}
                   </th>
                   <th scope="col" className={TH_BASE}>
                     {t('table.total')}
                   </th>
                   <th scope="col" className={TH_BASE}>
-                    {t('table.items')}
+                    {tShop('items')}
                   </th>
                   <th scope="col" className={TH_BASE}>
                     {t('table.provider')}

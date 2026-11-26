@@ -17,6 +17,7 @@ import {
   OrderNotFoundError,
   OrderStateInvalidError,
 } from '@/lib/services/errors';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 
 type PaymentAttemptRow = typeof paymentAttempts.$inferSelect;
 type WalletOrderRow = Pick<
@@ -83,12 +84,6 @@ function parseIsoDateOrNull(value: unknown): Date | null {
   return new Date(ms);
 }
 
-function readTrimmedString(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 function extractInvoiceIdFromPspError(error: unknown): string | null {
   if (!(error instanceof PspError)) return null;
 
@@ -101,11 +96,11 @@ function extractInvoiceIdFromPspError(error: unknown): string | null {
   ];
 
   for (const candidate of directCandidates) {
-    const parsed = readTrimmedString(candidate);
+    const parsed = trimToNull(candidate);
     if (parsed) return parsed;
   }
 
-  const snippet = readTrimmedString(safeMeta.responseSnippet);
+  const snippet = trimToNull(safeMeta.responseSnippet);
   if (!snippet) return null;
 
   try {
@@ -116,7 +111,7 @@ function extractInvoiceIdFromPspError(error: unknown): string | null {
       parsed.providerPaymentIntentId,
       parsed.provider_payment_intent_id,
     ]) {
-      const normalized = readTrimmedString(candidate);
+      const normalized = trimToNull(candidate);
       if (normalized) return normalized;
     }
   } catch {
@@ -404,8 +399,8 @@ async function persistAttemptUnknown(args: {
 }): Promise<void> {
   const now = new Date();
   const invoiceId =
-    readTrimmedString(args.attempt.providerPaymentIntentId) ??
-    readTrimmedString(args.invoiceId);
+    trimToNull(args.attempt.providerPaymentIntentId) ??
+    trimToNull(args.invoiceId);
   const nextMetadata = mergeWalletMetadata(args.attempt.metadata, {
     requested: 'google_pay',
     submitOutcome: 'unknown',

@@ -1,6 +1,4 @@
-import crypto from 'node:crypto';
-
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import {
   AdminApiDisabledError,
@@ -8,6 +6,8 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { getRequestId } from '@/lib/http/getRequestId';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import {
   CSRF_FORM_FIELD,
@@ -21,19 +21,12 @@ import {
 } from '@/lib/services/orders';
 export const runtime = 'nodejs';
 
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
-
 const DEFAULT_STALE_MINUTES = 60;
 
 export async function POST(request: NextRequest) {
   const startedAtMs = Date.now();
 
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const blocked = guardBrowserSameOrigin(request);
 

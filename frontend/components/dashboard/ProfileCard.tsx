@@ -139,7 +139,6 @@ export function ProfileCard({
           </div>
         </div>
         <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 xl:flex xl:w-auto xl:flex-nowrap xl:items-center xl:justify-end xl:gap-2 2xl:gap-3">
-          {/* Attempts */}
           <a
             href="#quiz-results"
             className={statItemBase}
@@ -163,7 +162,6 @@ export function ProfileCard({
             </div>
           </a>
 
-          {/* Points */}
           <a
             href="#stats"
             className={statItemBase}
@@ -187,7 +185,6 @@ export function ProfileCard({
             </div>
           </a>
 
-          {/* Global rank */}
           <Link href="/leaderboard" className={statItemBase}>
             <div className={iconBoxStyles}>
               <Globe className="h-5 w-5 text-teal-600 dark:text-teal-400" />
@@ -202,7 +199,6 @@ export function ProfileCard({
             </div>
           </Link>
 
-          {/* Joined */}
           <div className="flex flex-row items-center gap-2 rounded-2xl border border-gray-100 bg-white/50 p-2 text-left sm:gap-3 sm:p-3 xl:flex-row-reverse xl:items-center xl:p-3 xl:px-4 xl:text-right dark:border-white/5 dark:bg-black/20">
             <div className={iconBoxStyles}>
               <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -251,7 +247,6 @@ export function ProfileCard({
               className="overflow-hidden"
             >
               <div className="mt-6 flex flex-col gap-6">
-                {/* Edit Name Form */}
                 <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 dark:border-white/5 dark:bg-black/20">
                   <h3 className="mb-4 text-sm font-semibold tracking-wide text-gray-900 uppercase dark:text-white">
                     {t('changeName')}
@@ -292,7 +287,6 @@ export function ProfileCard({
                   </form>
                 </div>
 
-                {/* Edit Password Form */}
                 <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 dark:border-white/5 dark:bg-black/20">
                   <h3 className="mb-4 text-sm font-semibold tracking-wide text-gray-900 uppercase dark:text-white">
                     {t('changePassword')}

@@ -13,6 +13,7 @@ import {
   monoLogWarn,
 } from '@/lib/logging/monobank';
 import { cancelInvoicePayment, PspError } from '@/lib/psp/monobank';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 
 import {
   InvalidPayloadError,
@@ -30,12 +31,6 @@ function invalid(
   details?: Record<string, unknown>
 ): InvalidPayloadError {
   return new InvalidPayloadError(message, { code, details });
-}
-
-function toTrimmedOrNull(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length ? trimmed : null;
 }
 
 function makeMonobankRefundExtRef(orderId: string): string {
@@ -75,7 +70,7 @@ function readAttemptInvoiceId(row: {
   providerPaymentIntentId: string | null;
   metadata: unknown;
 }): string | null {
-  const direct = toTrimmedOrNull(row.providerPaymentIntentId);
+  const direct = trimToNull(row.providerPaymentIntentId);
   if (direct) return direct;
 
   if (
@@ -86,7 +81,7 @@ function readAttemptInvoiceId(row: {
     return null;
   }
 
-  return toTrimmedOrNull((row.metadata as Record<string, unknown>).invoiceId);
+  return trimToNull((row.metadata as Record<string, unknown>).invoiceId);
 }
 
 async function findInvoiceAttempt(
@@ -135,7 +130,7 @@ async function getMonobankInvoiceId(orderId: string): Promise<{
     .where(eq(orders.id, orderId))
     .limit(1);
 
-  const fromOrder = toTrimmedOrNull(orderRow?.pspChargeId);
+  const fromOrder = trimToNull(orderRow?.pspChargeId);
   if (fromOrder) {
     return { invoiceId: fromOrder, attemptId: null };
   }

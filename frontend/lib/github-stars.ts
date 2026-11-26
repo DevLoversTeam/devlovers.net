@@ -16,11 +16,6 @@ function makeHeaders(): Record<string, string> {
   };
 }
 
-/**
- * Resolves a GitHub login (username) from a numeric provider ID.
- * Used when the user signed in via GitHub OAuth — the DB stores the numeric
- * `providerId`, but the stargazers API works with logins.
- */
 export async function resolveGitHubLogin(
   providerId: string
 ): Promise<string | null> {

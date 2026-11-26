@@ -153,7 +153,7 @@ export const quizAttempts = pgTable(
       .defaultNow(),
   },
   table => ({
-    userIdIdx: index('quiz_attempts_user_id_idx').on(table.userId), // ← NEW
+    userIdIdx: index('quiz_attempts_user_id_idx').on(table.userId),
     quizIdIdx: index('quiz_attempts_quiz_id_idx').on(table.quizId),
     userCompletedAtIdx: index('quiz_attempts_user_completed_at_idx').on(
       table.userId,

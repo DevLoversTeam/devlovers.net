@@ -44,12 +44,17 @@ describe('shop shipping methods route (phase 2)', () => {
     vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'false');
 
     const req = new NextRequest(
-      'http://localhost/api/shop/shipping/methods?locale=uk'
+      'http://localhost/api/shop/shipping/methods?locale=uk',
+      { headers: { 'x-request-id': 'shipping-methods-test' } }
     );
     const res = await GET(req);
     const json: any = await res.json();
 
     expect(res.status).toBe(200);
+    expect(res.headers.get('Cache-Control')).toBe(
+      'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
+    );
+    expect(res.headers.get('X-Request-Id')).toBe('shipping-methods-test');
     expect(json).toMatchObject({
       success: true,
       available: false,

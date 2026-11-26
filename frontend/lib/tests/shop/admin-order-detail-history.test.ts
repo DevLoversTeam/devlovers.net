@@ -1,15 +1,14 @@
-import fs from 'node:fs';
-import path from 'node:path';
-
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import OrderDetailPage from '@/app/[locale]/admin/shop/orders/[id]/page';
 import type {
   AdminOrderDetail,
   AdminOrderHistoryEntry,
 } from '@/db/queries/shop/admin-orders';
+import type { Locale } from '@/i18n/config';
+import { createLocaleTranslator } from '@/lib/tests/helpers/locale-translator';
 
 const getAdminOrderDetailMock = vi.hoisted(() => vi.fn());
 const getAdminOrderTimelineMock = vi.hoisted(() => vi.fn());
@@ -25,21 +24,8 @@ const redirectMock = vi.hoisted(() =>
   })
 );
 const i18nState = vi.hoisted(() => ({
-  locale: 'en',
+  locale: 'en' as Locale,
 }));
-const messagesRoot = path.join(process.cwd(), 'messages');
-
-function readLocaleMessages(locale: 'en' | 'uk' | 'pl') {
-  return JSON.parse(
-    fs.readFileSync(path.join(messagesRoot, `${locale}.json`), 'utf8')
-  ) as Record<string, unknown>;
-}
-
-const localeMessagesCache = {
-  en: readLocaleMessages('en'),
-  uk: readLocaleMessages('uk'),
-  pl: readLocaleMessages('pl'),
-};
 
 vi.mock('next/navigation', () => ({
   notFound: notFoundMock,
@@ -47,38 +33,9 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next-intl/server', () => ({
-  getTranslations: vi.fn(async (namespace: string) => {
-    const getByPath = (source: unknown, dottedPath: string): unknown =>
-      dottedPath.split('.').reduce<unknown>((acc, segment) => {
-        if (!acc || typeof acc !== 'object' || Array.isArray(acc)) {
-          return undefined;
-        }
-        return (acc as Record<string, unknown>)[segment];
-      }, source);
-
-    const formatMessage = (
-      template: string,
-      values?: Record<string, string | number | Date>
-    ) =>
-      template.replace(/\{(\w+)\}/g, (_match, key: string) =>
-        values && key in values ? String(values[key]) : `{${key}}`
-      );
-
-    const localeMessages =
-      localeMessagesCache[i18nState.locale as 'en' | 'uk' | 'pl'];
-    const scopedMessages = getByPath(localeMessages, namespace);
-    if (!scopedMessages || typeof scopedMessages !== 'object') {
-      throw new Error(`MISSING_NAMESPACE:${namespace}`);
-    }
-
-    return (key: string, values?: Record<string, string | number | Date>) => {
-      const message = getByPath(scopedMessages, key);
-      if (typeof message !== 'string') {
-        throw new Error(`MISSING_MESSAGE:${namespace}.${key}`);
-      }
-      return formatMessage(message, values);
-    };
-  }),
+  getTranslations: vi.fn(async (namespace: string) =>
+    createLocaleTranslator(i18nState.locale, namespace)
+  ),
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -190,7 +147,7 @@ function baseHistoryEntry(
   };
 }
 
-async function renderOrder(history: AdminOrderHistoryEntry[], locale = 'en') {
+async function renderOrder(history: AdminOrderHistoryEntry[], locale: Locale = 'en') {
   i18nState.locale = locale;
   getAdminOrderDetailMock.mockResolvedValue(baseOrderDetail());
   getAdminOrderTimelineMock.mockResolvedValue(history);
@@ -209,11 +166,15 @@ describe('admin order detail history', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     i18nState.locale = 'en';
-    process.env.CSRF_SECRET = 'test_csrf_secret_for_admin_order_detail';
+    vi.stubEnv('CSRF_SECRET', 'test_csrf_secret_for_admin_order_detail');
     getCurrentUserMock.mockResolvedValue({
       id: 'admin-1',
       role: 'admin',
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('renders localized history details for known transition statuses', async () => {

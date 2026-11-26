@@ -13,6 +13,7 @@ import 'dotenv/config';
 
 import { eq } from 'drizzle-orm';
 
+import { ukrainianFirstLocales } from '../i18n/config';
 import { uploadImage } from '../lib/cloudinary';
 import { db } from './index';
 import {
@@ -24,10 +25,6 @@ import {
   blogPosts,
   blogPostTranslations,
 } from './schema';
-
-// ── Types ───────────────────────────────────────────────────────
-
-const LOCALES = ['uk', 'en', 'pl'] as const;
 
 const SANITY_API =
   'https://6y9ive6v.api.sanity.io/v2025-11-29/data/query/production';
@@ -71,8 +68,6 @@ type TiptapNode = {
   marks?: TiptapMark[];
 };
 
-// ── Sanity REST API fetcher ─────────────────────────────────────
-
 async function sanityFetch<T>(query: string): Promise<T> {
   const url = `${SANITY_API}?query=${encodeURIComponent(query)}`;
   const res = await fetch(url);
@@ -84,8 +79,6 @@ async function sanityFetch<T>(query: string): Promise<T> {
   const json = (await res.json()) as { result: T };
   return json.result;
 }
-
-// ── Image helpers ───────────────────────────────────────────────
 
 async function downloadImageAsBuffer(imageUrl: string): Promise<Buffer> {
   const res = await fetch(imageUrl);
@@ -105,8 +98,6 @@ async function reuploadToCloudinary(
   const buffer = await downloadImageAsBuffer(imageUrl);
   return uploadImage(buffer, { folder });
 }
-
-// ── Portable Text → Tiptap JSON ────────────────────────────────
 
 function convertSpansToTiptap(
   children: SanityBlock['children'] = [],
@@ -195,7 +186,6 @@ async function portableTextToTiptap(
   while (i < blocks.length) {
     const block = blocks[i];
 
-    // Inline image — re-upload to Cloudinary
     if (block._type === 'image' && (block as SanityImage).url) {
       try {
         const { url } = await reuploadToCloudinary(
@@ -216,7 +206,6 @@ async function portableTextToTiptap(
       continue;
     }
 
-    // List items — group consecutive same-type items
     if (block._type === 'block' && (block as SanityBlock).listItem) {
       const sanityBlock = block as SanityBlock;
       const listType =
@@ -246,14 +235,12 @@ async function portableTextToTiptap(
       continue;
     }
 
-    // Regular block
     if (block._type === 'block') {
       content.push(blockToTiptapNode(block as SanityBlock));
       i++;
       continue;
     }
 
-    // Unknown type — skip
     i++;
   }
 
@@ -269,8 +256,6 @@ function extractPlainText(blocks: SanityNode[] | undefined): string {
     .trim();
 }
 
-// ── Slug helper ─────────────────────────────────────────────────
-
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -279,8 +264,6 @@ function slugify(text: string): string {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
 }
-
-// ── Migration functions ─────────────────────────────────────────
 
 async function migrateCategories() {
   console.log('\n--- Migrating categories ---');
@@ -321,7 +304,7 @@ async function migrateCategories() {
     }
 
     // Sanity title is NOT multilingual — duplicate into 3 locale rows
-    const translations = LOCALES.map(locale => ({
+    const translations = ukrainianFirstLocales.map(locale => ({
       categoryId: row.id,
       locale,
       title: cat.title,
@@ -345,7 +328,6 @@ async function migrateCategories() {
 async function migrateAuthors(): Promise<Map<string, string>> {
   console.log('\n--- Migrating authors ---');
 
-  // Sanity _id → our DB uuid
   const idMap = new Map<string, string>();
 
   const authors = await sanityFetch<
@@ -383,7 +365,6 @@ async function migrateAuthors(): Promise<Map<string, string>> {
       author.slug?.current ||
       slugify(author.name?.en || author.name?.uk || 'unknown');
 
-    // Upload profile image to Cloudinary
     let imageUrl: string | null = null;
     let imagePublicId: string | null = null;
 
@@ -422,7 +403,6 @@ async function migrateAuthors(): Promise<Map<string, string>> {
 
     if (!row) {
       console.log(`  [skip] Author "${slug}" already exists`);
-      // Still need the ID for post mapping — look it up
       const existing = await db
         .select({ id: blogAuthors.id })
         .from(blogAuthors)
@@ -433,8 +413,7 @@ async function migrateAuthors(): Promise<Map<string, string>> {
 
     idMap.set(author._id, row.id);
 
-    // Insert translations for each locale
-    const translations = LOCALES.map(locale => ({
+    const translations = ukrainianFirstLocales.map(locale => ({
       authorId: row.id,
       locale,
       name:
@@ -463,13 +442,11 @@ async function migrateAuthors(): Promise<Map<string, string>> {
 async function migratePosts(authorIdMap: Map<string, string>) {
   console.log('\n--- Migrating posts ---');
 
-  // Load our DB categories for slug → id mapping
   const dbCategories = await db
     .select({ id: blogCategories.id, slug: blogCategories.slug })
     .from(blogCategories);
   const categorySlugMap = new Map(dbCategories.map(c => [c.slug, c.id]));
 
-  // Fetch posts from Sanity with ALL locale bodies (not coalesced)
   const posts = await sanityFetch<
     Array<{
       _id: string;
@@ -511,7 +488,6 @@ async function migratePosts(authorIdMap: Map<string, string>) {
       continue;
     }
 
-    // Upload mainImage to Cloudinary
     let mainImageUrl: string | null = null;
     let mainImagePublicId: string | null = null;
 
@@ -529,7 +505,6 @@ async function migratePosts(authorIdMap: Map<string, string>) {
       }
     }
 
-    // Resolve author ID via Sanity _ref → our DB uuid
     const authorRef = post.authorRef?._ref;
     const authorId = authorRef ? (authorIdMap.get(authorRef) ?? null) : null;
 
@@ -553,14 +528,13 @@ async function migratePosts(authorIdMap: Map<string, string>) {
       continue;
     }
 
-    // Convert body for each locale → Tiptap JSON, insert translations
     const bodyByLocale = {
       uk: post.bodyUk,
       en: post.bodyEn,
       pl: post.bodyPl,
     };
 
-    for (const locale of LOCALES) {
+    for (const locale of ukrainianFirstLocales) {
       const rawBody = bodyByLocale[locale];
       const title =
         post.title?.[locale] || post.title?.en || post.title?.uk || 'Untitled';
@@ -581,7 +555,6 @@ async function migratePosts(authorIdMap: Map<string, string>) {
         .onConflictDoNothing();
     }
 
-    // Insert post ↔ category junction rows
     if (post.categories && post.categories.length > 0) {
       const junctionRows = post.categories
         .map(cat => {
@@ -606,7 +579,7 @@ async function migratePosts(authorIdMap: Map<string, string>) {
     }
 
     inserted++;
-    const localesWithBody = LOCALES.filter(l => bodyByLocale[l]);
+    const localesWithBody = ukrainianFirstLocales.filter(l => bodyByLocale[l]);
     console.log(
       `  [ok] ${slug} (body: ${localesWithBody.join(', ') || 'none'})`
     );
@@ -616,8 +589,6 @@ async function migratePosts(authorIdMap: Map<string, string>) {
     `Posts done: ${inserted} inserted, ${posts.length - inserted} skipped`
   );
 }
-
-// ── Main ────────────────────────────────────────────────────────
 
 async function main() {
   console.log('=== Blog Migration: Sanity -> PostgreSQL ===');

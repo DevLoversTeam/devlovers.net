@@ -52,7 +52,6 @@ export default async function QuizReviewPage({
   const btnPrimary =
     'inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] transition-all hover:scale-105';
 
-  // Not found / not owned
   if (!review) {
     return (
       <DynamicGridBackground className="min-h-screen bg-gray-50 py-10 dark:bg-transparent">
@@ -79,7 +78,6 @@ export default async function QuizReviewPage({
 
   const incorrectCount = review.incorrectQuestions.length;
 
-  // All correct
   if (incorrectCount === 0) {
     return (
       <DynamicGridBackground className="min-h-screen bg-gray-50 py-10 dark:bg-transparent">
@@ -108,7 +106,6 @@ export default async function QuizReviewPage({
     );
   }
 
-  // Main review
   return (
     <DynamicGridBackground className="min-h-screen bg-gray-50 py-10 dark:bg-transparent">
       <main className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6">

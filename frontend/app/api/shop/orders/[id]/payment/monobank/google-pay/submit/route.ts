@@ -1,7 +1,6 @@
-import crypto from 'node:crypto';
-
 import { NextRequest } from 'next/server';
 
+import { getRequestId } from '@/lib/http/getRequestId';
 import { logError, logWarn } from '@/lib/logging';
 import { PspError } from '@/lib/psp/monobank';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -115,8 +114,7 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,

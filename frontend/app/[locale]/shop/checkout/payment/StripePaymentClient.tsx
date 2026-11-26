@@ -14,20 +14,18 @@ import {
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
+import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
 import { Link, useRouter } from '@/i18n/routing';
 import { logError } from '@/lib/logging';
 import { resolveCheckoutDisplayCurrency } from '@/lib/shop/checkout-display-currency';
 import { formatMoney } from '@/lib/shop/currency';
 import {
   SHOP_CTA_BASE,
-  SHOP_CTA_INSET,
   SHOP_CTA_INTERACTIVE,
-  SHOP_CTA_WAVE,
   SHOP_DISABLED,
   SHOP_FOCUS,
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
-  shopCtaGradient,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
 
@@ -121,32 +119,6 @@ const SHOP_OUTLINE = cn(
   'px-5 py-2.5'
 );
 
-function HeroCtaInner({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <span
-        className="absolute inset-0"
-        style={shopCtaGradient(
-          '--shop-hero-btn-bg',
-          '--shop-hero-btn-bg-hover'
-        )}
-        aria-hidden="true"
-      />
-      <span
-        className={SHOP_CTA_WAVE}
-        style={shopCtaGradient(
-          '--shop-hero-btn-bg-hover',
-          '--shop-hero-btn-bg'
-        )}
-        aria-hidden="true"
-      />
-      <span className={SHOP_CTA_INSET} aria-hidden="true" />
-
-      <span className="relative z-10">{children}</span>
-    </>
-  );
-}
-
 function StripePaymentForm({ orderId, locale, statusToken }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -231,9 +203,9 @@ function StripePaymentForm({ orderId, locale, statusToken }: PaymentFormProps) {
         className={SHOP_HERO_CTA}
         aria-disabled={!stripe || submitting}
       >
-        <HeroCtaInner>
+        <ShopCtaContent>
           {submitting ? t('actions.processing') : t('actions.submit')}
-        </HeroCtaInner>
+        </ShopCtaContent>
       </button>
 
       {errorMessage ? (
@@ -292,7 +264,7 @@ export default function StripePaymentClient({
             )}
             className={cn(SHOP_HERO_CTA, 'w-full sm:w-auto')}
           >
-            <HeroCtaInner>{t('actions.continue')}</HeroCtaInner>
+            <ShopCtaContent>{t('actions.continue')}</ShopCtaContent>
           </Link>
 
           <Link

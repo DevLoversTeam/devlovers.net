@@ -6,6 +6,7 @@ import BlogPostRenderer from '@/components/blog/BlogPostRenderer';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 import { getCachedBlogPosts } from '@/db/queries/blog/blog-posts';
 import { Link } from '@/i18n/routing';
+import { getBlogCategoryLabel } from '@/lib/blog/category-label';
 import { formatBlogDate } from '@/lib/blog/date';
 import { shouldBypassImageOptimization } from '@/lib/blog/image';
 import { extractPlainText } from '@/lib/blog/text';
@@ -27,16 +28,6 @@ function hashString(input: string) {
     hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
   }
   return hash;
-}
-
-function getCategoryLabel(categoryName: string, t: (key: string) => string) {
-  const key = categoryName.toLowerCase();
-  if (key === 'growth') return t('categories.career');
-  if (key === 'tech') return t('categories.tech');
-  if (key === 'career') return t('categories.career');
-  if (key === 'insights') return t('categories.insights');
-  if (key === 'news') return t('categories.news');
-  return categoryName;
 }
 
 export default async function PostDetails({
@@ -63,7 +54,9 @@ export default async function PostDetails({
 
   const authorName = post.author?.name;
   const category = post.categories?.[0];
-  const categoryDisplay = category ? getCategoryLabel(category.title, t) : null;
+  const categoryDisplay = category
+    ? getBlogCategoryLabel(category.title, t, 'detail')
+    : null;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
   const postUrl = baseUrl ? `${baseUrl}/${locale}/blog/${slugParam}` : null;
   const blogUrl = baseUrl ? `${baseUrl}/${locale}/blog` : null;
@@ -246,7 +239,7 @@ export default async function PostDetails({
                   {recommendedPosts.map(item => {
                     const itemCategory = item.categories?.[0];
                     const itemCategoryDisplay = itemCategory
-                      ? getCategoryLabel(itemCategory.title, t)
+                      ? getBlogCategoryLabel(itemCategory.title, t, 'detail')
                       : null;
 
                     return (

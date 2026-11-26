@@ -5,13 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { AnswerBlock } from '@/components/q&a/types';
 import type { AdminQuizQuestion } from '@/db/queries/quizzes/admin-quiz';
+import { locales } from '@/i18n/config';
 import { cn } from '@/lib/utils';
 
 import { AnswerEditor } from './AnswerEditor';
 import { ExplanationEditor } from './ExplanationEditor';
 import { type AdminLocale, LocaleTabs } from './LocaleTabs';
-
-const ALL_LOCALES: AdminLocale[] = ['en', 'uk', 'pl'];
 
 type Difficulty = 'beginner' | 'medium' | 'advanced';
 
@@ -66,7 +65,7 @@ function initEditorState(question: AdminQuizQuestion): EditorState {
 }
 
 function validate(state: EditorState): string | null {
-  for (const locale of ALL_LOCALES) {
+  for (const locale of locales) {
     if (!state.locales[locale].questionText.trim()) {
       return `Question text is empty for ${locale.toUpperCase()}`;
     }
@@ -230,7 +229,7 @@ export function QuestionEditor({
       ...prev,
       answers: prev.answers.map(a => ({ ...a, isCorrect: a.id === answerId })),
     }));
-    setDirtyLocales(new Set(ALL_LOCALES));
+    setDirtyLocales(new Set(locales));
   }
 
   function handleDifficultyChange(value: Difficulty) {
@@ -251,7 +250,6 @@ export function QuestionEditor({
   }
 
   async function handleSave() {
-    // Skip locale validation for difficulty-only saves
     if (dirtyLocales.size > 0) {
       const error = validate(editorState);
       if (error) {
@@ -262,7 +260,7 @@ export function QuestionEditor({
     setValidationError(null);
 
     if (dirtyLocales.size > 0 && dirtyLocales.size < 3) {
-      const untouched = ALL_LOCALES.filter(l => !dirtyLocales.has(l))
+      const untouched = locales.filter(l => !dirtyLocales.has(l))
         .map(l => l.toUpperCase())
         .join(', ');
       const modified = Array.from(dirtyLocales)
@@ -346,10 +344,8 @@ export function QuestionEditor({
     }
   }
 
-  const missingLocales = new Set(ALL_LOCALES.filter(l => !question.content[l]));
+  const missingLocales = new Set(locales.filter(l => !question.content[l]));
   const currentLocale = editorState.locales[activeLocale];
-
-  // ── Row view ──
 
   if (!isEditing) {
     return (
@@ -396,8 +392,6 @@ export function QuestionEditor({
       </div>
     );
   }
-
-  // ── Edit view ──
 
   return (
     <div className="rounded-lg border-2 border-[var(--accent-primary)]">

@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { desc, sql } from 'drizzle-orm';
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
@@ -6,6 +6,7 @@ import { AdminPagination } from '@/components/admin/shop/AdminPagination';
 import { AdminProductDeleteButton } from '@/components/admin/shop/AdminProductDeleteButton';
 import { AdminProductStatusToggle } from '@/components/admin/shop/AdminProductStatusToggle';
 import { db } from '@/db';
+import { productPriceJoin } from '@/db/queries/shop/product-price-join';
 import {
   inventoryMoves,
   orderItems,
@@ -113,13 +114,7 @@ export default async function AdminProductsPage({
       isInUse: isInUseSql,
     })
     .from(products)
-    .leftJoin(
-      productPrices,
-      and(
-        eq(productPrices.productId, products.id),
-        eq(productPrices.currency, displayCurrency)
-      )
-    )
+    .leftJoin(productPrices, productPriceJoin(displayCurrency))
     .orderBy(desc(products.createdAt), desc(products.id))
     .limit(PAGE_SIZE + 1)
     .offset(offset);
@@ -152,7 +147,6 @@ export default async function AdminProductsPage({
       </header>
 
       <section className="mt-6" aria-label={t('listCaption')}>
-        {/* Mobile cards */}
         <div className="md:hidden">
           {rows.length === 0 ? (
             <div className="border-border text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
@@ -293,7 +287,6 @@ export default async function AdminProductsPage({
           )}
         </div>
 
-        {/* Desktop table */}
         <div className="hidden md:block">
           <div className="bg-background/80 overflow-x-auto rounded-xl shadow-sm">
             <table className="divide-border w-full table-fixed divide-y text-sm">

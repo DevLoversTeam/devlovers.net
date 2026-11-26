@@ -69,6 +69,16 @@ describe('P0-SEC-1.1: GET /api/shop/orders/[id] access control', () => {
     (getCurrentUser as any).mockResolvedValue(user);
 
     const now = new Date();
+    const item = {
+      id: 'item-1',
+      productId: 'product-1',
+      productTitle: 'Title at purchase',
+      productSlug: null,
+      productSku: 'SNAPSHOT-SKU',
+      quantity: 2,
+      unitPrice: '5.00',
+      lineTotal: '10.00',
+    };
     mockDbRows([
       {
         order: {
@@ -89,7 +99,7 @@ describe('P0-SEC-1.1: GET /api/shop/orders/[id] access control', () => {
           createdAt: now,
           updatedAt: now,
         },
-        item: null,
+        item: { ...item, unitPriceMinor: 500, lineTotalMinor: 1000 },
       },
     ]);
 
@@ -101,6 +111,7 @@ describe('P0-SEC-1.1: GET /api/shop/orders/[id] access control', () => {
     expect(json?.order?.id).toBe(orderId);
     expect(json?.order?.userId).toBe(ownerId);
     expect(json?.order?.fulfillmentStage).toBe('processing');
+    expect(json?.order?.items).toEqual([item]);
   });
 
   it('admin -> 200', async () => {
@@ -136,5 +147,6 @@ describe('P0-SEC-1.1: GET /api/shop/orders/[id] access control', () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json?.order?.fulfillmentStage).toBe('processing');
+    expect(json?.order?.items).toEqual([]);
   });
 });

@@ -30,8 +30,6 @@ export const createBlogPostSchema = z
 
 export type CreateBlogPostPayload = z.infer<typeof createBlogPostSchema>;
 
-// ── Inline category creation ─────────────────────────────────────
-
 const blogCategoryTranslationSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
@@ -45,8 +43,6 @@ export const createBlogCategorySchema = z.object({
     pl: blogCategoryTranslationSchema,
   }),
 });
-
-// ── Inline author creation ───────────────────────────────────────
 
 const blogAuthorTranslationSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -73,8 +69,6 @@ export const createBlogAuthorSchema = z.object({
   }),
 });
 
-// ── Update author (full form) ────────────────────────────────────
-
 export const updateBlogAuthorSchema = z.object({
   slug: z.string().min(1, 'Slug is required'),
   imageUrl: z.string().nullable(),
@@ -89,8 +83,6 @@ export const updateBlogAuthorSchema = z.object({
 
 export type UpdateBlogAuthorPayload = z.infer<typeof updateBlogAuthorSchema>;
 
-// ── Update category (full form) ──────────────────────────────────
-
 export const updateBlogCategorySchema = z.object({
   slug: z.string().min(1, 'Slug is required'),
   translations: z.object({
@@ -101,8 +93,6 @@ export const updateBlogCategorySchema = z.object({
 });
 
 export type UpdateBlogCategoryPayload = z.infer<typeof updateBlogCategorySchema>;
-
-// ── Category reorder ─────────────────────────────────────────────
 
 export const swapCategoryOrderSchema = z.object({
   id1: z.string().uuid(),

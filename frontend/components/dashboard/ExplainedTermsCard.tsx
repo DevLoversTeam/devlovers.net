@@ -362,7 +362,6 @@ export function ExplainedTermsCard() {
             </div>
           ) : null}
 
-          {/* Explained Terms Section */}
           <div className="mt-6">
             <button
               onClick={() => setShowMore(!showMore)}

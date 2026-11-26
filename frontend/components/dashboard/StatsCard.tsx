@@ -23,6 +23,7 @@ interface StatsCardProps {
 
 export function StatsCard({ stats, attempts = [] }: StatsCardProps) {
   const t = useTranslations('dashboard.stats');
+  const tQuizStatus = useTranslations('quiz.status');
   const tProfile = useTranslations('dashboard.profile');
   const hasActivity = stats && stats.totalAttempts > 0;
 
@@ -34,7 +35,6 @@ export function StatsCard({ stats, attempts = [] }: StatsCardProps) {
   const primaryBtnStyles =
     'group relative inline-flex items-center justify-center rounded-full px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white bg-(--accent-primary) hover:bg-(--accent-hover) transition-all hover:scale-105';
 
-  // Calculate chart metrics
   const excellent = attempts.filter(a => Number(a.percentage) >= 100).length;
   const good = attempts.filter(
     a => Number(a.percentage) >= 70 && Number(a.percentage) < 100
@@ -156,7 +156,6 @@ export function StatsCard({ stats, attempts = [] }: StatsCardProps) {
                   transform="rotate(180 50 50)"
                 />
 
-                {/* 1. Study Overlay (Red - Bottom Layer) */}
                 <motion.circle
                   initial={{ strokeDasharray: `0 ${circumference}` }}
                   animate={{
@@ -174,7 +173,6 @@ export function StatsCard({ stats, attempts = [] }: StatsCardProps) {
                   filter="url(#neonGlow)"
                 />
 
-                {/* 2. Review Overlay (Amber - Middle Layer) */}
                 <motion.circle
                   initial={{ strokeDasharray: `0 ${circumference}` }}
                   animate={{
@@ -192,7 +190,6 @@ export function StatsCard({ stats, attempts = [] }: StatsCardProps) {
                   filter="url(#neonGlow)"
                 />
 
-                {/* 3. Mastered Overlay (Emerald - Top Layer) */}
                 <motion.circle
                   initial={{ strokeDasharray: `0 ${circumference}` }}
                   animate={{
@@ -223,13 +220,12 @@ export function StatsCard({ stats, attempts = [] }: StatsCardProps) {
               </div>
             </div>
 
-            {/* Legend & Stats */}
             <div className="flex w-full flex-1 flex-col justify-center gap-3">
               <div className="flex w-full items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-3 shrink-0 rounded-full bg-linear-to-br from-emerald-400 to-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                   <span className="flex-1 truncate text-gray-600 dark:text-gray-300">
-                    {t('mastered')}{' '}
+                    {tQuizStatus('mastered')}{' '}
                     <span className="ml-1 font-mono text-xs text-gray-400 dark:text-gray-500">
                       ({total > 0 ? excellentPct.toFixed(0) : 0}%)
                     </span>

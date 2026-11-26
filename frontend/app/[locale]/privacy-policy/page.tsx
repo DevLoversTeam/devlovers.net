@@ -4,6 +4,7 @@ import LegalPageShell from '@/components/legal/LegalPageShell';
 import PrivacyPolicyContent, {
   PRIVACY_LAST_UPDATED,
 } from '@/components/legal/PrivacyPolicyContent';
+import { getLocalizedMetadata } from '@/i18n/metadata';
 
 export async function generateMetadata({
   params,
@@ -11,12 +12,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'legal.privacy' });
-
-  return {
-    title: t('metaTitle'),
-    description: t('metaDescription'),
-  };
+  return getLocalizedMetadata('legal.privacy', locale);
 }
 
 export default async function PrivacyPolicyPage() {

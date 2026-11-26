@@ -10,6 +10,8 @@ import {
 import type { CurrencyCode } from '@/lib/shop/currency';
 import { type DbProduct, dbProductSchema } from '@/lib/validation/shop';
 
+import { productPriceJoin } from './product-price-join';
+
 const publicProductBaseSelect = {
   id: products.id,
   slug: products.slug,
@@ -168,13 +170,6 @@ async function mapRowsToDbProducts(
   return rows.map(row => mapRowToDbProduct(row, imagesByProductId));
 }
 
-function priceJoin(currency: CurrencyCode) {
-  return and(
-    eq(productPrices.productId, products.id),
-    eq(productPrices.currency, currency)
-  );
-}
-
 function buildWhereClause(options: {
   category?: string;
   type?: string;
@@ -235,7 +230,7 @@ export async function getActiveProducts(
   const rows = await db
     .select(publicProductSelect)
     .from(products)
-    .innerJoin(productPrices, priceJoin(currency))
+    .innerJoin(productPrices, productPriceJoin(currency))
     .where(eq(products.isActive, true));
 
   return await mapRowsToDbProducts(rows);
@@ -257,7 +252,7 @@ export async function getActiveProductsPage(options: {
   const [{ value: total }] = await db
     .select({ value: count() })
     .from(products)
-    .innerJoin(productPrices, priceJoin(options.currency))
+    .innerJoin(productPrices, productPriceJoin(options.currency))
     .where(whereClause);
 
   const totalCount =
@@ -266,7 +261,7 @@ export async function getActiveProductsPage(options: {
   const rows = await db
     .select(publicProductSelect)
     .from(products)
-    .innerJoin(productPrices, priceJoin(options.currency))
+    .innerJoin(productPrices, productPriceJoin(options.currency))
     .where(whereClause)
     .orderBy(...applySorting(options.sort))
     .limit(options.limit)
@@ -282,7 +277,7 @@ export async function getProductBySlug(
   const rows = await db
     .select(publicProductSelect)
     .from(products)
-    .innerJoin(productPrices, priceJoin(currency))
+    .innerJoin(productPrices, productPriceJoin(currency))
     .where(eq(products.slug, slug))
     .limit(1);
 
@@ -300,7 +295,7 @@ export async function getPublicProductBySlug(
   const rows = await db
     .select(publicProductSelect)
     .from(products)
-    .innerJoin(productPrices, priceJoin(currency))
+    .innerJoin(productPrices, productPriceJoin(currency))
     .where(and(eq(products.slug, slug), eq(products.isActive, true)))
     .limit(1);
 
@@ -318,7 +313,7 @@ export async function getFeaturedProducts(
   const rows = await db
     .select(publicProductSelect)
     .from(products)
-    .innerJoin(productPrices, priceJoin(currency))
+    .innerJoin(productPrices, productPriceJoin(currency))
     .where(and(eq(products.isActive, true), eq(products.isFeatured, true)))
     .orderBy(desc(products.createdAt))
     .limit(limit);
@@ -335,7 +330,7 @@ export async function getActiveProductsByIds(
   const rows = await db
     .select(publicProductSelect)
     .from(products)
-    .innerJoin(productPrices, priceJoin(currency))
+    .innerJoin(productPrices, productPriceJoin(currency))
     .where(and(eq(products.isActive, true), inArray(products.id, ids)));
 
   return await mapRowsToDbProducts(rows);

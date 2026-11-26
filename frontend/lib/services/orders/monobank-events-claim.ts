@@ -3,6 +3,7 @@ import 'server-only';
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readOptionalDbRows } from '@/db/readDbRows';
 import { logDebug, logError } from '@/lib/logging';
 
 export type MonobankEventRow = {
@@ -29,13 +30,6 @@ export type MonobankEventRow = {
   raw_sha256: string;
   received_at: Date | string;
 };
-
-function readRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const anyRes = res as any;
-  if (Array.isArray(anyRes?.rows)) return anyRes.rows as T[];
-  return [];
-}
 
 export async function claimNextMonobankEvent(
   claimedBy: string
@@ -66,7 +60,7 @@ export async function claimNextMonobankEvent(
       RETURNING e.*
     `);
 
-    const row = readRows<MonobankEventRow>(result)[0] ?? null;
+    const row = readOptionalDbRows<MonobankEventRow>(result)[0] ?? null;
     if (!row) {
       logDebug('monobank_event_claim_none', {
         code: 'MONO_EVENT_CLAIM_NONE',

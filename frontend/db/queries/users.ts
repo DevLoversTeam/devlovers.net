@@ -44,7 +44,6 @@ export const getUserProfile = cache(async (userId: string) => {
 });
 
 export const getUserGlobalRank = cache(async (userId: string) => {
-  // Get all users' total points by grouping transactions
   const rankQuery = sql`
     WITH user_scores AS (
       SELECT user_id, COALESCE(SUM(points), 0) as total_points

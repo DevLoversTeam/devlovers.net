@@ -24,7 +24,6 @@ export async function POST(req: Request) {
 
     const { quizId, questionId, selectedAnswerId, timeLimitSeconds } = body;
 
-    // Identify user: userId for authenticated, IP for guests
     const headersList = await headers();
     const identifier = resolveRequestIdentifier(headersList);
     if (identifier) {

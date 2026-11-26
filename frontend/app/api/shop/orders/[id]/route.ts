@@ -1,13 +1,18 @@
 import 'server-only';
 
-import crypto from 'node:crypto';
-
 import { and, eq } from 'drizzle-orm';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { db } from '@/db';
+import {
+  type CustomerOrderItem,
+  customerOrderItemProjection,
+  toCustomerOrderItem,
+} from '@/db/queries/shop/order-item-snapshot';
 import { orderItems, orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
+import { getRequestId } from '@/lib/http/getRequestId';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError, logWarn } from '@/lib/logging';
 import {
   type CanonicalFulfillmentStage,
@@ -19,11 +24,6 @@ import { orderIdParamSchema } from '@/lib/validation/shop';
 
 export const dynamic = 'force-dynamic';
 
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
 type OrderCurrency = (typeof orders.$inferSelect)['currency'];
 type OrderPaymentStatus = (typeof orders.$inferSelect)['paymentStatus'];
 type OrderDetailResponse = {
@@ -42,52 +42,8 @@ type OrderDetailResponse = {
   idempotencyKey: string;
   createdAt: string;
   updatedAt: string;
-  items: Array<{
-    id: string;
-    productId: string;
-    productTitle: string | null;
-    productSlug: string | null;
-    productSku: string | null;
-    quantity: number;
-    unitPrice: string;
-    lineTotal: string;
-  }>;
+  items: CustomerOrderItem[];
 };
-
-function toOrderItem(
-  item: {
-    id: string | null;
-    productId: string | null;
-    productTitle: string | null;
-    productSlug: string | null;
-    productSku: string | null;
-    quantity: number | null;
-    unitPrice: string | null;
-    lineTotal: string | null;
-  } | null
-): OrderDetailResponse['items'][number] | null {
-  if (!item || !item.id) return null;
-
-  if (
-    !item.productId ||
-    item.quantity === null ||
-    !item.unitPrice ||
-    !item.lineTotal
-  ) {
-    throw new Error('Corrupt order item row: required columns are null');
-  }
-
-  return {
-    id: item.id,
-    productId: item.productId,
-    productTitle: item.productTitle,
-    productSlug: item.productSlug,
-    productSku: item.productSku,
-    quantity: item.quantity,
-    unitPrice: item.unitPrice,
-    lineTotal: item.lineTotal,
-  };
-}
 
 export async function GET(
   request: NextRequest,
@@ -95,8 +51,7 @@ export async function GET(
 ) {
   const startedAtMs = Date.now();
 
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const baseMeta = {
     requestId,
@@ -166,16 +121,7 @@ export async function GET(
           createdAt: orders.createdAt,
           updatedAt: orders.updatedAt,
         },
-        item: {
-          id: orderItems.id,
-          productId: orderItems.productId,
-          productTitle: orderItems.productTitle,
-          productSlug: orderItems.productSlug,
-          productSku: orderItems.productSku,
-          quantity: orderItems.quantity,
-          unitPrice: orderItems.unitPrice,
-          lineTotal: orderItems.lineTotal,
-        },
+        item: customerOrderItemProjection,
       })
       .from(orders)
       .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
@@ -204,7 +150,7 @@ export async function GET(
     });
 
     const items = rows
-      .map(r => toOrderItem(r.item))
+      .map(r => toCustomerOrderItem(r.item))
       .filter((i): i is NonNullable<typeof i> => i !== null);
 
     const response: OrderDetailResponse = {

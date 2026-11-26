@@ -3,8 +3,12 @@ import 'server-only';
 import { type SQL, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readDbRows } from '@/db/readDbRows';
 import { orderShippingEligibilityWhereSql } from '@/lib/services/shop/shipping/eligibility';
-import { shippingStatusTransitionWhereSql } from '@/lib/services/shop/transitions/shipping-state';
+import {
+  insertQueuedInitialShipmentSql,
+  shippingStatusCanBeQueuedSql,
+} from '@/lib/services/shop/shipping/queued-initial-shipment-sql';
 
 type SupportedPaymentProvider = 'monobank' | 'stripe';
 
@@ -19,13 +23,6 @@ export type EnsureQueuedInitialShipmentResult = {
   queuedShipment: boolean;
   updatedOrder: boolean;
 };
-
-function readRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const maybe = res as { rows?: unknown };
-  if (Array.isArray(maybe.rows)) return maybe.rows as T[];
-  return [];
-}
 
 function paymentProviderFilterSql(
   paymentProvider: SupportedPaymentProvider | null | undefined
@@ -57,24 +54,12 @@ export async function ensureQueuedInitialShipment(args: {
         })}
     ),
     inserted_shipment as (
-      insert into shipping_shipments (
-        order_id,
-        provider,
-        status,
-        attempt_count,
-        created_at,
-        updated_at
-      )
-      select
-        eo.id,
-        'nova_poshta',
-        'queued',
-        0,
-        ${args.now},
-        ${args.now}
-      from eligible_order eo
-      on conflict (order_id) do nothing
-      returning order_id
+      ${insertQueuedInitialShipmentSql({
+        orderIdColumn: sql`eo.id`,
+        eligibleOrders: sql`eligible_order eo`,
+        now: args.now,
+        onConflict: 'keep-existing',
+      })}
     ),
     queued_order_ids as (
       select order_id from inserted_shipment
@@ -90,12 +75,7 @@ export async function ensureQueuedInitialShipment(args: {
       set shipping_status = 'queued'::shipping_status,
           updated_at = ${args.now}
       where id in (select order_id from queued_order_ids)
-        and shipping_status is distinct from 'queued'::shipping_status
-        and ${shippingStatusTransitionWhereSql({
-          column: sql`shipping_status`,
-          to: 'queued',
-          allowNullFrom: true,
-        })}
+        and ${shippingStatusCanBeQueuedSql}
       returning id
     )
     select
@@ -104,7 +84,7 @@ export async function ensureQueuedInitialShipment(args: {
       (select count(*)::int from updated_order) as updated_order_count
   `);
 
-  const row = readRows<CountRow>(res)[0];
+  const row = readDbRows<CountRow>(res)[0];
 
   return {
     insertedShipment: Number(row?.inserted_shipment_count ?? 0) > 0,

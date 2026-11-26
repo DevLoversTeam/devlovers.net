@@ -2,12 +2,10 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock next-intl before importing the hook
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => `translated:${key}`,
 }));
 
-// Mock sonner toast
 vi.mock('sonner', () => ({
   toast: {
     warning: vi.fn(),
@@ -81,7 +79,6 @@ describe('useAntiCheat', () => {
     it('detects tab switch (visibilitychange) and adds violation', () => {
       const { result } = renderHook(() => useAntiCheat(true));
 
-      // Mock document.hidden = true (tab became hidden)
       Object.defineProperty(document, 'hidden', {
         value: true,
         writable: true,
@@ -96,7 +93,6 @@ describe('useAntiCheat', () => {
       expect(result.current.violations[0].type).toBe('tab-switch');
       expect(result.current.isTabActive).toBe(false);
 
-      // Restore
       Object.defineProperty(document, 'hidden', {
         value: false,
         writable: true,

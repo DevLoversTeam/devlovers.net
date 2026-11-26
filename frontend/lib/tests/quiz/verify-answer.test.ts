@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { POST } from '@/app/api/quiz/verify-answer/route';
 
-// Mock the Redis module
 vi.mock('@/lib/quiz/quiz-answers-redis', () => ({
   getCorrectAnswer: vi.fn(),
 }));

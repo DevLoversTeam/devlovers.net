@@ -1,5 +1,3 @@
-import crypto from 'node:crypto';
-
 import { sql } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -15,6 +13,8 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { getRequestId } from '@/lib/http/getRequestId';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -31,12 +31,6 @@ import {
 import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 
 export const runtime = 'nodejs';
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
 
 const productIdParamSchema = z.object({ id: z.string().uuid() });
 
@@ -179,8 +173,7 @@ export async function GET(
 ): Promise<NextResponse> {
   const startedAtMs = Date.now();
 
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const baseMeta = {
     requestId,
@@ -299,8 +292,7 @@ export async function PATCH(
 ): Promise<NextResponse> {
   const startedAtMs = Date.now();
 
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const blocked = guardBrowserSameOrigin(request);
   if (blocked) {
@@ -687,8 +679,7 @@ export async function DELETE(
 ): Promise<NextResponse> {
   const startedAtMs = Date.now();
 
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const blocked = guardBrowserSameOrigin(request);
   if (blocked) {

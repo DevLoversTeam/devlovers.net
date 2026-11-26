@@ -11,13 +11,10 @@ import { runMonobankJanitorJob3 } from '@/lib/services/orders/monobank-janitor';
 import { toDbMoney } from '@/lib/shop/money';
 
 vi.mock('@/lib/logging', async () => {
-  const actual = await vi.importActual<any>('@/lib/logging');
-  return {
-    ...actual,
-    logInfo: () => {},
-    logWarn: () => {},
-    logError: () => {},
-  };
+  const { createQuietLoggingMock } = await import(
+    '@/lib/tests/helpers/quiet-logging'
+  );
+  return createQuietLoggingMock();
 });
 
 function sha256HexUtf8(value: string): string {

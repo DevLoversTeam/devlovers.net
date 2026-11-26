@@ -21,6 +21,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { saveLearnedTerm } from '@/actions/ai';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  defaultLocale,
+  isSupportedLocale,
+  type Locale,
+  ukrainianFirstLocales,
+} from '@/i18n/config';
 import { Link } from '@/i18n/routing';
 import {
   getCachedExplanation,
@@ -31,8 +37,6 @@ import { cn } from '@/lib/utils';
 import enMessages from '@/messages/en.json';
 import plMessages from '@/messages/pl.json';
 import ukMessages from '@/messages/uk.json';
-
-type Locale = 'uk' | 'en' | 'pl';
 
 interface AIWordHelperProps {
   term: string;
@@ -67,17 +71,8 @@ const messagesByLocale = {
   pl: plMessages,
 } as const;
 
-const SUPPORTED_LOCALES: Locale[] = ['uk', 'en', 'pl'];
-const DEFAULT_LOCALE: Locale = 'en';
-
-function isValidLocale(value: unknown): value is Locale {
-  return (
-    typeof value === 'string' && SUPPORTED_LOCALES.includes(value as Locale)
-  );
-}
-
 function getValidLocale(value: unknown): Locale {
-  return isValidLocale(value) ? value : DEFAULT_LOCALE;
+  return isSupportedLocale(value) ? value : defaultLocale;
 }
 
 function getLocalizedMessages(locale: Locale) {
@@ -153,6 +148,7 @@ export default function AIWordHelper({
   onClose,
 }: AIWordHelperProps) {
   const t = useTranslations('aiHelper');
+  const tCommon = useTranslations('common');
   const params = useParams();
   const validatedLocale = getValidLocale(params.locale);
 
@@ -393,8 +389,6 @@ export default function AIWordHelper({
 
   if (!isOpen) return null;
 
-  const locales = SUPPORTED_LOCALES;
-
   const renderGuestCTA = () => (
     <div className="flex flex-col items-center justify-center gap-4 px-4 py-8 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-purple-600">
@@ -496,7 +490,7 @@ export default function AIWordHelper({
               'transition-colors',
               'focus:ring-2 focus:ring-(--accent-primary) focus:outline-none'
             )}
-            aria-label={t('close')}
+            aria-label={tCommon('close')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -513,7 +507,7 @@ export default function AIWordHelper({
         {!isCheckingAuth && isAuthenticated === true && (
           <>
             <div className="flex gap-2 border-b border-gray-200 p-4 dark:border-neutral-800">
-              {locales.map(loc => (
+              {ukrainianFirstLocales.map(loc => (
                 <button
                   key={loc}
                   onClick={() => setActiveLocale(loc)}

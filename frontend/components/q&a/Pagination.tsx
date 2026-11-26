@@ -4,6 +4,7 @@ import { Check, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 
+import { hexToRgba } from '@/components/q&a/hexToRgba';
 import { cn } from '@/lib/utils';
 
 interface PaginationProps {
@@ -16,15 +17,6 @@ interface PaginationProps {
   onPageSizeChange?: (size: number) => void;
 }
 
-function hexToRgba(hex: string, alpha: number): string {
-  const normalized = hex.replace('#', '');
-  if (normalized.length !== 6) return `rgba(0, 0, 0, ${alpha})`;
-  const r = parseInt(normalized.slice(0, 2), 16);
-  const g = parseInt(normalized.slice(2, 4), 16);
-  const b = parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 export function Pagination({
   currentPage,
   totalPages,
@@ -35,6 +27,7 @@ export function Pagination({
   onPageSizeChange,
 }: PaginationProps) {
   const t = useTranslations('qa.pagination');
+  const tPagination = useTranslations('common.pagination');
   const accentSoft = hexToRgba(accentColor, 0.16);
   const accentGlow = hexToRgba(accentColor, 0.22);
   const [isMobile, setIsMobile] = useState(false);
@@ -250,7 +243,7 @@ export function Pagination({
               ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
               : 'text-gray-700 hover:bg-[var(--qa-accent-soft)] dark:text-gray-300'
           )}
-          aria-label={t('previousPage')}
+          aria-label={tPagination('previousPage')}
         >
           ← <span className="hidden sm:inline">{t('previous')}</span>
         </button>
@@ -284,7 +277,7 @@ export function Pagination({
                       }
                     : undefined
                 }
-                aria-label={t('page', { page })}
+                aria-label={tPagination('page', { page })}
                 aria-current={page === currentPage ? 'page' : undefined}
               >
                 {page}
@@ -303,7 +296,7 @@ export function Pagination({
               ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
               : 'text-gray-700 hover:bg-[var(--qa-accent-soft)] dark:text-gray-300'
           )}
-          aria-label={t('nextPage')}
+          aria-label={tPagination('nextPage')}
         >
           <span className="hidden sm:inline">{t('next')}</span> →
         </button>

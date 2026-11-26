@@ -3,15 +3,9 @@ import 'server-only';
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readOptionalDbRows } from '@/db/readDbRows';
 
 type UpdatedRow = { order_id: string };
-
-function readRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const anyRes = res as { rows?: unknown };
-  if (Array.isArray(anyRes?.rows)) return anyRes.rows as T[];
-  return [];
-}
 
 export async function anonymizeRetainedOrderShippingSnapshots(args: {
   runId: string;
@@ -63,5 +57,5 @@ export async function anonymizeRetainedOrderShippingSnapshots(args: {
     from updated
   `);
 
-  return { processed: readRows<UpdatedRow>(res).length };
+  return { processed: readOptionalDbRows<UpdatedRow>(res).length };
 }

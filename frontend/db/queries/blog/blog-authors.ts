@@ -20,7 +20,6 @@ export async function getBlogAuthorByName(
   name: string,
   locale: string
 ): Promise<BlogAuthorProfile | null> {
-  // Find author ID by name match in any locale
   const [match] = await db
     .select({ authorId: blogAuthorTranslations.authorId })
     .from(blogAuthorTranslations)
@@ -29,7 +28,6 @@ export async function getBlogAuthorByName(
 
   if (!match) return null;
 
-  // Fetch full profile for requested locale
   const [row] = await db
     .select({
       imageUrl: blogAuthors.imageUrl,

@@ -367,7 +367,7 @@ describe('P0-CUR-3 checkout currency policy', () => {
       slug,
       title: 'Test Product Missing UAH',
       stock: 10,
-      prices: [{ currency: 'USD', priceMinor: 6700, price: '67.00' }], // no UAH row
+      prices: [{ currency: 'USD', priceMinor: 6700, price: '67.00' }],
     });
 
     const req = await makeCheckoutRequest(

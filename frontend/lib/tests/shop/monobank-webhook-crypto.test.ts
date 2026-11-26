@@ -4,30 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resetEnvCache } from '@/lib/env';
 
-const ENV_KEYS = [
-  'MONO_MERCHANT_TOKEN',
-  'PAYMENTS_ENABLED',
-  'MONO_PUBLIC_KEY',
-  'MONO_API_BASE',
-  'MONO_INVOICE_TIMEOUT_MS',
-];
-
-const previousEnv: Record<string, string | undefined> = {};
 const originalFetch = globalThis.fetch;
-
-function rememberEnv() {
-  for (const key of ENV_KEYS) {
-    previousEnv[key] = process.env[key];
-  }
-}
-
-function restoreEnv() {
-  for (const key of ENV_KEYS) {
-    const value = previousEnv[key];
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
-  }
-}
 
 function makeResponse(body: string) {
   return {
@@ -38,18 +15,17 @@ function makeResponse(body: string) {
 }
 
 beforeEach(() => {
-  rememberEnv();
-  process.env.MONO_MERCHANT_TOKEN = 'test_token';
-  process.env.PAYMENTS_ENABLED = 'true';
-  process.env.MONO_API_BASE = 'https://api.example.test';
-  process.env.MONO_INVOICE_TIMEOUT_MS = '5000';
-  delete process.env.MONO_PUBLIC_KEY;
+  vi.stubEnv('MONO_MERCHANT_TOKEN', 'test_token');
+  vi.stubEnv('PAYMENTS_ENABLED', 'true');
+  vi.stubEnv('MONO_API_BASE', 'https://api.example.test');
+  vi.stubEnv('MONO_INVOICE_TIMEOUT_MS', '5000');
+  vi.stubEnv('MONO_PUBLIC_KEY', undefined);
   resetEnvCache();
   vi.resetModules();
 });
 
 afterEach(() => {
-  restoreEnv();
+  vi.unstubAllEnvs();
   resetEnvCache();
   vi.restoreAllMocks();
   globalThis.fetch = originalFetch;

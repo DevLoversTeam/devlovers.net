@@ -8,11 +8,6 @@ import { routing } from './i18n/routing';
 
 const AUTH_COOKIE_NAME = 'auth_session';
 
-// const AUTH_SECRET = process.env.AUTH_SECRET;
-// if (!AUTH_SECRET) {
-//   throw new Error('AUTH_SECRET is not defined');
-// }
-
 function decodeAuthToken(token: string): AuthTokenPayload | null {
   const parts = token.split('.');
   if (parts.length < 2) return null;

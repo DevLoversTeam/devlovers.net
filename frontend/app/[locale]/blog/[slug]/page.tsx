@@ -4,7 +4,7 @@ import { getCachedBlogPostBySlug } from '@/db/queries/blog/blog-posts';
 
 import PostDetails from './PostDetails';
 
-export const revalidate = 604800; // 7 days
+export const revalidate = 604800;
 
 export async function generateMetadata({
   params,

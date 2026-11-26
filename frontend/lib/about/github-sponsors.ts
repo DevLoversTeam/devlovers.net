@@ -96,15 +96,10 @@ async function fetchSponsors(activeOnly: boolean): Promise<Sponsor[]> {
   }
 }
 
-/** Active sponsors only — used for public-facing sponsor displays. */
 export async function getSponsors(): Promise<Sponsor[]> {
   return fetchSponsors(true);
 }
 
-/**
- * All sponsors (active + past/cancelled) — used for achievement checks.
- * A user who donated once and later cancelled still earns the Supporter badge.
- */
 export async function getAllSponsors(): Promise<Sponsor[]> {
   return fetchSponsors(false);
 }

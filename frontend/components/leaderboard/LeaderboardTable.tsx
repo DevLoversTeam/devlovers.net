@@ -146,8 +146,6 @@ function TableRow({
   inContext?: boolean;
   t: ReturnType<typeof useTranslations>;
 }) {
-  // inContext = true  → glow applied on <tr>; cells stay plain
-  // inContext = false → top-15 row; accent borders drawn on cells directly
   const cellClass = cn(
     'border-b px-2 py-3 sm:px-6 sm:py-4',
     isCurrentUser && !inContext

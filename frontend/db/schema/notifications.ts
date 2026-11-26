@@ -13,7 +13,6 @@ export const notifications = pgTable('notifications', {
     onDelete: 'cascade',
   }),
 
-  // e.g., 'ACHIEVEMENT', 'ARTICLE', 'SYSTEM'
   type: text('type').notNull(),
 
   title: text('title').notNull(),
@@ -22,7 +21,6 @@ export const notifications = pgTable('notifications', {
 
   isRead: boolean('is_read').notNull().default(false),
 
-  // Store arbitrary data like { badgeId: 'flawless' } or { articleSlug: 'new-react-compiler' }
   metadata: jsonb('metadata'),
 
   createdAt: timestamp('created_at').notNull().defaultNow(),

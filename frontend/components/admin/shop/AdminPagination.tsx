@@ -42,6 +42,7 @@ export async function AdminPagination({
 }: AdminPaginationProps) {
   const hasPrev = page > 1;
   const t = await getTranslations('shop.admin.pagination');
+  const tPagination = await getTranslations('common.pagination');
 
   const disabledClass =
     'inline-flex h-9 items-center rounded-md border border-border px-3 text-sm font-medium text-muted-foreground opacity-60';
@@ -56,7 +57,7 @@ export async function AdminPagination({
             <Link
               href={pageHref(basePath, page - 1, query)}
               rel="prev"
-              aria-label={t('previousPage')}
+              aria-label={tPagination('previousPage')}
               className={linkClass}
             >
               {t('previous')}
@@ -70,7 +71,7 @@ export async function AdminPagination({
 
         <li>
           <span aria-current="page" className="text-muted-foreground text-sm">
-            {t('page', { page })}
+            {tPagination('page', { page })}
           </span>
         </li>
 
@@ -79,7 +80,7 @@ export async function AdminPagination({
             <Link
               href={pageHref(basePath, page + 1, query)}
               rel="next"
-              aria-label={t('nextPage')}
+              aria-label={tPagination('nextPage')}
               className={linkClass}
             >
               {t('next')}

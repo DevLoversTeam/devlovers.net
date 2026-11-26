@@ -5,6 +5,7 @@ import {
   NovaPoshtaConfigError,
 } from '@/lib/env/nova-poshta';
 import { logWarn } from '@/lib/logging';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 
 type NovaPoshtaEnvelope<T> = {
   success: boolean;
@@ -131,12 +132,6 @@ export class NovaPoshtaApiError extends Error {
   }
 }
 
-function readString(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 function isPostMachineByLabels(
   ...labels: Array<string | null | undefined>
 ): boolean {
@@ -176,7 +171,7 @@ function normalizeNpBusinessErrorCode(args: {
   rawCode: string | null | undefined;
   message: string;
 }): string {
-  const rawCode = readString(args.rawCode);
+  const rawCode = trimToNull(args.rawCode);
   const msg = args.message.toLowerCase();
 
   if (
@@ -354,18 +349,18 @@ async function getCitiesByFindByString(args: {
   const seen = new Set<string>();
 
   for (const item of rows) {
-    const ref = readString(item.Ref);
-    const nameUa = readString(item.Description);
+    const ref = trimToNull(item.Ref);
+    const nameUa = trimToNull(item.Description);
     if (!ref || !nameUa || seen.has(ref)) continue;
     seen.add(ref);
 
     out.push({
       ref,
       nameUa,
-      nameRu: readString(item.DescriptionRu),
-      area: readString(item.AreaDescription),
-      region: readString(item.RegionDescription),
-      settlementType: readString(item.SettlementTypeDescription),
+      nameRu: trimToNull(item.DescriptionRu),
+      area: trimToNull(item.AreaDescription),
+      region: trimToNull(item.RegionDescription),
+      settlementType: trimToNull(item.SettlementTypeDescription),
     });
   }
 
@@ -398,9 +393,9 @@ async function searchSettlementsByCityName(args: {
   const seen = new Set<string>();
 
   for (const item of addresses) {
-    const ref = readString(item.Ref);
-    const present = readString(item.Present);
-    const main = readString(item.MainDescription);
+    const ref = trimToNull(item.Ref);
+    const present = trimToNull(item.Present);
+    const main = trimToNull(item.MainDescription);
     const nameUa = present ?? main;
 
     if (!ref || !nameUa || seen.has(ref)) continue;
@@ -410,9 +405,9 @@ async function searchSettlementsByCityName(args: {
       ref,
       nameUa,
       nameRu: null,
-      area: readString(item.Area),
-      region: readString(item.Region),
-      settlementType: readString(item.SettlementTypeDescription),
+      area: trimToNull(item.Area),
+      region: trimToNull(item.Region),
+      settlementType: trimToNull(item.SettlementTypeDescription),
     });
   }
 
@@ -504,16 +499,16 @@ export async function getWarehousesByCityRef(
   const seen = new Set<string>();
 
   for (const item of rows) {
-    const ref = readString(item.Ref);
-    const description = readString(item.Description);
+    const ref = trimToNull(item.Ref);
+    const description = trimToNull(item.Description);
     if (!ref || !description || seen.has(ref)) continue;
     seen.add(ref);
 
-    const category = readString(item.CategoryOfWarehouse);
-    const type = readString(item.TypeOfWarehouse);
-    const descriptionRu = readString(item.DescriptionRu);
-    const shortAddress = readString(item.ShortAddress);
-    const shortAddressRu = readString(item.ShortAddressRu);
+    const category = trimToNull(item.CategoryOfWarehouse);
+    const type = trimToNull(item.TypeOfWarehouse);
+    const descriptionRu = trimToNull(item.DescriptionRu);
+    const shortAddress = trimToNull(item.ShortAddress);
+    const shortAddressRu = trimToNull(item.ShortAddressRu);
 
     const isPostMachine = isPostMachineByLabels(
       category,
@@ -526,9 +521,9 @@ export async function getWarehousesByCityRef(
 
     out.push({
       ref,
-      settlementRef: readString(item.SettlementRef),
-      cityRef: readString(item.CityRef),
-      number: readString(item.Number),
+      settlementRef: trimToNull(item.SettlementRef),
+      cityRef: trimToNull(item.CityRef),
+      number: trimToNull(item.Number),
       type: type ?? category,
       name: description,
       nameRu: descriptionRu,
@@ -576,8 +571,8 @@ export async function createInternetDocument(
   });
 
   const first = rows[0];
-  const providerRef = readString(first?.Ref);
-  const trackingNumber = readString(first?.IntDocNumber);
+  const providerRef = trimToNull(first?.Ref);
+  const trackingNumber = trimToNull(first?.IntDocNumber);
 
   if (!providerRef || !trackingNumber) {
     throw new NovaPoshtaApiError(
