@@ -23,13 +23,10 @@ vi.mock('@/lib/psp/monobank', async () => {
 });
 
 vi.mock('@/lib/logging', async () => {
-  const actual = await vi.importActual<any>('@/lib/logging');
-  return {
-    ...actual,
-    logInfo: () => {},
-    logWarn: () => {},
-    logError: () => {},
-  };
+  const { createQuietLoggingMock } = await import(
+    '@/lib/tests/helpers/quiet-logging'
+  );
+  return createQuietLoggingMock();
 });
 
 async function insertOrderAndAttempt(args: {

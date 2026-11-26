@@ -1,11 +1,10 @@
 import 'server-only';
 
-import crypto from 'node:crypto';
-
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getMonobankConfig } from '@/lib/env/monobank';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
+import { getRequestId } from '@/lib/http/getRequestId';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import {
   MONO_SIG_INVALID,
@@ -77,8 +76,7 @@ function parseWebhookPayload(
 }
 
 export async function POST(request: NextRequest) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
   const originBlocked = guardNonBrowserFailClosed(request, {
     surface: 'monobank_webhook',
   });

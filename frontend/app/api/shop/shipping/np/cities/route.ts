@@ -1,12 +1,13 @@
 import crypto from 'node:crypto';
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import {
   getShopShippingFlags,
   NovaPoshtaConfigError,
 } from '@/lib/env/nova-poshta';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
+import { getRequestId } from '@/lib/http/getRequestId';
 import { logError, logWarn } from '@/lib/logging';
 import {
   enforceRateLimit,
@@ -27,30 +28,14 @@ import {
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { shippingCitiesQuerySchema } from '@/lib/validation/shop-shipping';
 
+import { cachedShippingJson, noStoreShippingJson } from '../../_responses';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-function cachedJson(body: unknown, requestId: string) {
-  const res = NextResponse.json(body, { status: 200 });
-  res.headers.set(
-    'Cache-Control',
-    'public, max-age=30, s-maxage=60, stale-while-revalidate=120'
-  );
-  res.headers.set('X-Request-Id', requestId);
-  return res;
-}
-
-function noStoreJson(body: unknown, requestId: string, status = 200) {
-  const res = NextResponse.json(body, { status });
-  res.headers.set('Cache-Control', 'no-store');
-  res.headers.set('X-Request-Id', requestId);
-  return res;
-}
-
 export async function GET(request: NextRequest) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,
@@ -83,7 +68,7 @@ export async function GET(request: NextRequest) {
   const raw = Object.fromEntries(request.nextUrl.searchParams.entries());
   const parsed = shippingCitiesQuerySchema.safeParse(raw);
   if (!parsed.success) {
-    return noStoreJson(
+    return noStoreShippingJson(
       {
         success: false,
         code: 'INVALID_QUERY',
@@ -106,14 +91,15 @@ export async function GET(request: NextRequest) {
   });
 
   if (!availability.available) {
-    return cachedJson(
+    return cachedShippingJson(
       {
         success: true,
         available: false,
         reasonCode: availability.reasonCode,
         items: [],
       },
-      requestId
+      requestId,
+      'lookup'
     );
   }
 
@@ -124,18 +110,19 @@ export async function GET(request: NextRequest) {
       runId: crypto.randomUUID(),
     });
 
-    return cachedJson(
+    return cachedShippingJson(
       {
         success: true,
         available: true,
         reasonCode: 'OK',
         items,
       },
-      requestId
+      requestId,
+      'lookup'
     );
   } catch (error) {
     if (error instanceof NovaPoshtaConfigError) {
-      return noStoreJson(
+      return noStoreShippingJson(
         {
           success: false,
           code: 'NP_MISCONFIG',
@@ -150,7 +137,7 @@ export async function GET(request: NextRequest) {
         ...baseMeta,
         code: error.code,
       });
-      return noStoreJson(
+      return noStoreShippingJson(
         {
           success: true,
           available: false,
@@ -170,7 +157,7 @@ export async function GET(request: NextRequest) {
         code: 'INTERNAL_ERROR',
       }
     );
-    return noStoreJson(
+    return noStoreShippingJson(
       {
         success: false,
         code: 'INTERNAL_ERROR',

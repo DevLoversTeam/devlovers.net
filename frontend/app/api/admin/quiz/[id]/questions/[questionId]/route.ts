@@ -16,6 +16,7 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError } from '@/lib/logging';
 import { invalidateQuizCache } from '@/lib/quiz/quiz-answers-redis';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
@@ -28,12 +29,6 @@ const paramsSchema = z.object({
   id: z.string().uuid(),
   questionId: z.string().uuid(),
 });
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
 
 export async function PATCH(
   request: NextRequest,

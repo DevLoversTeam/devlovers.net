@@ -8,13 +8,10 @@ import { monobankEvents } from '@/db/schema';
 import { runMonobankJanitorJob4 } from '@/lib/services/orders/monobank-janitor';
 
 vi.mock('@/lib/logging', async () => {
-  const actual = await vi.importActual<any>('@/lib/logging');
-  return {
-    ...actual,
-    logInfo: () => {},
-    logWarn: () => {},
-    logError: () => {},
-  };
+  const { createQuietLoggingMock } = await import(
+    '@/lib/tests/helpers/quiet-logging'
+  );
+  return createQuietLoggingMock();
 });
 
 const EVENT_KEY_PREFIX = `test:mono-job4-needs-review:${crypto.randomUUID()}`;

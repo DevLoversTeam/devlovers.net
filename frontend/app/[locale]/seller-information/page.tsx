@@ -4,6 +4,7 @@ import LegalPageShell from '@/components/legal/LegalPageShell';
 import SellerInformationContent, {
   SELLER_INFORMATION_LAST_UPDATED,
 } from '@/components/legal/SellerInformationContent';
+import { getLocalizedMetadata } from '@/i18n/metadata';
 
 export async function generateMetadata({
   params,
@@ -11,12 +12,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'legal.seller' });
-
-  return {
-    title: t('metaTitle'),
-    description: t('metaDescription'),
-  };
+  return getLocalizedMetadata('legal.seller', locale);
 }
 
 export default async function SellerInformationPage() {

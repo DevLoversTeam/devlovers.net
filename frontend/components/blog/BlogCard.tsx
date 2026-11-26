@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 import { Link } from '@/i18n/routing';
+import { getBlogCategoryLabel } from '@/lib/blog/category-label';
 import { formatBlogDate } from '@/lib/blog/date';
 import { shouldBypassImageOptimization } from '@/lib/blog/image';
 import { extractPlainText } from '@/lib/blog/text';
@@ -22,34 +23,16 @@ export default function BlogCard({
 }) {
   const t = useTranslations('blog');
 
-  const getCategoryLabel = (categoryName: string): string => {
-    const key = categoryName.toLowerCase() as
-      | 'tech'
-      | 'career'
-      | 'insights'
-      | 'news'
-      | 'growth';
-    const categoryTranslations: Record<string, string> = {
-      tech: t('categories.tech'),
-      career: t('categories.career'),
-      insights: t('categories.insights'),
-      news: t('categories.news'),
-      growth: t('categories.growth'),
-    };
-    return categoryTranslations[key] || categoryName;
-  };
-
   const excerpt = extractPlainText(post.body).slice(0, 160);
 
   const formattedDate = useMemo(
     () => formatBlogDate(post.publishedAt),
     [post.publishedAt]
   );
-  const rawCategory =
-    post.categories?.[0].title === 'Growth'
-      ? 'Career'
-      : post.categories?.[0].title;
-  const categoryLabel = rawCategory ? getCategoryLabel(rawCategory) : undefined;
+  const rawCategory = post.categories?.[0]?.title;
+  const categoryLabel = rawCategory
+    ? getBlogCategoryLabel(rawCategory, t)
+    : undefined;
 
   return (
     <article className="group flex h-full flex-col overflow-visible rounded-none border-0 bg-transparent shadow-none transition">

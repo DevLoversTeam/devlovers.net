@@ -2,14 +2,13 @@
 
 import { useRef, useState } from 'react';
 
+import { useAutoSlug } from '@/components/admin/useAutoSlug';
 import type { AdminBlogAuthorFull } from '@/db/queries/blog/admin-blog';
+import { locales } from '@/i18n/config';
 import { useRouter } from '@/i18n/routing';
-import { slugify } from '@/lib/shop/slug';
 
 import { type AdminLocale, LocaleTabs } from '../quiz/LocaleTabs';
 import { BlogImageUpload } from './BlogImageUpload';
-
-const LOCALES: AdminLocale[] = ['en', 'uk', 'pl'];
 
 const PLATFORMS = [
   { value: 'github', label: 'GitHub' },
@@ -93,8 +92,9 @@ export function BlogAuthorForm({
     };
   });
 
-  const [slug, setSlug] = useState(initialData?.slug ?? '');
-  const [slugTouched, setSlugTouched] = useState(!!initialData);
+  const { slug, updateFromTitle, setManualSlug } = useAutoSlug(
+    initialData ? (initialData.slug ?? '') : undefined
+  );
 
   const [image, setImage] = useState<{ url: string; publicId: string } | null>(
     initialData?.imageUrl
@@ -116,7 +116,7 @@ export function BlogAuthorForm({
       imageUrl: initialData.imageUrl ?? null,
       socialMedia: initialData.socialMedia ?? [],
       translations: Object.fromEntries(
-        LOCALES.map(l => [l, {
+        locales.map(l => [l, {
           name: initialData.translations[l]?.name ?? '',
           bio: initialData.translations[l]?.bio ?? '',
           jobTitle: initialData.translations[l]?.jobTitle ?? '',
@@ -136,7 +136,7 @@ export function BlogAuthorForm({
       imageUrl: image?.url ?? null,
       socialMedia,
       translations: Object.fromEntries(
-        LOCALES.map(l => [l, translations[l]])
+        locales.map(l => [l, translations[l]])
       ),
     });
     return current !== snap;
@@ -147,9 +147,7 @@ export function BlogAuthorForm({
       ...prev,
       [activeLocale]: { ...prev[activeLocale], name: value },
     }));
-    if (activeLocale === 'en' && !slugTouched) {
-      setSlug(slugify(value));
-    }
+    updateFromTitle(activeLocale, value);
   }
 
   function handleFieldChange(field: keyof AuthorTranslation, value: string) {
@@ -175,7 +173,7 @@ export function BlogAuthorForm({
 
   function isFormValid(): boolean {
     if (!slug.trim()) return false;
-    return LOCALES.every(l => translations[l].name.trim().length > 0);
+    return locales.every(l => translations[l].name.trim().length > 0);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -189,7 +187,7 @@ export function BlogAuthorForm({
       imagePublicId: image?.publicId ?? null,
       socialMedia: socialMedia.filter(s => s.url.trim()),
       translations: Object.fromEntries(
-        LOCALES.map(l => [l, {
+        locales.map(l => [l, {
           name: translations[l].name.trim(),
           bio: translations[l].bio.trim() || undefined,
           jobTitle: translations[l].jobTitle.trim() || undefined,
@@ -329,10 +327,7 @@ export function BlogAuthorForm({
         <input
           type="text"
           value={slug}
-          onChange={e => {
-            setSlugTouched(true);
-            setSlug(e.target.value);
-          }}
+          onChange={e => setManualSlug(e.target.value)}
           className={inputClass}
           placeholder="author-slug"
         />
@@ -396,7 +391,7 @@ export function BlogAuthorForm({
               ? 'Saving...'
               : !slug.trim()
                 ? 'Slug is required'
-                : !LOCALES.every(l => translations[l].name.trim())
+                : !locales.every(l => translations[l].name.trim())
                   ? 'Name is required in all 3 locales (EN, UK, PL)'
                   : isEditMode && !isDirty()
                     ? 'No changes to save'

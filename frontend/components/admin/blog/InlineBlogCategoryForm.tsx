@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 
-import { slugify } from '@/lib/shop/slug';
+import { useAutoSlug } from '@/components/admin/useAutoSlug';
+import { type Locale, locales } from '@/i18n/config';
 
 interface InlineBlogCategoryFormProps {
   csrfToken: string;
@@ -15,17 +16,14 @@ export function InlineBlogCategoryForm({
   onCreated,
   onCancel,
 }: InlineBlogCategoryFormProps) {
-  const [slug, setSlug] = useState('');
-  const [slugTouched, setSlugTouched] = useState(false);
+  const { slug, updateFromTitle, setManualSlug } = useAutoSlug();
   const [titles, setTitles] = useState({ en: '', uk: '', pl: '' });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  function handleTitleChange(locale: 'en' | 'uk' | 'pl', value: string) {
+  function handleTitleChange(locale: Locale, value: string) {
     setTitles(prev => ({ ...prev, [locale]: value }));
-    if (locale === 'en' && !slugTouched) {
-      setSlug(slugify(value));
-    }
+    updateFromTitle(locale, value);
   }
 
   async function handleSubmit() {
@@ -79,7 +77,7 @@ export function InlineBlogCategoryForm({
       <p className="text-foreground text-sm font-medium">New Blog Category</p>
 
       <div className="grid grid-cols-3 gap-3">
-        {(['en', 'uk', 'pl'] as const).map(locale => (
+        {locales.map(locale => (
           <div key={locale}>
             <label className="text-muted-foreground mb-1 block text-xs">
               Title ({locale.toUpperCase()})
@@ -100,10 +98,7 @@ export function InlineBlogCategoryForm({
         <input
           type="text"
           value={slug}
-          onChange={e => {
-            setSlug(e.target.value);
-            setSlugTouched(true);
-          }}
+          onChange={e => setManualSlug(e.target.value)}
           className="border-border bg-background text-foreground w-full max-w-xs rounded-md border px-3 py-1.5 text-sm"
           placeholder="category-slug"
         />

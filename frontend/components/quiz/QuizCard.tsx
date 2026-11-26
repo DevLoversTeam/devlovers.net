@@ -34,6 +34,7 @@ function makeSeed(): number {
 export function QuizCard({ quiz, userProgress }: QuizCardProps) {
   const router = useRouter();
   const t = useTranslations('quiz.card');
+  const tQuizStatus = useTranslations('quiz.status');
   const slug = quiz.categorySlug as keyof typeof categoryTabStyles | null;
   const style =
     slug && categoryTabStyles[slug] ? categoryTabStyles[slug] : null;
@@ -49,7 +50,7 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
     if (percentage === 100)
       return {
         variant: 'success' as const,
-        label: t('mastered'),
+        label: tQuizStatus('mastered'),
         dot: 'bg-emerald-500',
       };
     if (percentage >= 70)

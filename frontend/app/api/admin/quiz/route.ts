@@ -4,37 +4,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { getMaxQuizDisplayOrder } from '@/db/queries/categories/admin-categories';
 import {
-  quizAnswers,
-  quizAnswerTranslations,
-  quizQuestionContent,
-  quizQuestions,
-  quizTranslations,
-  quizzes,
-} from '@/db/schema/quiz';
+  insertQuizQuestionDetails,
+  insertQuizQuestionRows,
+} from '@/db/queries/quizzes/write-quiz-questions';
+import { quizTranslations, quizzes } from '@/db/schema/quiz';
+import { locales } from '@/i18n/config';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import { createQuizSchema } from '@/lib/validation/admin-quiz';
 
 export const runtime = 'nodejs';
-
-const LOCALES = ['en', 'uk', 'pl'] as const;
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
-
-function textToExplanationBlocks(text: string) {
-  return [{ type: 'paragraph', children: [{ text }] }];
-}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const blocked = guardBrowserSameOrigin(request);
@@ -117,7 +104,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
       // 2. Insert quiz translations
       await db.insert(quizTranslations).values(
-        LOCALES.map(locale => ({
+        locales.map(locale => ({
           quizId,
           locale,
           title: translations[locale].title,
@@ -125,56 +112,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }))
       );
 
-      // 3. Insert questions + get IDs
-      const insertedQuestions = await db
-        .insert(quizQuestions)
-        .values(
-          questions.map(q => ({
-            quizId,
-            displayOrder: q.order,
-            difficulty: q.difficulty,
-          }))
-        )
-        .returning({ id: quizQuestions.id });
-
-      // 4. Insert question content (3 locales per question)
-      await db.insert(quizQuestionContent).values(
-        insertedQuestions.flatMap((dbQ, i) =>
-          LOCALES.map(locale => ({
-            quizQuestionId: dbQ.id,
-            locale,
-            questionText: questions[i][locale].q,
-            explanation: textToExplanationBlocks(questions[i][locale].exp),
-          }))
-        )
+      const insertedQuestions = await insertQuizQuestionRows(
+        quizId,
+        questions,
+        question => question.order
       );
-
-      // 5. Insert answers (4 per question) + get IDs
-      const answerValues = insertedQuestions.flatMap((dbQ, i) =>
-        questions[i].answers.map((a, aIdx) => ({
-          quizQuestionId: dbQ.id,
-          displayOrder: aIdx + 1,
-          isCorrect: a.correct,
-        }))
-      );
-
-      const insertedAnswers = await db
-        .insert(quizAnswers)
-        .values(answerValues)
-        .returning({ id: quizAnswers.id });
-
-      // 6. Insert answer translations (3 locales per answer)
-      await db.insert(quizAnswerTranslations).values(
-        insertedAnswers.flatMap((dbA, i) => {
-          const qIdx = Math.floor(i / 4);
-          const aIdx = i % 4;
-          return LOCALES.map(locale => ({
-            quizAnswerId: dbA.id,
-            locale,
-            answerText: questions[qIdx].answers[aIdx][locale],
-          }));
-        })
-      );
+      await insertQuizQuestionDetails(insertedQuestions);
     } catch (insertError) {
       // Delete quiz — CASCADE removes translations, questions, content, answers, answer translations
       await db.delete(quizzes).where(eq(quizzes.id, quizId));

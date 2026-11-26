@@ -2,16 +2,15 @@
 
 import { useState } from 'react';
 
+import { useAutoSlug } from '@/components/admin/useAutoSlug';
 import type { AdminCategoryItem } from '@/db/queries/categories/admin-categories';
+import { locales } from '@/i18n/config';
 import { useRouter } from '@/i18n/routing';
-import { slugify } from '@/lib/shop/slug';
 import type { JsonQuestion } from '@/lib/validation/admin-quiz';
 
 import { InlineCategoryForm } from './InlineCategoryForm';
 import { JsonUploadArea } from './JsonUploadArea';
 import { type AdminLocale, LocaleTabs } from './LocaleTabs';
-
-const LOCALES: AdminLocale[] = ['en', 'uk', 'pl'];
 
 const emptyTranslations = () => ({
   en: { title: '', description: '' },
@@ -36,8 +35,7 @@ export function CreateQuizForm({
   const [categoryId, setCategoryId] = useState('');
   const [showNewCategory, setShowNewCategory] = useState(false);
 
-  const [slug, setSlug] = useState('');
-  const [slugTouched, setSlugTouched] = useState(false);
+  const { slug, updateFromTitle, setManualSlug } = useAutoSlug();
   const [timeLimitSeconds, setTimeLimitSeconds] = useState('');
 
   const [translations, setTranslations] = useState(emptyTranslations);
@@ -57,8 +55,8 @@ export function CreateQuizForm({
       [activeLocale]: { ...prev[activeLocale], [field]: value },
     }));
 
-    if (field === 'title' && activeLocale === 'en' && !slugTouched) {
-      setSlug(slugify(value));
+    if (field === 'title') {
+      updateFromTitle(activeLocale, value);
     }
   }
 
@@ -89,7 +87,7 @@ export function CreateQuizForm({
       return;
     }
 
-    const missing = LOCALES.filter(
+    const missing = locales.filter(
       l => !translations[l].title.trim() || !translations[l].description.trim()
     );
     if (missing.length > 0) {
@@ -228,10 +226,7 @@ export function CreateQuizForm({
         <input
           type="text"
           value={slug}
-          onChange={e => {
-            setSlug(e.target.value);
-            setSlugTouched(true);
-          }}
+          onChange={e => setManualSlug(e.target.value)}
           placeholder="quiz-slug"
           className="border-border bg-background text-foreground w-full max-w-sm rounded-md border px-3 py-2 text-sm"
         />

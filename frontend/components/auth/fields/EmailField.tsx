@@ -2,6 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 
+import { clearCustomValidity, setRequiredValidity } from './fieldValidity';
+
 type EmailFieldProps = {
   onChange?: (value: string) => void;
   minLength?: number;
@@ -20,10 +22,7 @@ export function EmailField({
   const handleInvalid = (e: React.InvalidEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
 
-    if (input.validity.valueMissing) {
-      input.setCustomValidity(t('validation.required'));
-      return;
-    }
+    if (setRequiredValidity(input, () => t('validation.required'))) return;
 
     if (input.validity.tooShort && minLength) {
       input.setCustomValidity(
@@ -43,10 +42,6 @@ export function EmailField({
       );
       return;
     }
-  };
-
-  const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
-    e.currentTarget.setCustomValidity('');
   };
 
   const handleBlur: React.FocusEventHandler<HTMLInputElement> = e => {
@@ -69,7 +64,7 @@ export function EmailField({
       maxLength={maxLength}
       className="w-full rounded border px-3 py-2"
       onInvalid={handleInvalid}
-      onInput={handleInput}
+      onInput={clearCustomValidity}
       onChange={e => onChange?.(e.currentTarget.value)}
       onBlur={handleBlur}
     />

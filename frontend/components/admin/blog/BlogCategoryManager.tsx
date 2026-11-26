@@ -4,12 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { useAutoSlug } from '@/components/admin/useAutoSlug';
 import type { AdminBlogCategoryListItem } from '@/db/queries/blog/admin-blog';
-import { slugify } from '@/lib/shop/slug';
+import { type Locale, locales } from '@/i18n/config';
 import { cn } from '@/lib/utils';
-
-const LOCALES = ['en', 'uk', 'pl'] as const;
-type Locale = (typeof LOCALES)[number];
 
 const inputClass =
   'border-border bg-background text-foreground w-full rounded-md border px-3 py-1.5 text-sm';
@@ -38,8 +36,12 @@ export function BlogCategoryManager({
 
   // ── Create form state ──────────────────────────────────────────
 
-  const [createSlug, setCreateSlug] = useState('');
-  const [createSlugTouched, setCreateSlugTouched] = useState(false);
+  const {
+    slug: createSlug,
+    updateFromTitle: updateCreateSlugFromTitle,
+    setManualSlug: setManualCreateSlug,
+    resetSlug: resetCreateSlug,
+  } = useAutoSlug();
   const [createTitles, setCreateTitles] = useState({ en: '', uk: '', pl: '' });
   const [createDescs, setCreateDescs] = useState({ en: '', uk: '', pl: '' });
   const [createError, setCreateError] = useState('');
@@ -47,9 +49,7 @@ export function BlogCategoryManager({
 
   function handleCreateTitleChange(locale: Locale, value: string) {
     setCreateTitles(prev => ({ ...prev, [locale]: value }));
-    if (locale === 'en' && !createSlugTouched) {
-      setCreateSlug(slugify(value));
-    }
+    updateCreateSlugFromTitle(locale, value);
   }
 
   async function handleCreate() {
@@ -74,7 +74,7 @@ export function BlogCategoryManager({
         body: JSON.stringify({
           slug: createSlug.trim(),
           translations: Object.fromEntries(
-            LOCALES.map(l => [l, {
+            locales.map(l => [l, {
               title: createTitles[l].trim(),
               description: createDescs[l].trim() || undefined,
             }])
@@ -89,8 +89,7 @@ export function BlogCategoryManager({
       }
 
       setShowCreate(false);
-      setCreateSlug('');
-      setCreateSlugTouched(false);
+      resetCreateSlug();
       setCreateTitles({ en: '', uk: '', pl: '' });
       setCreateDescs({ en: '', uk: '', pl: '' });
       router.refresh();
@@ -152,7 +151,7 @@ export function BlogCategoryManager({
         body: JSON.stringify({
           slug: editSlug.trim(),
           translations: Object.fromEntries(
-            LOCALES.map(l => [l, {
+            locales.map(l => [l, {
               title: editTitles[l].trim(),
               description: editDescs[l].trim() || undefined,
             }])
@@ -258,16 +257,13 @@ export function BlogCategoryManager({
             <input
               type="text"
               value={createSlug}
-              onChange={e => {
-                setCreateSlug(e.target.value);
-                setCreateSlugTouched(true);
-              }}
+              onChange={e => setManualCreateSlug(e.target.value)}
               className={`${inputClass} max-w-xs`}
               placeholder="category-slug"
             />
           </div>
 
-          {LOCALES.map(locale => (
+          {locales.map(locale => (
             <div key={locale} className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-muted-foreground mb-1 block text-xs">
@@ -405,7 +401,7 @@ export function BlogCategoryManager({
                     />
                   </div>
 
-                  {LOCALES.map(locale => (
+                  {locales.map(locale => (
                     <div key={locale} className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-muted-foreground mb-1 block text-xs">

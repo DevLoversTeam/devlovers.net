@@ -4,6 +4,7 @@ import { desc, eq, type SQL, sql, type SQLWrapper } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { returnRequests, shippingShipments } from '@/db/schema/shop';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 import {
   type CanonicalFulfillmentStage as ValidationCanonicalFulfillmentStage,
   canonicalFulfillmentStageValues,
@@ -43,12 +44,6 @@ export function latestReturnStatusSql(orderIdColumn: SQLWrapper): SQL {
     order by rr.created_at desc nulls last
     limit 1
   )`;
-}
-
-function normalizeStatus(value: string | null | undefined): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
 }
 
 function isPackedShippingStatus(value: string | null): boolean {
@@ -105,10 +100,10 @@ export async function readCanonicalFulfillmentSignals(
 export function deriveCanonicalFulfillmentStage(
   input: CanonicalFulfillmentStageInput
 ): CanonicalFulfillmentStage {
-  const orderStatus = normalizeStatus(input.orderStatus);
-  const shippingStatus = normalizeStatus(input.shippingStatus);
-  const shipmentStatus = normalizeStatus(input.shipmentStatus);
-  const returnStatus = normalizeStatus(input.returnStatus);
+  const orderStatus = trimToNull(input.orderStatus);
+  const shippingStatus = trimToNull(input.shippingStatus);
+  const shipmentStatus = trimToNull(input.shipmentStatus);
+  const returnStatus = trimToNull(input.returnStatus);
 
   if (isReturnedStatus(returnStatus)) {
     return 'returned';

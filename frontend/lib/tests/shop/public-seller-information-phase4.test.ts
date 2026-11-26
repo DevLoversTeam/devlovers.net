@@ -30,32 +30,16 @@ const ENV_KEYS = [
   'SHOP_SELLER_ADDRESS',
 ] as const;
 
-const previousEnv: Partial<
-  Record<(typeof ENV_KEYS)[number], string | undefined>
-> = {};
-
-function restoreEnv() {
-  for (const key of ENV_KEYS) {
-    const value = previousEnv[key];
-    if (value === undefined) {
-      delete process.env[key];
-    } else {
-      process.env[key] = value;
-    }
-  }
-}
-
 describe('public seller information contract', () => {
   beforeEach(() => {
     for (const key of ENV_KEYS) {
-      previousEnv[key] = process.env[key];
-      delete process.env[key];
+      vi.stubEnv(key, undefined);
     }
     vi.resetModules();
   });
 
   afterEach(() => {
-    restoreEnv();
+    vi.unstubAllEnvs();
     vi.resetModules();
   });
 

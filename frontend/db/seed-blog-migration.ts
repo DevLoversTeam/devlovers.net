@@ -13,6 +13,7 @@ import 'dotenv/config';
 
 import { eq } from 'drizzle-orm';
 
+import { ukrainianFirstLocales } from '../i18n/config';
 import { uploadImage } from '../lib/cloudinary';
 import { db } from './index';
 import {
@@ -26,8 +27,6 @@ import {
 } from './schema';
 
 // ── Types ───────────────────────────────────────────────────────
-
-const LOCALES = ['uk', 'en', 'pl'] as const;
 
 const SANITY_API =
   'https://6y9ive6v.api.sanity.io/v2025-11-29/data/query/production';
@@ -321,7 +320,7 @@ async function migrateCategories() {
     }
 
     // Sanity title is NOT multilingual — duplicate into 3 locale rows
-    const translations = LOCALES.map(locale => ({
+    const translations = ukrainianFirstLocales.map(locale => ({
       categoryId: row.id,
       locale,
       title: cat.title,
@@ -434,7 +433,7 @@ async function migrateAuthors(): Promise<Map<string, string>> {
     idMap.set(author._id, row.id);
 
     // Insert translations for each locale
-    const translations = LOCALES.map(locale => ({
+    const translations = ukrainianFirstLocales.map(locale => ({
       authorId: row.id,
       locale,
       name:
@@ -560,7 +559,7 @@ async function migratePosts(authorIdMap: Map<string, string>) {
       pl: post.bodyPl,
     };
 
-    for (const locale of LOCALES) {
+    for (const locale of ukrainianFirstLocales) {
       const rawBody = bodyByLocale[locale];
       const title =
         post.title?.[locale] || post.title?.en || post.title?.uk || 'Untitled';
@@ -606,7 +605,7 @@ async function migratePosts(authorIdMap: Map<string, string>) {
     }
 
     inserted++;
-    const localesWithBody = LOCALES.filter(l => bodyByLocale[l]);
+    const localesWithBody = ukrainianFirstLocales.filter(l => bodyByLocale[l]);
     console.log(
       `  [ok] ${slug} (body: ${localesWithBody.join(', ') || 'none'})`
     );

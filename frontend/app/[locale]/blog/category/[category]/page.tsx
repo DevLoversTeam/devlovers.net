@@ -8,18 +8,9 @@ import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground
 import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
 import { getCachedBlogPostsByCategory } from '@/db/queries/blog/blog-posts';
 import { Link } from '@/i18n/routing';
+import { getBlogCategoryLabel } from '@/lib/blog/category-label';
 import { formatBlogDate } from '@/lib/blog/date';
 export const revalidate = 604800; // 7 days
-
-function getCategoryLabel(categoryName: string, t: (key: string) => string) {
-  const key = categoryName.toLowerCase();
-  if (key === 'growth') return t('categories.career');
-  if (key === 'tech') return t('categories.tech');
-  if (key === 'career') return t('categories.career');
-  if (key === 'insights') return t('categories.insights');
-  if (key === 'news') return t('categories.news');
-  return categoryName;
-}
 
 export default async function BlogCategoryPage({
   params,
@@ -38,7 +29,11 @@ export default async function BlogCategoryPage({
   const matchedCategory = categories.find(c => c.slug === category);
   if (!matchedCategory) return notFound();
 
-  const categoryDisplay = getCategoryLabel(matchedCategory.title, t);
+  const categoryDisplay = getBlogCategoryLabel(
+    matchedCategory.title,
+    t,
+    'detail'
+  );
   const featuredPost = posts[0];
   const restPosts = posts.slice(1);
   const featuredDate = formatBlogDate(featuredPost?.publishedAt);

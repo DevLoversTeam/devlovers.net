@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { and, desc, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readOptionalDbRows } from '@/db/readDbRows';
 import { shippingEvents } from '@/db/schema';
 import {
   getNovaPoshtaConfig,
@@ -25,6 +26,7 @@ import {
   type NovaPoshtaCreateTtnInput,
 } from '@/lib/services/shop/shipping/nova-poshta-client';
 import { shippingStatusTransitionWhereSql } from '@/lib/services/shop/transitions/shipping-state';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 
 type ClaimedShipmentRow = {
   id: string;
@@ -152,19 +154,6 @@ function isPermanentNovaPoshtaErrorCode(
   return PERMANENT_NP_ERROR_CODES.has(code);
 }
 
-function readRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const anyRes = res as { rows?: unknown };
-  if (Array.isArray(anyRes?.rows)) return anyRes.rows as T[];
-  return [];
-}
-
-function toStringOrNull(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 function toObject(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
@@ -241,7 +230,7 @@ function parseSnapshot(raw: unknown): ParsedShipmentSnapshot {
     );
   }
 
-  const methodCode = toStringOrNull(root.methodCode);
+  const methodCode = trimToNull(root.methodCode);
   if (
     methodCode !== 'NP_WAREHOUSE' &&
     methodCode !== 'NP_LOCKER' &&
@@ -264,13 +253,13 @@ function parseSnapshot(raw: unknown): ParsedShipmentSnapshot {
     );
   }
 
-  const cityRef = toStringOrNull(selection.cityRef);
-  const warehouseRef = toStringOrNull(selection.warehouseRef);
-  const addressLine1 = toStringOrNull(selection.addressLine1);
-  const addressLine2 = toStringOrNull(selection.addressLine2);
+  const cityRef = trimToNull(selection.cityRef);
+  const warehouseRef = trimToNull(selection.warehouseRef);
+  const addressLine1 = trimToNull(selection.addressLine1);
+  const addressLine2 = trimToNull(selection.addressLine2);
 
-  const recipientFullName = toStringOrNull(recipient.fullName);
-  const recipientPhone = toStringOrNull(recipient.phone);
+  const recipientFullName = trimToNull(recipient.fullName);
+  const recipientPhone = trimToNull(recipient.phone);
 
   if (!cityRef || !recipientFullName || !recipientPhone) {
     throw buildFailure(
@@ -456,7 +445,7 @@ type PersistedCarrierCreateRequest = {
 
 function readCanonicalHashFromPayload(payload: unknown): string | null {
   const payloadObject = toObject(payload);
-  return toStringOrNull(payloadObject?.canonicalHash);
+  return trimToNull(payloadObject?.canonicalHash);
 }
 
 async function readPersistedCarrierCreateRequest(args: {
@@ -549,7 +538,7 @@ async function readPersistedCarrierCreateSuccessState(args: {
     )
     .orderBy(desc(shippingEvents.occurredAt), desc(shippingEvents.id));
 
-  const stateRows = readRows<{
+  const stateRows = readOptionalDbRows<{
     shipment_provider_ref: string | null;
     shipment_tracking_number: string | null;
     order_provider_ref: string | null;
@@ -577,8 +566,8 @@ async function readPersistedCarrierCreateSuccessState(args: {
   };
 
   for (const row of successEvents) {
-    const providerRef = toStringOrNull(row.providerRef);
-    const trackingNumber = toStringOrNull(row.trackingNumber);
+    const providerRef = trimToNull(row.providerRef);
+    const trackingNumber = trimToNull(row.trackingNumber);
     if (!providerRef || !trackingNumber) {
       return { state: 'conflict' };
     }
@@ -589,8 +578,8 @@ async function readPersistedCarrierCreateSuccessState(args: {
     });
   }
 
-  const shipmentProviderRef = toStringOrNull(stateRow?.shipment_provider_ref);
-  const shipmentTrackingNumber = toStringOrNull(
+  const shipmentProviderRef = trimToNull(stateRow?.shipment_provider_ref);
+  const shipmentTrackingNumber = trimToNull(
     stateRow?.shipment_tracking_number
   );
   if (
@@ -609,8 +598,8 @@ async function readPersistedCarrierCreateSuccessState(args: {
     });
   }
 
-  const orderProviderRef = toStringOrNull(stateRow?.order_provider_ref);
-  const orderTrackingNumber = toStringOrNull(stateRow?.order_tracking_number);
+  const orderProviderRef = trimToNull(stateRow?.order_provider_ref);
+  const orderTrackingNumber = trimToNull(stateRow?.order_tracking_number);
   if (
     isPartiallyPopulatedOutcome({
       providerRef: orderProviderRef,
@@ -922,7 +911,7 @@ export async function claimQueuedShipmentsForProcessing(args: {
 join mark_orders mo on mo.order_id = c.order_id
   `);
 
-  const claimed = readRows<ClaimedShipmentRow>(res);
+  const claimed = readOptionalDbRows<ClaimedShipmentRow>(res);
 
   for (const row of claimed) {
     try {
@@ -979,7 +968,7 @@ async function loadOrderShippingDetails(
     limit 1
   `);
 
-  return readRows<OrderShippingDetailsRow>(res)[0] ?? null;
+  return readOptionalDbRows<OrderShippingDetailsRow>(res)[0] ?? null;
 }
 
 async function loadAuthoritativeCarrierCreateIntent(args: {
@@ -1116,7 +1105,7 @@ async function markSucceeded(args: {
   `);
 
   return (
-    readRows<{
+    readOptionalDbRows<{
       shipment_updated: boolean;
       order_updated: boolean;
       order_id: string | null;
@@ -1175,7 +1164,7 @@ async function markFailed(args: {
   `);
 
   return (
-    readRows<{
+    readOptionalDbRows<{
       shipment_updated: boolean;
       order_updated: boolean;
     }>(res)[0] ?? null
@@ -1229,7 +1218,7 @@ async function markNeedsAttentionAfterSucceeded(args: {
   `);
 
   return (
-    readRows<{
+    readOptionalDbRows<{
       shipment_updated: boolean;
       order_updated: boolean;
     }>(res)[0] ?? null

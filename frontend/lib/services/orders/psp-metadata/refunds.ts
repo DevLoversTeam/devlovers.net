@@ -1,3 +1,5 @@
+import { trimToNull } from '@/lib/utils/trim-to-null';
+
 export type RefundMetaRecord = {
   refundId: string;
   idempotencyKey: string;
@@ -14,14 +16,8 @@ function ensureMetaObject(meta: unknown): Record<string, unknown> {
     : {};
 }
 
-function toNonEmptyString(v: unknown): string | null {
-  if (typeof v !== 'string') return null;
-  const s = v.trim();
-  return s.length ? s : null;
-}
-
 function toCurrency(v: unknown, fallback: string): string {
-  const s = toNonEmptyString(v);
+  const s = trimToNull(v);
   if (!s) return fallback;
   return s.toUpperCase();
 }
@@ -51,8 +47,8 @@ function normalizeRefundRecord(
   const r = input as Record<string, unknown>;
 
   const refundId =
-    toNonEmptyString(r.refundId) ??
-    toNonEmptyString((r as any).id) ??
+    trimToNull(r.refundId) ??
+    trimToNull((r as any).id) ??
     (typeof (r as any).refundId === 'number'
       ? String((r as any).refundId)
       : typeof (r as any).id === 'number'
@@ -61,7 +57,7 @@ function normalizeRefundRecord(
 
   if (!refundId) return null;
 
-  const idempotencyKey = toNonEmptyString(r.idempotencyKey) ?? 'meta:unknown';
+  const idempotencyKey = trimToNull(r.idempotencyKey) ?? 'meta:unknown';
 
   const amountMinor =
     toAmountMinor(r.amountMinor) ??
@@ -71,8 +67,8 @@ function normalizeRefundRecord(
   if (amountMinor === null) return null;
 
   const currency = toCurrency(r.currency, fallback.currency);
-  const createdAt = toNonEmptyString(r.createdAt) ?? fallback.createdAt;
-  const createdBy = toNonEmptyString(r.createdBy) ?? 'unknown';
+  const createdAt = trimToNull(r.createdAt) ?? fallback.createdAt;
+  const createdBy = trimToNull(r.createdBy) ?? 'unknown';
 
   const statusRaw = (r as any).status;
   const status =

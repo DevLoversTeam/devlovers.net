@@ -10,6 +10,7 @@ import { ProductSort } from '@/components/shop/ProductSort';
 export function ProductsToolbar() {
   const [open, setOpen] = React.useState(false);
   const t = useTranslations('shop.toolbar');
+  const tCommon = useTranslations('common');
 
   const dialogTitleId = React.useId();
   const dialogId = React.useId();
@@ -181,7 +182,7 @@ export function ProductsToolbar() {
                 type="button"
                 onClick={close}
                 className="text-muted-foreground hover:bg-secondary hover:text-foreground inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors"
-                aria-label={t('close')}
+                aria-label={tCommon('close')}
               >
                 <X className="h-5 w-5" aria-hidden="true" />
               </button>

@@ -19,6 +19,7 @@ export function BlogPagination({
   accentColor,
 }: BlogPaginationProps) {
   const t = useTranslations('blog.pagination');
+  const tPagination = useTranslations('common.pagination');
   const accentSoft = `color-mix(in srgb, ${accentColor} 16%, transparent)`;
   const accentGlow = `color-mix(in srgb, ${accentColor} 22%, transparent)`;
   const [isMobile, setIsMobile] = useState(false);
@@ -94,7 +95,7 @@ export function BlogPagination({
             ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
             : 'text-gray-700 hover:bg-[var(--qa-accent-soft)] dark:text-gray-300'
         )}
-        aria-label={t('previousPage')}
+        aria-label={tPagination('previousPage')}
       >
         ← <span className="hidden sm:inline">{t('previous')}</span>
       </button>
@@ -128,7 +129,7 @@ export function BlogPagination({
                     }
                   : undefined
               }
-              aria-label={t('page', { page })}
+              aria-label={tPagination('page', { page })}
               aria-current={page === currentPage ? 'page' : undefined}
             >
               {page}
@@ -147,7 +148,7 @@ export function BlogPagination({
             ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
             : 'text-gray-700 hover:bg-[var(--qa-accent-soft)] dark:text-gray-300'
         )}
-        aria-label={t('nextPage')}
+        aria-label={tPagination('nextPage')}
       >
         <span className="hidden sm:inline">{t('next')}</span> →
       </button>

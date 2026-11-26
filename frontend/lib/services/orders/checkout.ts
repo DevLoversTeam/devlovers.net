@@ -1,6 +1,7 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { productPriceJoin } from '@/db/queries/shop/product-price-join';
 import {
   npCities,
   npWarehouses,
@@ -18,6 +19,7 @@ import {
 } from '@/lib/env/nova-poshta';
 import { readServerEnv } from '@/lib/env/server-env';
 import { assertCriticalShopEnv } from '@/lib/env/shop-critical';
+import { isShopFlagEnabled } from '@/lib/env/shop-flag';
 import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { logError, logWarn } from '@/lib/logging';
 import { writeCanonicalEventWithRetry } from '@/lib/services/shop/events/write-canonical-event-with-retry';
@@ -148,13 +150,7 @@ async function getProductsForCheckout(
     })
 
     .from(products)
-    .leftJoin(
-      productPrices,
-      and(
-        eq(productPrices.productId, products.id),
-        eq(productPrices.currency, currency)
-      )
-    )
+    .leftJoin(productPrices, productPriceJoin(currency))
     .where(and(eq(products.isActive, true), inArray(products.id, productIds)));
 }
 
@@ -799,11 +795,6 @@ function priceItems(
   });
 }
 
-function isMonobankGooglePayEnabled(): boolean {
-  const raw = readServerEnv('SHOP_MONOBANK_GPAY_ENABLED')?.toLowerCase() ?? '';
-  return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';
-}
-
 function normalizeStoredPaymentMethod(value: unknown): PaymentMethod | null {
   const normalized = normVariant(typeof value === 'string' ? value : '');
   if (normalized === 'stripe_card') return 'stripe_card';
@@ -850,7 +841,7 @@ function resolveCheckoutPaymentMethod(args: {
 
     if (
       args.requestedMethod === 'monobank_google_pay' &&
-      !isMonobankGooglePayEnabled()
+      !isShopFlagEnabled(readServerEnv('SHOP_MONOBANK_GPAY_ENABLED'))
     ) {
       throw new InvalidPayloadError('Monobank Google Pay is disabled.', {
         code: 'INVALID_PAYLOAD',

@@ -30,20 +30,13 @@ vi.mock('@/lib/services/shop/events/write-admin-audit', () => ({
 }));
 
 import { db } from '@/db';
-import { adminAuditLog, orders, shippingShipments, users } from '@/db/schema';
+import { orders, shippingShipments, users } from '@/db/schema';
 import { applyAdminOrderLifecycleAction } from '@/lib/services/shop/admin-order-lifecycle';
 import { toDbMoney } from '@/lib/shop/money';
+import { cleanupAdminTestOrder } from '@/lib/tests/helpers/cleanup-admin-test-order';
 
 const ADMIN_USER_ID = 'admin_lifecycle_audit_1';
 type OrderInsertRow = typeof orders.$inferInsert;
-
-async function cleanup(orderId: string) {
-  await db.delete(adminAuditLog).where(eq(adminAuditLog.orderId, orderId));
-  await db
-    .delete(shippingShipments)
-    .where(eq(shippingShipments.orderId, orderId));
-  await db.delete(orders).where(eq(orders.id, orderId));
-}
 
 async function ensureAdminUser() {
   await db
@@ -190,7 +183,7 @@ describe.sequential('admin order lifecycle audit reliability', () => {
         })
       );
     } finally {
-      await cleanup(orderId);
+      await cleanupAdminTestOrder(orderId);
     }
   });
 
@@ -249,7 +242,7 @@ describe.sequential('admin order lifecycle audit reliability', () => {
         })
       );
     } finally {
-      await cleanup(orderId);
+      await cleanupAdminTestOrder(orderId);
     }
   });
 
@@ -315,7 +308,7 @@ describe.sequential('admin order lifecycle audit reliability', () => {
         })
       );
     } finally {
-      await cleanup(orderId);
+      await cleanupAdminTestOrder(orderId);
     }
   });
 });

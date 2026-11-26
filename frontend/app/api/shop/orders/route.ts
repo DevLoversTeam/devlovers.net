@@ -1,22 +1,16 @@
 import 'server-only';
 
-import crypto from 'node:crypto';
-
 import { desc, eq, sql } from 'drizzle-orm';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { db } from '@/db';
 import { orderItems, orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
+import { getRequestId } from '@/lib/http/getRequestId';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError, logInfo } from '@/lib/logging';
 
 export const dynamic = 'force-dynamic';
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
 
 type PaymentStatus = (typeof orders.$inferSelect)['paymentStatus'];
 type OrderCurrency = (typeof orders.$inferSelect)['currency'];
@@ -34,8 +28,7 @@ function toCount(v: unknown): number {
 
 export async function GET(request: NextRequest) {
   const startedAtMs = Date.now();
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const baseMeta = {
     requestId,

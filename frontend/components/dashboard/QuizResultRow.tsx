@@ -89,10 +89,13 @@ function getCategoryStyle(slug: string | null): CategoryTabStyle | null {
 
 export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
   const t = useTranslations('dashboard.quizResults');
+  const tQuizStatus = useTranslations('quiz.status');
   const router = useRouter();
 
   const pct = Number(attempt.percentage);
   const status = getStatus(pct);
+  const statusLabel =
+    status.label === 'mastered' ? tQuizStatus('mastered') : t(status.label);
   const isMastered = pct === 100;
   const catStyle = getCategoryStyle(attempt.categorySlug);
 
@@ -188,7 +191,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
             className="gap-1 rounded-full px-2 py-0.5 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs"
           >
             <span className={`h-1.5 w-1.5 rounded-full ${status.dotColor}`} />
-            {t(status.label)}
+            {statusLabel}
           </Badge>
         </div>
         {!isMastered ? (
@@ -268,7 +271,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
         <div className="flex justify-center">
           <Badge variant={status.variant} className="gap-1.5 rounded-full">
             <span className={`h-1.5 w-1.5 rounded-full ${status.dotColor}`} />
-            {t(status.label)}
+            {statusLabel}
           </Badge>
         </div>
 

@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { logWarn } from '@/lib/logging';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 
 import {
   getWarehousesByCityRef,
@@ -56,44 +57,38 @@ export type ShippingWarehouse = {
   isPostMachine: boolean;
 };
 
-function toStringOrNull(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 function toBoolean(value: unknown): boolean {
   return value === true;
 }
 
 function mapCityRow(row: CityRow): ShippingCity | null {
-  const ref = toStringOrNull(row.ref);
-  const nameUa = toStringOrNull(row.name_ua);
+  const ref = trimToNull(row.ref);
+  const nameUa = trimToNull(row.name_ua);
   if (!ref || !nameUa) return null;
   return {
     ref,
     nameUa,
-    nameRu: toStringOrNull(row.name_ru),
-    area: toStringOrNull(row.area),
-    region: toStringOrNull(row.region),
-    settlementType: toStringOrNull(row.settlement_type),
+    nameRu: trimToNull(row.name_ru),
+    area: trimToNull(row.area),
+    region: trimToNull(row.region),
+    settlementType: trimToNull(row.settlement_type),
   };
 }
 
 function mapWarehouseRow(row: WarehouseRow): ShippingWarehouse | null {
-  const ref = toStringOrNull(row.ref);
-  const name = toStringOrNull(row.name);
+  const ref = trimToNull(row.ref);
+  const name = trimToNull(row.name);
   if (!ref || !name) return null;
   return {
     ref,
-    settlementRef: toStringOrNull(row.settlement_ref),
-    cityRef: toStringOrNull(row.city_ref),
-    number: toStringOrNull(row.number),
-    type: toStringOrNull(row.type),
+    settlementRef: trimToNull(row.settlement_ref),
+    cityRef: trimToNull(row.city_ref),
+    number: trimToNull(row.number),
+    type: trimToNull(row.type),
     name,
-    nameRu: toStringOrNull(row.name_ru),
-    address: toStringOrNull(row.address),
-    addressRu: toStringOrNull(row.address_ru),
+    nameRu: trimToNull(row.name_ru),
+    address: trimToNull(row.address),
+    addressRu: trimToNull(row.address_ru),
     isPostMachine: toBoolean(row.is_post_machine),
   };
 }

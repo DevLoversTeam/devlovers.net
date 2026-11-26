@@ -1,6 +1,4 @@
-import crypto from 'node:crypto';
-
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import {
   AdminApiDisabledError,
@@ -8,6 +6,8 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { getRequestId } from '@/lib/http/getRequestId';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -15,26 +15,7 @@ import { InvalidPayloadError } from '@/lib/services/errors';
 import { refundReturnRequest } from '@/lib/services/shop/returns';
 import { returnRequestIdParamSchema } from '@/lib/validation/shop-returns';
 
-function noStoreJson(body: unknown, status = 200) {
-  const res = NextResponse.json(body, { status });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
-
-function mapInvalidPayloadStatus(code: string): number {
-  if (code === 'RETURN_NOT_FOUND') return 404;
-  if (
-    code === 'RETURN_TRANSITION_INVALID' ||
-    code === 'RETURN_REFUND_DISABLED' ||
-    code === 'RETURN_REFUND_STATE_INVALID' ||
-    code === 'RETURN_REFUND_PROVIDER_UNSUPPORTED' ||
-    code === 'RETURN_REFUND_PAYMENT_STATUS_INVALID'
-  ) {
-    return 409;
-  }
-  if (code === 'PSP_UNAVAILABLE') return 503;
-  return 400;
-}
+import { invalidReturnPayloadResponse } from '../_shared';
 
 export const runtime = 'nodejs';
 
@@ -42,8 +23,7 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,
@@ -67,7 +47,7 @@ export async function POST(
 
     const parsed = returnRequestIdParamSchema.safeParse(await context.params);
     if (!parsed.success) {
-      return noStoreJson({ code: 'INVALID_RETURN_ID' }, 400);
+      return noStoreJson({ code: 'INVALID_RETURN_ID' }, { status: 400 });
     }
     returnRequestIdForLog = parsed.data.id;
 
@@ -79,13 +59,13 @@ export async function POST(
     throw new Error('refundReturnRequest unexpectedly resolved');
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
-      return noStoreJson({ code: 'ADMIN_API_DISABLED' }, 403);
+      return noStoreJson({ code: 'ADMIN_API_DISABLED' }, { status: 403 });
     }
     if (error instanceof AdminUnauthorizedError) {
-      return noStoreJson({ code: error.code }, 401);
+      return noStoreJson({ code: error.code }, { status: 401 });
     }
     if (error instanceof AdminForbiddenError) {
-      return noStoreJson({ code: error.code }, 403);
+      return noStoreJson({ code: error.code }, { status: 403 });
     }
     if (error instanceof InvalidPayloadError) {
       logWarn('admin_return_refund_rejected', {
@@ -93,20 +73,13 @@ export async function POST(
         returnRequestId: returnRequestIdForLog,
         code: error.code,
       });
-      return noStoreJson(
-        {
-          code: error.code,
-          message: error.message,
-          ...(error.details ? { details: error.details } : {}),
-        },
-        mapInvalidPayloadStatus(error.code)
-      );
+      return invalidReturnPayloadResponse(error, 'refund');
     }
     logError('admin_return_refund_failed', error, {
       ...baseMeta,
       returnRequestId: returnRequestIdForLog,
       code: 'ADMIN_RETURN_REFUND_FAILED',
     });
-    return noStoreJson({ code: 'INTERNAL_ERROR' }, 500);
+    return noStoreJson({ code: 'INTERNAL_ERROR' }, { status: 500 });
   }
 }

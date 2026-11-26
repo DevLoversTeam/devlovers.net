@@ -19,6 +19,9 @@ import {
 import type { CurrencyCode } from '@/lib/shop/currency';
 import { toDbMoney } from '@/lib/shop/money';
 import type { PaymentProvider, PaymentStatus } from '@/lib/shop/payments';
+import { trimToNull } from '@/lib/utils/trim-to-null';
+
+import { adminOrderItemProjection } from './order-item-snapshot';
 
 export type AdminOrderListItem = {
   id: string;
@@ -204,12 +207,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
-function readString(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 function normalizeHistoryAction(args: {
   action: string;
   payload: Record<string, unknown>;
@@ -222,7 +219,7 @@ function normalizeHistoryAction(args: {
     return args.action.slice('order_admin_action.'.length);
   }
 
-  return readString(args.payload.action) ?? args.action;
+  return trimToNull(args.payload.action) ?? args.action;
 }
 
 function toHistoryDate(value: unknown): Date | null {
@@ -247,7 +244,7 @@ function parseLegacyShippingAdminAudit(
   rawEntries.forEach((entry, index) => {
     if (!isRecord(entry)) return;
 
-    const action = readString(entry.action);
+    const action = trimToNull(entry.action);
     const occurredAt = toHistoryDate(entry.at);
     if (!action || !occurredAt) return;
 
@@ -257,13 +254,13 @@ function parseLegacyShippingAdminAudit(
         source: 'legacy',
         action,
         occurredAt,
-        actorUserId: readString(entry.actorUserId),
+        actorUserId: trimToNull(entry.actorUserId),
         actorName: null,
         actorEmail: null,
-        requestId: readString(entry.requestId),
-        fromShippingStatus: readString(entry.fromShippingStatus),
-        toShippingStatus: readString(entry.toShippingStatus),
-        fromShipmentStatus: readString(entry.fromShipmentStatus),
+        requestId: trimToNull(entry.requestId),
+        fromShippingStatus: trimToNull(entry.fromShippingStatus),
+        toShippingStatus: trimToNull(entry.toShippingStatus),
+        fromShipmentStatus: trimToNull(entry.fromShipmentStatus),
       },
       index,
     });
@@ -301,9 +298,9 @@ function toCanonicalHistoryEntry(row: {
     actorName: row.actorName,
     actorEmail: row.actorEmail,
     requestId: row.requestId,
-    fromShippingStatus: readString(payload.fromShippingStatus),
-    toShippingStatus: readString(payload.toShippingStatus),
-    fromShipmentStatus: readString(payload.fromShipmentStatus),
+    fromShippingStatus: trimToNull(payload.fromShippingStatus),
+    toShippingStatus: trimToNull(payload.toShippingStatus),
+    fromShipmentStatus: trimToNull(payload.fromShipmentStatus),
   };
 }
 
@@ -482,16 +479,7 @@ export async function getAdminOrderDetail(
         shipmentUpdatedAt: shippingShipments.updatedAt,
         shippingAddress: orderShipping.shippingAddress,
       },
-      item: {
-        id: orderItems.id,
-        productId: orderItems.productId,
-        productTitle: orderItems.productTitle,
-        productSlug: orderItems.productSlug,
-        productSku: orderItems.productSku,
-        quantity: orderItems.quantity,
-        unitPriceMinor: orderItems.unitPriceMinor,
-        lineTotalMinor: orderItems.lineTotalMinor,
-      },
+      item: adminOrderItemProjection,
     })
     .from(orders)
     .leftJoin(shippingShipments, eq(shippingShipments.orderId, orders.id))

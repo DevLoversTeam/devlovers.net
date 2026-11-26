@@ -4,6 +4,7 @@ import LegalPageShell from '@/components/legal/LegalPageShell';
 import ReturnsPolicyContent, {
   RETURNS_POLICY_LAST_UPDATED,
 } from '@/components/legal/ReturnsPolicyContent';
+import { getLocalizedMetadata } from '@/i18n/metadata';
 
 export async function generateMetadata({
   params,
@@ -11,12 +12,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'legal.returns' });
-
-  return {
-    title: t('metaTitle'),
-    description: t('metaDescription'),
-  };
+  return getLocalizedMetadata('legal.returns', locale);
 }
 
 export default async function ReturnsPolicyPage() {

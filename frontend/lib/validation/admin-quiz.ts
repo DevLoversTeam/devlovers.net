@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-export const localeSchema = z.enum(['en', 'uk', 'pl']);
+import { locales } from '@/i18n/config';
+
+export const localeSchema = z.enum(locales);
 
 export type AdminLocaleValue = z.infer<typeof localeSchema>;
 

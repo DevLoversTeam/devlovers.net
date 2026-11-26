@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -20,7 +20,8 @@ vi.mock('@/actions/ai', () => ({
 }));
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations: (namespace: string) => (key: string) =>
+    namespace === 'common' ? `common.${key}` : key,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -85,10 +86,13 @@ describe('AIWordHelper', () => {
 
     const fetchMock = mockFetchSequence([]);
 
-    render(<AIWordHelper term="Git" isOpen onClose={vi.fn()} />);
+    const onClose = vi.fn();
+    render(<AIWordHelper term="Git" isOpen onClose={onClose} />);
 
     expect(await screen.findByText('Cached')).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('renders explanation from API', async () => {

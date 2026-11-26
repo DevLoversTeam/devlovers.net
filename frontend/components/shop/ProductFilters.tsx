@@ -28,6 +28,7 @@ export function ProductFilters() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const t = useTranslations('shop.filters');
+  const tProduct = useTranslations('shop.product');
   const tCategories = useTranslations('shop.catalog.categories');
   const tTypes = useTranslations('shop.catalog.productTypes');
   const tColors = useTranslations('shop.catalog.colors');
@@ -60,7 +61,7 @@ export function ProductFilters() {
           id={categoryGroupId}
           className="text-foreground text-sm font-semibold tracking-wide uppercase"
         >
-          {t('category')}
+          {tProduct('category')}
         </h3>
 
         <ul className="mt-4 space-y-2" role="list">
@@ -90,7 +91,7 @@ export function ProductFilters() {
           id={typeGroupId}
           className="text-foreground text-sm font-semibold tracking-wide uppercase"
         >
-          {t('type')}
+          {tProduct('type')}
         </h3>
 
         <ul className="mt-4 space-y-2" role="list">

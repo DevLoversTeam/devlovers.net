@@ -8,6 +8,7 @@ import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 import { categoryData } from '@/data/category';
 import { getCategoryTabStyle } from '@/data/categoryStyles';
+import { defaultLocale, isSupportedLocale } from '@/i18n/config';
 
 import { QuizCard } from './QuizCard';
 
@@ -40,12 +41,8 @@ export default function QuizzesSection({
   const t = useTranslations('quiz.section');
   const params = useParams();
   const searchParams = useSearchParams();
-  const locale = params.locale as string;
-  const localeKey = (['uk', 'en', 'pl'] as const).includes(
-    locale as 'uk' | 'en' | 'pl'
-  )
-    ? (locale as 'uk' | 'en' | 'pl')
-    : 'en';
+  const { locale } = params;
+  const localeKey = isSupportedLocale(locale) ? locale : defaultLocale;
 
   const [progressMap, setProgressMap] =
     useState<Record<string, UserProgress>>(userProgressMap);

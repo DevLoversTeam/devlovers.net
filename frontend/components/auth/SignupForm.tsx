@@ -35,6 +35,7 @@ function utf8ByteLength(value: string): number {
 
 export function SignupForm({ locale, returnTo }: SignupFormProps) {
   const t = useTranslations('auth.signup');
+  const tNavigation = useTranslations('navigation');
   const tf = useTranslations('auth.fields');
 
   const [loading, setLoading] = useState(false);
@@ -198,7 +199,7 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
               }
               className="underline"
             >
-              {t('loginLink')}
+              {tNavigation('login')}
             </Link>
           </p>
         )
@@ -297,7 +298,7 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
           {error && <AuthErrorBanner message={error} />}
 
           <Button type="submit" disabled={submitDisabled} className="w-full">
-            {loading ? t('submitting') : t('submit')}
+            {loading ? t('submitting') : tNavigation('signup')}
           </Button>
         </form>
       )}

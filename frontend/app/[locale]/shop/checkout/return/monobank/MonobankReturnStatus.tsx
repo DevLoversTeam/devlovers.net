@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Link, useRouter } from '@/i18n/routing';
+import { fetchCheckoutOrderStatus } from '@/lib/shop/checkout-order-status';
 import {
   type CurrencyCode,
   currencyValues,
@@ -96,6 +97,7 @@ export default function MonobankReturnStatus({
   locale,
 }: MonobankReturnStatusProps) {
   const t = useTranslations('shop.checkout');
+  const tOrders = useTranslations('shop.orders');
   const router = useRouter();
 
   const [status, setStatus] = useState<LiteOrderStatus | null>(null);
@@ -106,22 +108,12 @@ export default function MonobankReturnStatus({
   const normalizedToken = normalizeToken(statusToken);
 
   const fetchStatus = useCallback(async (): Promise<LiteOrderStatus | null> => {
-    const params = new URLSearchParams({ view: 'lite' });
-    if (normalizedToken) params.set('statusToken', normalizedToken);
-
-    const response = await fetch(
-      `/api/shop/orders/${encodeURIComponent(orderId)}/status?${params.toString()}`,
-      {
-        method: 'GET',
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-      }
-    );
-
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) return null;
-
-    return parseStatusPayload(payload);
+    const { ok, payload } = await fetchCheckoutOrderStatus({
+      orderId,
+      statusToken: normalizedToken,
+      headers: { Accept: 'application/json' },
+    });
+    return ok ? parseStatusPayload(payload) : null;
   }, [normalizedToken, orderId]);
 
   useEffect(() => {
@@ -201,12 +193,12 @@ export default function MonobankReturnStatus({
       <div className="border-border bg-muted/30 mt-6 rounded-md border p-4">
         <dl className="space-y-2 text-sm">
           <div className="flex items-center justify-between gap-4">
-            <dt className="text-muted-foreground">{t('error.orderLabel')}</dt>
+            <dt className="text-muted-foreground">{tOrders('orderLabel')}</dt>
             <dd className="text-foreground font-medium">{orderId}</dd>
           </div>
 
           <div className="flex items-center justify-between gap-4">
-            <dt className="text-muted-foreground">{t('error.statusLabel')}</dt>
+            <dt className="text-muted-foreground">{t('paymentStatusLabel')}</dt>
             <dd className="text-foreground font-semibold">{statusLabel}</dd>
           </div>
 

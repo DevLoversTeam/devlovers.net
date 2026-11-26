@@ -4,8 +4,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next-intl', () => ({
   useTranslations:
-    () => (key: string, values?: Record<string, string | number>) =>
-      values ? `${key}:${Object.values(values).join('/')}` : key,
+    (namespace: string) =>
+    (key: string, values?: Record<string, string | number>) => {
+      if (namespace === 'common') return `common.${key}`;
+      return values ? `${key}:${Object.values(values).join('/')}` : key;
+    },
 }));
 
 import { QuestionProgressToolbar } from '@/components/q&a/QuestionProgressToolbar';
@@ -64,10 +67,13 @@ describe('QuestionProgressToolbar', () => {
     expect(screen.getByText('reset.title:Git')).toBeTruthy();
     expect(screen.getByText('reset.description:3/2')).toBeTruthy();
 
-    await waitFor(() => {
-      expect(screen.getByText('reset.cancel')).toHaveFocus();
-    });
+    const cancel = screen.getByRole('button', { name: 'common.cancel' });
+    await waitFor(() => expect(cancel).toHaveFocus());
+    fireEvent.click(cancel);
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(onResetProgress).not.toHaveBeenCalled();
 
+    fireEvent.click(screen.getByText('resetProgress'));
     fireEvent.click(screen.getByText('reset.confirm'));
 
     await waitFor(() => {

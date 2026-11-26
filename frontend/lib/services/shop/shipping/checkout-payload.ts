@@ -1,4 +1,5 @@
 import { localeToCountry } from '@/lib/shop/locale';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 
 export type CheckoutDeliveryMethodCode =
   | 'NP_WAREHOUSE'
@@ -64,12 +65,6 @@ export type BuildCheckoutShippingPayloadResult =
         | 'RECIPIENT_EMAIL_INVALID';
     };
 
-function trimOrNull(value: string | null | undefined): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 const UA_PHONE_REGEX = /^(?:\+380\d{9}|0\d{9})$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -90,7 +85,7 @@ export function buildCheckoutShippingPayload(
     };
   }
 
-  const cityRef = trimOrNull(input.cityRef);
+  const cityRef = trimToNull(input.cityRef);
   if (!cityRef) {
     return {
       ok: false,
@@ -99,13 +94,13 @@ export function buildCheckoutShippingPayload(
   }
 
   const methodCode = input.methodCode;
-  const warehouseRef = trimOrNull(input.warehouseRef);
-  const addressLine1 = trimOrNull(input.addressLine1);
-  const addressLine2 = trimOrNull(input.addressLine2);
-  const recipientFullName = trimOrNull(input.recipientFullName);
-  const recipientPhone = trimOrNull(input.recipientPhone);
-  const recipientEmail = trimOrNull(input.recipientEmail);
-  const recipientComment = trimOrNull(input.recipientComment);
+  const warehouseRef = trimToNull(input.warehouseRef);
+  const addressLine1 = trimToNull(input.addressLine1);
+  const addressLine2 = trimToNull(input.addressLine2);
+  const recipientFullName = trimToNull(input.recipientFullName);
+  const recipientPhone = trimToNull(input.recipientPhone);
+  const recipientEmail = trimToNull(input.recipientEmail);
+  const recipientComment = trimToNull(input.recipientComment);
 
   if (methodCode === 'NP_WAREHOUSE' || methodCode === 'NP_LOCKER') {
     if (!warehouseRef) {

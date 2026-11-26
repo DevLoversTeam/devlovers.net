@@ -3,16 +3,11 @@ import { getTranslations } from 'next-intl/server';
 
 import { CategoryTile } from '@/components/shop/CategoryTile';
 import { ProductCard } from '@/components/shop/ProductCard';
+import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
 import { Hero } from '@/components/shop/ShopHero';
 import { Link } from '@/i18n/routing';
 import { getHomepageContent } from '@/lib/shop/data';
-import {
-  SHOP_CTA_BASE,
-  SHOP_CTA_INSET,
-  SHOP_CTA_WAVE,
-  SHOP_FOCUS,
-  shopCtaGradient,
-} from '@/lib/shop/ui-classes';
+import { SHOP_CTA_BASE, SHOP_FOCUS } from '@/lib/shop/ui-classes';
 
 export const metadata: Metadata = {
   title: 'Shop | DevLovers',
@@ -125,21 +120,10 @@ export default async function HomePage({
               className={` ${SHOP_CTA_BASE} ${SHOP_FOCUS} px-8 py-3 text-[color:var(--shop-cta-fg)] shadow-[var(--shop-cta-shadow)] hover:shadow-[var(--shop-cta-shadow-hover)] sm:px-10 md:px-12 md:py-3.5`}
               aria-label={t('hero.cta')}
             >
-              <span
-                className="absolute inset-0"
-                style={shopCtaGradient('--shop-cta-bg', '--shop-cta-bg-hover')}
-                aria-hidden="true"
-              />
-
-              <span
-                className={SHOP_CTA_WAVE}
-                style={shopCtaGradient('--shop-cta-bg-hover', '--shop-cta-bg')}
-                aria-hidden="true"
-              />
-
-              <span className={SHOP_CTA_INSET} aria-hidden="true" />
-
-              <span className="relative z-10 flex items-center gap-2">
+              <ShopCtaContent
+                className="relative z-10 flex items-center gap-2"
+                variant="shop"
+              >
                 <span>{t('hero.cta')}</span>
                 <span
                   aria-hidden="true"
@@ -147,7 +131,7 @@ export default async function HomePage({
                 >
                   →
                 </span>
-              </span>
+              </ShopCtaContent>
             </Link>
           </div>
         </div>

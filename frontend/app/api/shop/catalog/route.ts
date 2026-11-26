@@ -1,8 +1,8 @@
-import crypto from 'node:crypto';
-
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
+import { getRequestId } from '@/lib/http/getRequestId';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError, logWarn } from '@/lib/logging';
 import { canonicalizePublicCatalogQuery } from '@/lib/shop/catalog-query';
 import { getCatalogProducts } from '@/lib/shop/data';
@@ -11,12 +11,6 @@ import { catalogQuerySchema } from '@/lib/validation/shop';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
 
 type RawSearchParams = {
   category?: string;
@@ -39,8 +33,7 @@ function normalizeLocale(input: unknown): 'en' | 'uk' {
 export async function GET(request: NextRequest) {
   const startedAtMs = Date.now();
 
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const baseMeta = {
     requestId,

@@ -4,33 +4,24 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useId, useState, useTransition } from 'react';
 
+import { normalizeActionErrorCode } from './normalizeActionErrorCode';
+
 type Props = {
   orderId: string;
   disabled: boolean;
   csrfToken: string;
 };
 
-function normalizeActionErrorCode(error: unknown): string {
-  if (error instanceof TypeError) {
-    return 'NETWORK_ERROR';
-  }
-
-  if (error instanceof Error && error.message.trim().length > 0) {
-    return error.message;
-  }
-
-  return 'NETWORK_ERROR';
-}
-
 function mapCancelPaymentError(
   code: string,
-  t: (key: string) => string
+  t: (key: string) => string,
+  securityError: string
 ): string {
   switch (code) {
     case 'NETWORK_ERROR':
       return t('errors.network');
     case 'CSRF_REJECTED':
-      return t('errors.security');
+      return securityError;
     case 'CANCEL_DISABLED':
       return t('errors.cancelPaymentDisabled');
     case 'CANCEL_PROVIDER_NOT_MONOBANK':
@@ -55,6 +46,8 @@ function mapCancelPaymentError(
 export function CancelPaymentButton({ orderId, disabled, csrfToken }: Props) {
   const router = useRouter();
   const t = useTranslations('shop.orders.detail.paymentControls');
+  const tDetail = useTranslations('shop.orders.detail');
+  const securityError = tDetail('actionSecurityError');
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const errorId = useId();
@@ -73,7 +66,9 @@ export function CancelPaymentButton({ orderId, disabled, csrfToken }: Props) {
         },
       });
     } catch (err) {
-      setError(mapCancelPaymentError(normalizeActionErrorCode(err), t));
+      setError(
+        mapCancelPaymentError(normalizeActionErrorCode(err), t, securityError)
+      );
       return;
     }
 
@@ -88,7 +83,8 @@ export function CancelPaymentButton({ orderId, disabled, csrfToken }: Props) {
       setError(
         mapCancelPaymentError(
           json?.error ?? json?.code ?? json?.message ?? `HTTP_${res.status}`,
-          t
+          t,
+          securityError
         )
       );
       return;

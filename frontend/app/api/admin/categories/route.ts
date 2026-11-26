@@ -3,26 +3,20 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { categories, categoryTranslations } from '@/db/schema/categories';
+import { locales } from '@/i18n/config';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import { createCategorySchema } from '@/lib/validation/admin-quiz';
 
 export const runtime = 'nodejs';
-
-const LOCALES = ['en', 'uk', 'pl'] as const;
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const blocked = guardBrowserSameOrigin(request);
@@ -93,7 +87,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Insert translations (cleanup orphan category on failure)
     try {
       await db.insert(categoryTranslations).values(
-        LOCALES.map(locale => ({
+        locales.map(locale => ({
           categoryId: category.id,
           locale,
           title: translations[locale].title,

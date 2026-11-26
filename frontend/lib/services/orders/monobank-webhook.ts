@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { and, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readOptionalDbRows } from '@/db/readDbRows';
 import { monobankEvents, orders, paymentAttempts } from '@/db/schema';
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 import {
@@ -24,11 +25,15 @@ import { InvalidPayloadError } from '@/lib/services/errors';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 import { restockOrder } from '@/lib/services/orders/restock';
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { insertPaymentEventFromUpdatedOrderSql } from '@/lib/services/shop/events/insert-payment-event-from-updated-order-sql';
 import { orderShippingEligibilityWhereSql } from '@/lib/services/shop/shipping/eligibility';
 import { ensureQueuedInitialShipment } from '@/lib/services/shop/shipping/ensure-queued-initial-shipment';
 import { isInventoryCommittedForShipping } from '@/lib/services/shop/shipping/inventory-eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
-import { shippingStatusTransitionWhereSql } from '@/lib/services/shop/transitions/shipping-state';
+import {
+  insertQueuedInitialShipmentSql,
+  shippingStatusCanBeQueuedSql,
+} from '@/lib/services/shop/shipping/queued-initial-shipment-sql';
 import { isUuidV1toV5 } from '@/lib/utils/uuid';
 
 type WebhookMode = 'apply' | 'store' | 'drop';
@@ -148,13 +153,6 @@ function toIssueMessage(error: unknown): string {
         ? error
         : 'Unknown error';
   return msg.length > 500 ? msg.slice(0, 500) : msg;
-}
-
-function readDbRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const anyRes = res as any;
-  if (Array.isArray(anyRes?.rows)) return anyRes.rows as T[];
-  return [];
 }
 
 function normalizeStatus(raw: unknown): string {
@@ -552,6 +550,46 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
     paymentEventPayload.wallet = args.walletAttribution;
   }
 
+  const enqueueShipmentCtes = sql`
+    eligible_for_enqueue as (
+      select uo.id
+      from updated_order uo
+      where ${args.enqueueShipment} = true
+        and uo.shipping_required = true
+        and uo.shipping_provider = 'nova_poshta'
+        and uo.shipping_method_code is not null
+        and ${orderShippingEligibilityWhereSql({
+          paymentStatusColumn: sql`uo.payment_status`,
+          orderStatusColumn: sql`'PAID'`,
+          inventoryStatusColumn: sql`uo.inventory_status`,
+        })}
+    ),
+    inserted_shipment as (
+      ${insertQueuedInitialShipmentSql({
+        orderIdColumn: sql`id`,
+        eligibleOrders: sql`eligible_for_enqueue`,
+        now: args.now,
+        onConflict: 'keep-existing',
+      })}
+    ),
+    queued_order_ids as (
+      select order_id from inserted_shipment
+      union
+      select s.order_id
+      from shipping_shipments s
+      where s.order_id in (select id from eligible_for_enqueue)
+        and s.status = 'queued'
+    ),
+    shipping_status_update as (
+      update orders
+      set shipping_status = 'queued'::shipping_status,
+          updated_at = ${args.now}
+      where id in (select order_id from queued_order_ids)
+        and ${shippingStatusCanBeQueuedSql}
+      returning id
+    )
+  `;
+
   const res = args.canonicalDualWriteEnabled
     ? await db.execute(sql`
         with updated_order as (
@@ -592,95 +630,19 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
           returning id
         ),
         inserted_payment_event as (
-          insert into payment_events (
-            order_id,
-            provider,
-            event_name,
-            event_source,
-            event_ref,
-            attempt_id,
-            provider_payment_intent_id,
-            provider_charge_id,
-            amount_minor,
-            currency,
-            payload,
-            dedupe_key,
-            occurred_at,
-            created_at
-          )
-          select
-            uo.id,
-            'monobank',
-            'paid_applied',
-            'monobank_webhook',
-            ${args.eventId},
-            ${args.attemptId}::uuid,
-            ${args.invoiceId},
-            null,
-            uo.total_amount_minor::bigint,
-            uo.currency,
-            ${JSON.stringify(paymentEventPayload)}::jsonb,
-            ${args.canonicalEventDedupeKey},
-            ${args.now},
-            ${args.now}
-          from updated_order uo
-          on conflict (dedupe_key) do nothing
-          returning id
+          ${insertPaymentEventFromUpdatedOrderSql({
+            provider: sql`'monobank'`,
+            eventName: sql`'paid_applied'`,
+            eventSource: sql`'monobank_webhook'`,
+            eventRef: args.eventId,
+            attemptId: args.attemptId,
+            providerPaymentIntentId: args.invoiceId,
+            payload: paymentEventPayload,
+            dedupeKey: args.canonicalEventDedupeKey,
+            now: args.now,
+          })}
         ),
-        eligible_for_enqueue as (
-          select uo.id
-          from updated_order uo
-          where ${args.enqueueShipment} = true
-            and uo.shipping_required = true
-            and uo.shipping_provider = 'nova_poshta'
-            and uo.shipping_method_code is not null
-            and ${orderShippingEligibilityWhereSql({
-              paymentStatusColumn: sql`uo.payment_status`,
-              orderStatusColumn: sql`'PAID'`,
-              inventoryStatusColumn: sql`uo.inventory_status`,
-            })}
-        ),
-        inserted_shipment as (
-          insert into shipping_shipments (
-            order_id,
-            provider,
-            status,
-            attempt_count,
-            created_at,
-            updated_at
-          )
-          select
-            id,
-            'nova_poshta',
-            'queued',
-            0,
-            ${args.now},
-            ${args.now}
-          from eligible_for_enqueue
-          on conflict (order_id) do nothing
-          returning order_id
-        ),
-        queued_order_ids as (
-          select order_id from inserted_shipment
-          union
-          select s.order_id
-          from shipping_shipments s
-          where s.order_id in (select id from eligible_for_enqueue)
-            and s.status = 'queued'
-        ),
-        shipping_status_update as (
-      update orders
-      set shipping_status = 'queued'::shipping_status,
-          updated_at = ${args.now}
-      where id in (select order_id from queued_order_ids)
-        and shipping_status is distinct from 'queued'::shipping_status
-        and ${shippingStatusTransitionWhereSql({
-          column: sql`shipping_status`,
-          to: 'queued',
-          allowNullFrom: true,
-        })}
-      returning id
-    )
+        ${enqueueShipmentCtes}
     select
       (select id from updated_order) as order_id,
       (select id from updated_attempt) as attempt_id,
@@ -734,60 +696,7 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
             and exists (select 1 from updated_order)
           returning id
         ),
-        eligible_for_enqueue as (
-          select uo.id
-          from updated_order uo
-          where ${args.enqueueShipment} = true
-            and uo.shipping_required = true
-            and uo.shipping_provider = 'nova_poshta'
-            and uo.shipping_method_code is not null
-            and ${orderShippingEligibilityWhereSql({
-              paymentStatusColumn: sql`uo.payment_status`,
-              orderStatusColumn: sql`'PAID'`,
-              inventoryStatusColumn: sql`uo.inventory_status`,
-            })}
-        ),
-        inserted_shipment as (
-          insert into shipping_shipments (
-            order_id,
-            provider,
-            status,
-            attempt_count,
-            created_at,
-            updated_at
-          )
-          select
-            id,
-            'nova_poshta',
-            'queued',
-            0,
-            ${args.now},
-            ${args.now}
-          from eligible_for_enqueue
-          on conflict (order_id) do nothing
-          returning order_id
-        ),
-        queued_order_ids as (
-          select order_id from inserted_shipment
-          union
-          select s.order_id
-          from shipping_shipments s
-          where s.order_id in (select id from eligible_for_enqueue)
-            and s.status = 'queued'
-        ),
-        shipping_status_update as (
-      update orders
-      set shipping_status = 'queued'::shipping_status,
-          updated_at = ${args.now}
-      where id in (select order_id from queued_order_ids)
-        and shipping_status is distinct from 'queued'::shipping_status
-        and ${shippingStatusTransitionWhereSql({
-          column: sql`shipping_status`,
-          to: 'queued',
-          allowNullFrom: true,
-        })}
-      returning id
-    )
+        ${enqueueShipmentCtes}
     select
       (select id from updated_order) as order_id,
       (select id from updated_attempt) as attempt_id,
@@ -806,7 +715,7 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
       ) as order_shipping_is_queued
       `);
 
-  const row = readDbRows<{
+  const row = readOptionalDbRows<{
     order_id?: string;
     attempt_id?: string;
     inserted_shipment_count?: number;
@@ -882,7 +791,7 @@ async function atomicFinalizeOrderAndAttempt(args: {
       (select id from updated_attempt) as attempt_id
   `);
 
-  const row = readDbRows<{ order_id?: string; attempt_id?: string }>(res)[0];
+  const row = readOptionalDbRows<{ order_id?: string; attempt_id?: string }>(res)[0];
   return Boolean(row?.order_id && row?.attempt_id);
 }
 

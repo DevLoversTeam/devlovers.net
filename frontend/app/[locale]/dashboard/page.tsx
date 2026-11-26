@@ -18,6 +18,7 @@ import {
   getUserQuizStats,
 } from '@/db/queries/quizzes/quiz';
 import { getUserGlobalRank, getUserProfile } from '@/db/queries/users';
+import { getLocalizedMetadata } from '@/i18n/metadata';
 import { redirect } from '@/i18n/routing';
 import { computeAchievements } from '@/lib/achievements';
 import { getCurrentUser } from '@/lib/auth';
@@ -30,12 +31,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'dashboard' });
-
-  return {
-    title: t('metaTitle'),
-    description: t('metaDescription'),
-  };
+  return getLocalizedMetadata('dashboard', locale);
 }
 
 export default async function DashboardPage({

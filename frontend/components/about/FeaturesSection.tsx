@@ -52,6 +52,7 @@ interface Feature {
 
 interface Page {
   id: string;
+  titleKey: string;
   icon: LucideIcon;
   href: string;
   features: Feature[];
@@ -75,6 +76,7 @@ const decorativeDots = [
 const pages: Page[] = [
   {
     id: 'qa',
+    titleKey: 'about.features.qa.title',
     icon: MessageCircle,
     href: '/q&a',
     features: [
@@ -114,6 +116,7 @@ const pages: Page[] = [
   },
   {
     id: 'quiz',
+    titleKey: 'navigation.quizzes',
     icon: Brain,
     href: '/quizzes',
     features: [
@@ -153,6 +156,7 @@ const pages: Page[] = [
   },
   {
     id: 'leaderboard',
+    titleKey: 'navigation.leaderboard',
     icon: Trophy,
     href: '/leaderboard',
     features: [
@@ -192,6 +196,7 @@ const pages: Page[] = [
   },
   {
     id: 'profile',
+    titleKey: 'about.features.profile.title',
     icon: User,
     href: '/dashboard',
     features: [
@@ -231,6 +236,7 @@ const pages: Page[] = [
   },
   {
     id: 'blog',
+    titleKey: 'about.features.blog.title',
     icon: BookOpen,
     href: '/blog',
     features: [
@@ -270,6 +276,7 @@ const pages: Page[] = [
   },
   {
     id: 'shop',
+    titleKey: 'navigation.shop',
     icon: ShoppingBag,
     href: '/shop',
     features: [
@@ -518,13 +525,13 @@ function TabButton({
   isActive,
   onClick,
   onKeyDown,
-  t,
+  title,
 }: {
   page: Page;
   isActive: boolean;
   onClick: () => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
-  t: (key: string) => string;
+  title: string;
 }) {
   return (
     <button
@@ -553,7 +560,7 @@ function TabButton({
       )}
       <span className="relative z-10 flex items-center gap-2">
         <page.icon size={18} className="md:h-4 md:w-4" aria-hidden="true" />
-        <span className="hidden md:inline">{t(`${page.id}.title`)}</span>
+        <span className="hidden md:inline">{title}</span>
       </span>
     </button>
   );
@@ -561,6 +568,7 @@ function TabButton({
 
 export function FeaturesSection() {
   const t = useTranslations('about.features');
+  const tPageTitle = useTranslations();
   const [activeTab, setActiveTab] = useState('qa');
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
@@ -655,7 +663,7 @@ export function FeaturesSection() {
                 isActive={activeTab === page.id}
                 onClick={() => setActiveTab(page.id)}
                 onKeyDown={e => onTabKeyDown(e, index)}
-                t={t}
+                title={tPageTitle(page.titleKey)}
               />
             ))}
           </div>

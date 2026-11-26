@@ -13,6 +13,7 @@ import {
   blogCategoryTranslations,
   blogPostCategories,
 } from '@/db/schema';
+import { defaultLocale, isSupportedLocale, locales } from '@/i18n/config';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
 import { shouldBypassImageOptimization } from '@/lib/blog/image';
@@ -23,8 +24,6 @@ export const metadata: Metadata = {
   robots: 'noindex, nofollow',
 };
 
-const LOCALES = ['en', 'uk', 'pl'] as const;
-
 export default async function AdminBlogPreviewPage({
   params,
   searchParams,
@@ -34,9 +33,7 @@ export default async function AdminBlogPreviewPage({
 }) {
   const { id } = await params;
   const sp = await searchParams;
-  const lang = LOCALES.includes(sp.lang as any)
-    ? (sp.lang as string)
-    : 'en';
+  const lang = isSupportedLocale(sp.lang) ? sp.lang : defaultLocale;
 
   const post = await getAdminBlogPostById(id);
   if (!post) notFound();
@@ -69,7 +66,7 @@ export default async function AdminBlogPreviewPage({
 
         {/* Locale tabs */}
         <div className="flex gap-1 rounded-md border border-border p-0.5">
-          {LOCALES.map(l => (
+          {locales.map(l => (
             <a
               key={l}
               href={`?lang=${l}`}

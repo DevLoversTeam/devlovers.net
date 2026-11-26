@@ -23,13 +23,10 @@ vi.mock('@/lib/services/orders/restock', () => ({
 }));
 
 vi.mock('@/lib/logging', async () => {
-  const actual = await vi.importActual<any>('@/lib/logging');
-  return {
-    ...actual,
-    logWarn: () => {},
-    logError: () => {},
-    logInfo: () => {},
-  };
+  const { createQuietLoggingMock } = await import(
+    '@/lib/tests/helpers/quiet-logging'
+  );
+  return createQuietLoggingMock();
 });
 
 beforeEach(() => {

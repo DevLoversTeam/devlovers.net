@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useId, useState, useTransition } from 'react';
 
+import { normalizeActionErrorCode } from './normalizeActionErrorCode';
+
 type ShippingMethodCode = 'NP_WAREHOUSE' | 'NP_LOCKER' | 'NP_COURIER';
 
 type Props = {
@@ -24,22 +26,18 @@ type Props = {
   };
 };
 
-function normalizeErrorCode(error: unknown): string {
-  if (error instanceof TypeError) return 'NETWORK_ERROR';
-  if (error instanceof Error && error.message.trim().length > 0) {
-    return error.message;
-  }
-  return 'NETWORK_ERROR';
-}
-
-function mapError(code: string, t: (key: string) => string): string {
+function mapError(
+  code: string,
+  t: (key: string) => string,
+  securityError: string
+): string {
   switch (code) {
     case 'NETWORK_ERROR':
       return t('errors.network');
     case 'CSRF_MISSING':
     case 'CSRF_REJECTED':
     case 'ORIGIN_BLOCKED':
-      return t('errors.security');
+      return securityError;
     case 'INVALID_PAYLOAD':
     case 'INVALID_SHIPPING_ADDRESS':
       return t('errors.invalid');
@@ -77,6 +75,7 @@ export function ShippingEditForm({
   const router = useRouter();
   const t = useTranslations('shop.orders.detail');
   const tEditor = useTranslations('shop.orders.detail.shippingEditor');
+  const securityError = t('actionSecurityError');
   const [isPending, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -174,7 +173,9 @@ export function ShippingEditForm({
         }),
       });
     } catch (requestError) {
-      setError(mapError(normalizeErrorCode(requestError), tEditor));
+      setError(
+        mapError(normalizeActionErrorCode(requestError), tEditor, securityError)
+      );
       setIsSubmitting(false);
       return;
     }
@@ -193,7 +194,7 @@ export function ShippingEditForm({
           : typeof json?.message === 'string'
             ? json.message
             : `HTTP_${response.status}`;
-      setError(mapError(code, tEditor));
+      setError(mapError(code, tEditor, securityError));
       setIsSubmitting(false);
       return;
     }

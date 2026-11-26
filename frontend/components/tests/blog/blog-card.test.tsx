@@ -69,6 +69,7 @@ describe('BlogCard', () => {
       id: '1',
       title: 'Пост',
       slug: 'post',
+      categories: [],
       author,
     };
 

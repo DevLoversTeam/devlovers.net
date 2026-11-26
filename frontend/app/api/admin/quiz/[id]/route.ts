@@ -5,12 +5,14 @@ import { z } from 'zod';
 
 import { db } from '@/db';
 import { quizAttempts, quizTranslations, quizzes } from '@/db/schema/quiz';
+import { locales } from '@/i18n/config';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError } from '@/lib/logging';
 import { invalidateQuizCache } from '@/lib/quiz/quiz-answers-redis';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
@@ -21,12 +23,6 @@ import { validateQuizForPublish } from '@/lib/validation/quiz-publish-validation
 export const runtime = 'nodejs';
 
 const paramsSchema = z.object({ id: z.string().uuid() });
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
 
 export async function PATCH(
   request: NextRequest,
@@ -121,7 +117,6 @@ export async function PATCH(
     await db.update(quizzes).set(updateData).where(eq(quizzes.id, quizId));
     const { translations } = parsed.data;
     if (translations) {
-      const locales = ['en', 'uk', 'pl'] as const;
       for (const locale of locales) {
         await db
           .insert(quizTranslations)

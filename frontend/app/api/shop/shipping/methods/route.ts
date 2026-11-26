@@ -1,6 +1,4 @@
-import crypto from 'node:crypto';
-
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import {
   assertNovaPoshtaProductionLikeReady,
@@ -8,6 +6,7 @@ import {
   NovaPoshtaConfigError,
 } from '@/lib/env/nova-poshta';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
+import { getRequestId } from '@/lib/http/getRequestId';
 import { logError, logWarn } from '@/lib/logging';
 import {
   enforceRateLimit,
@@ -30,6 +29,8 @@ import {
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { shippingMethodsQuerySchema } from '@/lib/validation/shop-shipping';
 
+import { cachedShippingJson, noStoreShippingJson } from '../_responses';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -48,23 +49,6 @@ type ShippingMethod = {
     | 'recipientPhone'
   >;
 };
-
-function cachedJson(body: unknown, requestId: string) {
-  const res = NextResponse.json(body, { status: 200 });
-  res.headers.set(
-    'Cache-Control',
-    'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
-  );
-  res.headers.set('X-Request-Id', requestId);
-  return res;
-}
-
-function noStoreJson(body: unknown, requestId: string, status = 200) {
-  const res = NextResponse.json(body, { status });
-  res.headers.set('Cache-Control', 'no-store');
-  res.headers.set('X-Request-Id', requestId);
-  return res;
-}
 
 function parseQuery(request: NextRequest) {
   const raw = Object.fromEntries(request.nextUrl.searchParams.entries());
@@ -129,8 +113,7 @@ function getMethods(currency: 'UAH'): ShippingMethod[] {
 }
 
 export async function GET(request: NextRequest) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,
@@ -162,7 +145,7 @@ export async function GET(request: NextRequest) {
 
   const parsed = parseQuery(request);
   if (!parsed.success) {
-    return noStoreJson(
+    return noStoreShippingJson(
       {
         success: false,
         code: 'INVALID_QUERY',
@@ -188,7 +171,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!availability.available) {
-      return cachedJson(
+      return cachedShippingJson(
         {
           success: true,
           available: false,
@@ -198,12 +181,13 @@ export async function GET(request: NextRequest) {
           currency: availability.normalized.currency,
           methods: [],
         },
-        requestId
+        requestId,
+        'methods'
       );
     }
 
     if (!isCheckoutShippingQuoteCurrency(availability.normalized.currency)) {
-      return cachedJson(
+      return cachedShippingJson(
         {
           success: true,
           available: false,
@@ -213,7 +197,8 @@ export async function GET(request: NextRequest) {
           currency: availability.normalized.currency,
           methods: [],
         },
-        requestId
+        requestId,
+        'methods'
       );
     }
 
@@ -221,7 +206,7 @@ export async function GET(request: NextRequest) {
       assertNovaPoshtaProductionLikeReady();
     } catch (error) {
       if (error instanceof NovaPoshtaConfigError) {
-        return noStoreJson(
+        return noStoreShippingJson(
           {
             success: false,
             code: 'NP_MISCONFIG',
@@ -234,7 +219,7 @@ export async function GET(request: NextRequest) {
       throw error;
     }
 
-    return cachedJson(
+    return cachedShippingJson(
       {
         success: true,
         available: true,
@@ -244,7 +229,8 @@ export async function GET(request: NextRequest) {
         currency: availability.normalized.currency,
         methods: getMethods(availability.normalized.currency),
       },
-      requestId
+      requestId,
+      'methods'
     );
   } catch (error) {
     logError(
@@ -255,7 +241,7 @@ export async function GET(request: NextRequest) {
         code: 'INTERNAL_ERROR',
       }
     );
-    return noStoreJson(
+    return noStoreShippingJson(
       {
         success: false,
         code: 'INTERNAL_ERROR',

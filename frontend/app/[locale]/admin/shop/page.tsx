@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 
 export default async function ShopAdminHomePage() {
   const t = await getTranslations('shop.admin.page');
+  const tProducts = await getTranslations('shop.products');
 
   return (
     <main
@@ -34,7 +35,7 @@ export default async function ShopAdminHomePage() {
               className="border-border hover:bg-muted/50 block rounded-lg border p-4 transition-colors"
             >
               <div className="text-foreground text-base font-semibold">
-                {t('productsSection.title')}
+                {tProducts('label')}
               </div>
               <div className="text-muted-foreground mt-1 text-sm">
                 {t('productsSection.description')}

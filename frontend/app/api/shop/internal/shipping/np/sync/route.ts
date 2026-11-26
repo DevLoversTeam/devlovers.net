@@ -1,11 +1,10 @@
 import crypto from 'node:crypto';
 
-import { sql } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { db } from '@/db';
 import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
 import { getShopShippingFlags } from '@/lib/env/nova-poshta';
+import { getRequestId } from '@/lib/http/getRequestId';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { guardNonBrowserFailClosed } from '@/lib/security/origin';
 import {
@@ -22,6 +21,11 @@ import {
   internalNpSyncPayloadSchema,
 } from '@/lib/validation/shop-shipping';
 
+import {
+  acquireShippingJobSlot,
+  shippingJobRateLimitedResponse,
+} from '../../_shared';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -29,59 +33,11 @@ export const revalidate = 0;
 const JOB_NAME = 'shipping-np-sync';
 const ROUTE_PATH = '/api/shop/internal/shipping/np/sync';
 
-type GateRow = { next_allowed_at: unknown };
-
-function normalizeDate(x: unknown): Date | null {
-  if (!x) return null;
-  if (x instanceof Date) return Number.isNaN(x.getTime()) ? null : x;
-  const d = new Date(String(x));
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
 function noStoreJson(body: unknown, requestId: string, status = 200) {
   const res = NextResponse.json(body, { status });
   res.headers.set('Cache-Control', 'no-store');
   res.headers.set('X-Request-Id', requestId);
   return res;
-}
-
-async function acquireJobSlot(params: {
-  runId: string;
-  minIntervalSeconds: number;
-}) {
-  const res = await db.execute<GateRow>(sql`
-    INSERT INTO internal_job_state (job_name, next_allowed_at, last_run_id, updated_at)
-    VALUES (
-      ${JOB_NAME},
-      now() + make_interval(secs => ${params.minIntervalSeconds}),
-      ${params.runId}::uuid,
-      now()
-    )
-    ON CONFLICT (job_name) DO UPDATE
-      SET next_allowed_at = now() + make_interval(secs => ${params.minIntervalSeconds}),
-          last_run_id = ${params.runId}::uuid,
-          updated_at = now()
-      WHERE internal_job_state.next_allowed_at <= now()
-    RETURNING next_allowed_at
-  `);
-
-  const rows = (res as any).rows ?? [];
-  if (rows.length > 0) return { ok: true as const };
-
-  const fallback = await db.execute<GateRow>(sql`
-    SELECT next_allowed_at
-    FROM internal_job_state
-    WHERE job_name = ${JOB_NAME}
-    LIMIT 1
-  `);
-  const rows2 = (fallback as any).rows ?? [];
-  const nextAllowedAt = normalizeDate(rows2[0]?.next_allowed_at);
-  return { ok: false as const, nextAllowedAt };
-}
-
-function retryAfterSeconds(nextAllowedAt: Date | null): number {
-  if (!nextAllowedAt) return 1;
-  return Math.max(1, Math.ceil((nextAllowedAt.getTime() - Date.now()) / 1000));
 }
 
 function buildSafeDebugPayload(error: unknown) {
@@ -122,8 +78,7 @@ function isNonProductionAppStage(): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
   const runId = crypto.randomUUID();
   const baseMeta = {
     requestId,
@@ -217,24 +172,14 @@ export async function POST(request: NextRequest) {
     wasClamped,
   });
 
-  const gate = await acquireJobSlot({
+  const gate = await acquireShippingJobSlot({
+    jobName: JOB_NAME,
     runId,
     minIntervalSeconds: effectiveIntervalSeconds,
   });
 
   if (!gate.ok) {
-    const wait = retryAfterSeconds(gate.nextAllowedAt);
-    const res = noStoreJson(
-      {
-        success: false,
-        code: 'RATE_LIMITED',
-        retryAfterSeconds: wait,
-      },
-      requestId,
-      429
-    );
-    res.headers.set('Retry-After', String(wait));
-    return res;
+    return shippingJobRateLimitedResponse(gate.nextAllowedAt, requestId);
   }
 
   try {

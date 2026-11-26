@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-const LOCALES = ['en', 'uk', 'pl'] as const;
+import { locales } from '@/i18n/config';
+
 const LOCALE_LABELS: Record<string, string> = { en: 'EN', uk: 'UK', pl: 'PL' };
 
 interface QuizMetadataEditorProps {
@@ -34,7 +35,7 @@ export function QuizMetadataEditor({
     timeLimit: number | null
   ) {
     const t: Record<string, { title: string; description: string }> = {};
-    for (const locale of LOCALES) {
+    for (const locale of locales) {
       t[locale] = {
         title: trans[locale]?.title ?? '',
         description: trans[locale]?.description ?? '',
@@ -79,7 +80,7 @@ export function QuizMetadataEditor({
   }
 
   async function handleSave() {
-    for (const locale of LOCALES) {
+    for (const locale of locales) {
       if (!draft.translations[locale].title.trim()) {
         setError(`Title is required for ${LOCALE_LABELS[locale]}`);
         setActiveLocale(locale);
@@ -167,7 +168,7 @@ export function QuizMetadataEditor({
 
       {/* Locale tabs */}
       <div className="flex gap-1">
-        {LOCALES.map(locale => (
+        {locales.map(locale => (
           <button
             key={locale}
             type="button"

@@ -1,19 +1,13 @@
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readDbRows } from '@/db/readDbRows';
 
 function buildShutdownMessage(reason: string): string {
   const normalized = reason.trim();
   return normalized.length > 0
     ? `Shipping pipeline closed: ${normalized}`
     : 'Shipping pipeline closed.';
-}
-
-function readRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const maybe = res as { rows?: unknown };
-  if (Array.isArray(maybe.rows)) return maybe.rows as T[];
-  return [];
 }
 
 export async function closeShippingPipelineForOrder(args: {
@@ -65,7 +59,7 @@ export async function closeShippingPipelineForOrder(args: {
       exists (select 1 from closed_order) as order_closed
   `);
 
-  const row = readRows<{
+  const row = readDbRows<{
     shipments_closed?: number;
     order_closed?: boolean;
   }>(res)[0];

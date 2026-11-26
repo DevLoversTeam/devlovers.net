@@ -1,10 +1,9 @@
 'use client';
 
 import { categoryData } from '@/data/category';
+import { type Locale, ukrainianFirstLocales } from '@/i18n/config';
 
-const SUPPORTED_LOCALES = ['uk', 'en', 'pl'] as const;
-
-export type Locale = (typeof SUPPORTED_LOCALES)[number];
+export type { Locale };
 export type CategorySlug = (typeof categoryData)[number]['slug'];
 export type QaQuestionFilter = 'all' | 'bookmarked';
 
@@ -99,5 +98,5 @@ export interface PaginatedResponse<T> {
 }
 
 export const qaConstants = {
-  supportedLocales: SUPPORTED_LOCALES,
+  supportedLocales: ukrainianFirstLocales,
 } as const;

@@ -1,12 +1,8 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
-import {
-  quizAnswers,
-  quizAnswerTranslations,
-  quizQuestionContent,
-  quizQuestions,
-} from '@/db/schema/quiz';
+import { loadLocalizedQuizQuestions } from '@/db/queries/quizzes/quiz-question-data';
+import { quizAnswers, quizQuestions } from '@/db/schema/quiz';
 import { getRedisClient } from '@/lib/redis';
 import type { AttemptReview, QuizQuestionWithAnswers } from '@/types/quiz';
 
@@ -139,77 +135,7 @@ export async function getOrCreateQuestionsCache(
     console.warn('Redis cache read failed, falling back to DB:', err);
   }
 
-  const questionsData = await db
-    .select({
-      id: quizQuestions.id,
-      displayOrder: quizQuestions.displayOrder,
-      difficulty: quizQuestions.difficulty,
-      questionText: quizQuestionContent.questionText,
-      explanation: quizQuestionContent.explanation,
-    })
-    .from(quizQuestions)
-    .leftJoin(
-      quizQuestionContent,
-      and(
-        eq(quizQuestionContent.quizQuestionId, quizQuestions.id),
-        eq(quizQuestionContent.locale, locale)
-      )
-    )
-    .where(eq(quizQuestions.quizId, quizId))
-    .orderBy(quizQuestions.displayOrder);
-
-  if (questionsData.length === 0) {
-    const cacheData: QuizQuestionsCache = {
-      quizId,
-      locale,
-      questions: [],
-      cachedAt: Date.now(),
-    };
-    try {
-      await redis.set(key, cacheData);
-    } catch (e) {
-      console.warn('Redis cache write failed:', e);
-    }
-    return [];
-  }
-
-  const questionIds = questionsData.map(q => q.id);
-
-  const allAnswers = await db
-    .select({
-      id: quizAnswers.id,
-      questionId: quizAnswers.quizQuestionId,
-      displayOrder: quizAnswers.displayOrder,
-      isCorrect: quizAnswers.isCorrect,
-      answerText: quizAnswerTranslations.answerText,
-    })
-    .from(quizAnswers)
-    .leftJoin(
-      quizAnswerTranslations,
-      and(
-        eq(quizAnswerTranslations.quizAnswerId, quizAnswers.id),
-        eq(quizAnswerTranslations.locale, locale)
-      )
-    )
-    .where(inArray(quizAnswers.quizQuestionId, questionIds))
-    .orderBy(quizAnswers.displayOrder);
-
-  const answersByQuestion = new Map<string, typeof allAnswers>();
-  for (const answer of allAnswers) {
-    const arr = answersByQuestion.get(answer.questionId) || [];
-    arr.push(answer);
-    answersByQuestion.set(answer.questionId, arr);
-  }
-
-  const questions: QuizQuestionWithAnswers[] = questionsData.map(q => ({
-    ...q,
-    answers: (answersByQuestion.get(q.id) || []).map(a => ({
-      id: a.id,
-      displayOrder: a.displayOrder,
-      isCorrect: a.isCorrect,
-      answerText: a.answerText,
-    })),
-  }));
+  const questions = await loadLocalizedQuizQuestions(quizId, locale);
 
   const cacheData: QuizQuestionsCache = {
     quizId,

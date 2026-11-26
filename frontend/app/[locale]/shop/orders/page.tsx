@@ -13,6 +13,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { logError } from '@/lib/logging';
 import { type CurrencyCode, formatMoney } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
+import { createOrderDateFormatter } from '@/lib/shop/order-date';
 import {
   SHOP_FOCUS,
   SHOP_LINK_BASE,
@@ -35,17 +36,6 @@ function shortOrderId(id: string) {
   if (!id) return '';
   if (id.length <= 14) return id;
   return `${id.slice(0, 8)}...${id.slice(-4)}`;
-}
-
-function formatDateTime(d: Date, locale: string) {
-  try {
-    return new Intl.DateTimeFormat(locale, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(d);
-  } catch {
-    return d.toISOString();
-  }
 }
 
 function formatOrderTotal(
@@ -129,7 +119,7 @@ function buildOrderHeadline(
     return primary;
   }
 
-  return t('orderHeadline.default', { id: shortOrderId(id) });
+  return t('orderNumber', { id: shortOrderId(id) });
 }
 
 export default async function MyOrdersPage({
@@ -141,6 +131,7 @@ export default async function MyOrdersPage({
 
   const { locale } = await params;
   const t = await getTranslations('shop.orders');
+  const tShop = await getTranslations('shop');
 
   const user = await getCurrentUser();
   if (!user) {
@@ -206,6 +197,7 @@ export default async function MyOrdersPage({
     throw new Error('MY_ORDERS_LOAD_FAILED');
   }
 
+  const formatOrderDateTime = createOrderDateFormatter(locale);
   const NAV_LINK = cn(SHOP_NAV_LINK_BASE, 'text-lg', SHOP_FOCUS);
 
   const ORDER_HEADLINE_LINK = cn(
@@ -248,7 +240,12 @@ export default async function MyOrdersPage({
         <section className="space-y-3" aria-label={t('table.caption')}>
           {rows.map(o => {
             const href = `/shop/orders/${o.id}`;
-            const dateTime = o.createdAt.toISOString();
+            const dateTime = Number.isNaN(o.createdAt.getTime())
+              ? undefined
+              : o.createdAt.toISOString();
+            const placedOn = t('card.placedOn', {
+              date: formatOrderDateTime(o.createdAt),
+            });
             const count = toCount(o.itemCount);
             const rawPrimary = o.primaryItemLabel?.trim() || null;
             const primary =
@@ -268,7 +265,7 @@ export default async function MyOrdersPage({
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase">
-                      {t('card.orderNumber', { id: shortOrderId(o.id) })}
+                      {t('orderNumber', { id: shortOrderId(o.id) })}
                     </p>
 
                     <Link
@@ -285,11 +282,11 @@ export default async function MyOrdersPage({
 
                     <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                       <span>{t('card.itemsCount', { count })}</span>
-                      <time dateTime={dateTime}>
-                        {t('card.placedOn', {
-                          date: formatDateTime(o.createdAt, locale),
-                        })}
-                      </time>
+                      {dateTime ? (
+                        <time dateTime={dateTime}>{placedOn}</time>
+                      ) : (
+                        <span>{placedOn}</span>
+                      )}
                     </div>
                   </div>
 
@@ -305,7 +302,7 @@ export default async function MyOrdersPage({
 
                     <div>
                       <div className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
-                        {t('table.total')}
+                        {tShop('total')}
                       </div>
                       <div className="mt-1 text-base font-semibold">
                         {totalLabel}

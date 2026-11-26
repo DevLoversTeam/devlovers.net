@@ -23,6 +23,7 @@ interface StatsCardProps {
 
 export function StatsCard({ stats, attempts = [] }: StatsCardProps) {
   const t = useTranslations('dashboard.stats');
+  const tQuizStatus = useTranslations('quiz.status');
   const tProfile = useTranslations('dashboard.profile');
   const hasActivity = stats && stats.totalAttempts > 0;
 
@@ -229,7 +230,7 @@ export function StatsCard({ stats, attempts = [] }: StatsCardProps) {
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-3 shrink-0 rounded-full bg-linear-to-br from-emerald-400 to-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                   <span className="flex-1 truncate text-gray-600 dark:text-gray-300">
-                    {t('mastered')}{' '}
+                    {tQuizStatus('mastered')}{' '}
                     <span className="ml-1 font-mono text-xs text-gray-400 dark:text-gray-500">
                       ({total > 0 ? excellentPct.toFixed(0) : 0}%)
                     </span>

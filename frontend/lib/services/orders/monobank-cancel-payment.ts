@@ -7,6 +7,7 @@ import { monobankPaymentCancels, orders, paymentAttempts } from '@/db/schema';
 import { getMonobankEnv } from '@/lib/env/monobank';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { PspError, removeInvoice } from '@/lib/psp/monobank';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 
 import {
   InvalidPayloadError,
@@ -33,12 +34,6 @@ type OrderCancelRow = {
 
 function invalid(code: string, message: string): InvalidPayloadError {
   return new InvalidPayloadError(message, { code });
-}
-
-function toTrimmedOrNull(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length ? trimmed : null;
 }
 
 function makeCancelExtRef(orderId: string): string {
@@ -92,7 +87,7 @@ function readInvoiceFromAttempt(row: {
   providerPaymentIntentId: string | null;
   metadata: unknown;
 }): string | null {
-  const direct = toTrimmedOrNull(row.providerPaymentIntentId);
+  const direct = trimToNull(row.providerPaymentIntentId);
   if (direct) return direct;
 
   if (
@@ -103,7 +98,7 @@ function readInvoiceFromAttempt(row: {
     return null;
   }
 
-  return toTrimmedOrNull((row.metadata as Record<string, unknown>).invoiceId);
+  return trimToNull((row.metadata as Record<string, unknown>).invoiceId);
 }
 
 async function findInvoiceAttempt(
@@ -144,7 +139,7 @@ async function resolveInvoiceForCancel(
   orderId: string,
   pspChargeId: string | null
 ) {
-  const direct = toTrimmedOrNull(pspChargeId);
+  const direct = trimToNull(pspChargeId);
   if (direct) return { invoiceId: direct, attemptId: null as string | null };
 
   const succeeded = await findInvoiceAttempt(orderId, ['succeeded']);

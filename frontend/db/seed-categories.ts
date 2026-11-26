@@ -1,10 +1,9 @@
 import 'dotenv/config';
 
 import { categoryData } from '../data/category';
+import { ukrainianFirstLocales } from '../i18n/config';
 import { db } from './index';
 import { categories, categoryTranslations } from './schema';
-
-const LOCALES = ['uk', 'en', 'pl'] as const;
 
 async function seedCategories() {
   for (const item of categoryData) {
@@ -22,7 +21,7 @@ async function seedCategories() {
       continue;
     }
 
-    const translations = LOCALES.map(locale => ({
+    const translations = ukrainianFirstLocales.map(locale => ({
       categoryId: category.id,
       locale,
       title: item.translations[locale],

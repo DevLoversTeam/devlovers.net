@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
+import { getRequestId } from '@/lib/http/getRequestId';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { guardNonBrowserFailClosed } from '@/lib/security/origin';
 import {
@@ -261,8 +262,7 @@ async function acquireJobSlot(params: {
 }
 
 export async function POST(request: NextRequest) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const baseMeta = {
     requestId,

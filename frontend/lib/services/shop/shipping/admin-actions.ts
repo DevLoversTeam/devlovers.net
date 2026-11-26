@@ -3,6 +3,7 @@ import 'server-only';
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readDbRows } from '@/db/readDbRows';
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 import { logWarn } from '@/lib/logging';
 import {
@@ -90,15 +91,8 @@ export class ShippingAdminActionError extends Error {
   }
 }
 
-function readRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const maybe = res as { rows?: unknown };
-  if (Array.isArray(maybe.rows)) return maybe.rows as T[];
-  return [];
-}
-
 function first<T>(res: unknown): T | null {
-  return readRows<T>(res)[0] ?? null;
+  return readDbRows<T>(res)[0] ?? null;
 }
 
 function assertOrderIsShippable(

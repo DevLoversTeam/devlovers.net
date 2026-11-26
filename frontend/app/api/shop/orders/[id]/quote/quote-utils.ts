@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+export { noStoreJson } from '@/lib/http/noStoreJson';
 
 type QuoteErrorStatusMode = 'accept' | 'decline' | 'request';
 
@@ -12,12 +12,6 @@ const VERSION_CONFLICT_MODES = new Set<QuoteErrorStatusMode>([
   'accept',
   'decline',
 ]);
-
-export function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
 
 export function mapQuoteErrorStatus(
   code: string,

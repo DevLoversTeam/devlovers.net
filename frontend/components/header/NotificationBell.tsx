@@ -18,6 +18,7 @@ import {
   markAllAsRead,
   markAsRead,
 } from '@/actions/notifications';
+import { useOutsideMouseDown } from '@/hooks/useOutsideMouseDown';
 
 function getRelativeTime(date: Date, locale: string, justNow: string) {
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
@@ -92,21 +93,12 @@ export function NotificationBell() {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
+  useOutsideMouseDown(dropdownRef, isOpen, () => setIsOpen(false));
 
+  useEffect(() => {
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
       fetchNotifications();
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
   const handleMarkAllAsRead = async () => {

@@ -8,8 +8,7 @@ import {
   quizQuestions,
   quizTranslations,
 } from '@/db/schema/quiz';
-
-const LOCALES = ['en', 'uk', 'pl'];
+import { locales } from '@/i18n/config';
 
 export async function validateQuizForPublish(
   quizId: string
@@ -27,7 +26,7 @@ export async function validateQuizForPublish(
     .where(eq(quizTranslations.quizId, quizId));
 
   const quizLocales = new Set(quizTrans.map(t => t.locale));
-  for (const locale of LOCALES) {
+  for (const locale of locales) {
     if (!quizLocales.has(locale)) {
       errors.push(`Quiz missing translation for locale: ${locale}`);
     }
@@ -84,9 +83,9 @@ export async function validateQuizForPublish(
   }
 
   for (let i = 0; i < questions.length; i++) {
-    const locales = contentMap.get(questions[i].id);
-    for (const locale of LOCALES) {
-      if (!locales?.has(locale)) {
+    const questionLocales = contentMap.get(questions[i].id);
+    for (const locale of locales) {
+      if (!questionLocales?.has(locale)) {
         errors.push(`Q${i + 1}: missing content for locale: ${locale}`);
       }
     }
@@ -145,9 +144,9 @@ export async function validateQuizForPublish(
   }
 
   for (const a of answers) {
-    const locales = answerTransMap.get(a.id);
-    for (const locale of LOCALES) {
-      if (!locales?.has(locale)) {
+    const answerLocales = answerTransMap.get(a.id);
+    for (const locale of locales) {
+      if (!answerLocales?.has(locale)) {
         const qIdx = questions.findIndex(q => q.id === a.quizQuestionId) + 1;
         errors.push(
           `Q${qIdx}: answer missing translation for locale: ${locale}`
