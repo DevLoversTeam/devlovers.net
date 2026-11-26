@@ -60,8 +60,6 @@ export async function getAdminQuizList(): Promise<AdminQuizListItem[]> {
   return rows;
 }
 
-// ── Types for quiz editor ──
-
 export interface AdminQuizTranslation {
   title: string;
   description: string | null;
@@ -94,12 +92,9 @@ export interface AdminQuizFull {
   questions: AdminQuizQuestion[];
 }
 
-// ── Query ──
-
 export async function getAdminQuizFull(
   quizId: string
 ): Promise<AdminQuizFull | null> {
-  // 1. Quiz base data
   const [quiz] = await db
     .select({
       id: quizzes.id,
@@ -116,7 +111,6 @@ export async function getAdminQuizFull(
 
   if (!quiz) return null;
 
-  // 2. Quiz translations (all locales)
   const quizTrans = await db
     .select({
       locale: quizTranslations.locale,
@@ -131,7 +125,6 @@ export async function getAdminQuizFull(
     translations[t.locale] = { title: t.title, description: t.description };
   }
 
-  // 3. Questions
   const questionsData = await db
     .select({
       id: quizQuestions.id,
@@ -148,7 +141,6 @@ export async function getAdminQuizFull(
 
   const questionIds = questionsData.map(q => q.id);
 
-  // 4. Question content (all locales)
   const contentRows = await db
     .select({
       quizQuestionId: quizQuestionContent.quizQuestionId,
@@ -175,7 +167,6 @@ export async function getAdminQuizFull(
     };
   }
 
-  // 5. Answers + translations (all locales)
   const answersData = await getQuizAnswerRows(questionIds);
 
   const answerIds = answersData.map(a => a.id);
@@ -202,7 +193,6 @@ export async function getAdminQuizFull(
     map[row.locale] = { answerText: row.answerText };
   }
 
-  // 6. Group answers by question
   const answersByQuestion = groupQuizAnswersByQuestion(
     answersData,
     (answer): AdminQuizAnswer => ({
@@ -213,7 +203,6 @@ export async function getAdminQuizFull(
     })
   );
 
-  // 7. Assemble questions
   const questions: AdminQuizQuestion[] = questionsData.map(q => ({
     id: q.id,
     displayOrder: q.displayOrder,

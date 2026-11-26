@@ -51,8 +51,6 @@ export const patchQuestionSchema = z
 
 export type PatchQuestionBody = z.infer<typeof patchQuestionSchema>;
 
-// ── JSON upload schemas  ──
-
 const jsonQuestionAnswerSchema = z.object({
   uk: z.string().min(1),
   en: z.string().min(1),
@@ -92,8 +90,6 @@ export const jsonQuestionsFileSchema = z.object({
 
 export type JsonQuestion = z.infer<typeof jsonQuestionSchema>;
 
-// ── Create quiz ──
-
 const localeTranslationSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
@@ -122,8 +118,6 @@ export const createQuizSchema = z.object({
 
 export type CreateQuizBody = z.infer<typeof createQuizSchema>;
 
-// ── Patch quiz (status / active toggle) ──
-
 export const patchQuizSchema = z
   .object({
     status: z.enum(['draft', 'ready']).optional(),
@@ -148,8 +142,6 @@ export const patchQuizSchema = z
 
 export type PatchQuizBody = z.infer<typeof patchQuizSchema>;
 
-// ── Add questions to existing draft ──
-
 export const addQuestionsSchema = z.object({
   questions: z
     .array(jsonQuestionSchema)
@@ -157,8 +149,6 @@ export const addQuestionsSchema = z.object({
 });
 
 export type AddQuestionsBody = z.infer<typeof addQuestionsSchema>;
-
-// ── Create category ──
 
 export const createCategorySchema = z.object({
   slug: z

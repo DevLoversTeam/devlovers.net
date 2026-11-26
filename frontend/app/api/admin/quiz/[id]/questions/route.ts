@@ -55,7 +55,6 @@ export async function POST(
 
     const { id: quizId } = parsedParams.data;
 
-    // Verify quiz exists and is draft
     const [quiz] = await db
       .select({ id: quizzes.id, status: quizzes.status })
       .from(quizzes)
@@ -103,7 +102,6 @@ export async function POST(
 
     const { questions } = parsed.data;
 
-    // Get current max displayOrder for offset
     const [maxRow] = await db
       .select({ maxOrder: sql<number>`COALESCE(MAX(display_order), 0)::int` })
       .from(quizQuestions)
@@ -127,7 +125,6 @@ export async function POST(
         .where(inArray(quizQuestions.id, questionIds));
       throw insertError;
     }
-    // Update questionsCount
     const [countRow] = await db
       .select({ count: sql<number>`COUNT(*)::int` })
       .from(quizQuestions)

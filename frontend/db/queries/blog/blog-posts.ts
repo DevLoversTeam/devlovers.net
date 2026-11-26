@@ -40,7 +40,7 @@ export interface BlogPost {
     company?: string;
     jobTitle?: string;
     city?: string;
-    bio?: string | null; // matches BlogFilters
+    bio?: string | null;
     socialMedia?: SocialLink[];
   };
 }
@@ -159,8 +159,6 @@ function assemblePost(
   };
 }
 
-// ── Public queries ──
-
 export async function getBlogPosts(locale: string): Promise<BlogPost[]> {
   const rows = await db
     .select(buildPostSelect())
@@ -239,7 +237,6 @@ export async function getBlogPostsByCategory(
   categorySlug: string,
   locale: string
 ): Promise<BlogPost[]> {
-  // Step 1: find category ID by slug
   const [cat] = await db
     .select({ id: blogCategories.id })
     .from(blogCategories)
@@ -248,7 +245,6 @@ export async function getBlogPostsByCategory(
 
   if (!cat) return [];
 
-  // Step 2: get post IDs in this category
   const junctionRows = await db
     .select({ postId: blogPostCategories.postId })
     .from(blogPostCategories)
@@ -257,7 +253,6 @@ export async function getBlogPostsByCategory(
   const postIds = junctionRows.map(r => r.postId);
   if (postIds.length === 0) return [];
 
-  // Step 3: fetch posts with the standard joins
   const rows = await db
     .select(buildPostSelect())
     .from(blogPosts)

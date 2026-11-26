@@ -54,7 +54,7 @@ export function normalizeRateLimitSubject(subject: string): string {
   const trimmed = subject.trim();
   if (!trimmed) return 'anon';
 
-  const ipKind = isIP(trimmed); // 0 | 4 | 6
+  const ipKind = isIP(trimmed);
   if (ipKind === 6) return hashSubject(trimmed, 'ip6_');
   if (ipKind === 4) return trimmed;
 

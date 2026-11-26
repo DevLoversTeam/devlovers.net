@@ -111,7 +111,6 @@ export function BlogPostForm({
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Dirty tracking (edit mode only)
   const initialSnapshot = useRef(() => {
     if (!initialData) return null;
     return JSON.stringify({
@@ -328,7 +327,6 @@ export function BlogPostForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Title + Locale tabs */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="text-foreground text-sm font-medium">Title</label>
@@ -343,7 +341,6 @@ export function BlogPostForm({
         />
       </div>
 
-      {/* Slug */}
       <div>
         <label className="text-foreground mb-1 block text-sm font-medium">
           Slug
@@ -360,7 +357,6 @@ export function BlogPostForm({
         </p>
       </div>
 
-      {/* Author */}
       <div className="space-y-2">
         <label className="text-foreground text-sm font-medium">Author</label>
         <div className="flex items-center gap-3">
@@ -394,7 +390,6 @@ export function BlogPostForm({
         )}
       </div>
 
-      {/* Categories */}
       <div className="space-y-2">
         <label className="text-foreground text-sm font-medium">
           Categories
@@ -429,7 +424,6 @@ export function BlogPostForm({
         )}
       </div>
 
-      {/* Main image */}
       <div className="space-y-2">
         <label className="text-foreground text-sm font-medium">
           Main Image
@@ -441,7 +435,6 @@ export function BlogPostForm({
         />
       </div>
 
-      {/* Body editor (per locale, only active visible) */}
       <div className="space-y-2">
         <label className="text-foreground text-sm font-medium">
           Body ({activeLocale.toUpperCase()})
@@ -460,7 +453,6 @@ export function BlogPostForm({
         ))}
       </div>
 
-      {/* Tags */}
       <div>
         <label className="text-foreground mb-1 block text-sm font-medium">
           Tags
@@ -474,7 +466,6 @@ export function BlogPostForm({
         />
       </div>
 
-      {/* Resource link */}
       <div>
         <label className="text-foreground mb-1 block text-sm font-medium">
           Resource Link
@@ -506,7 +497,6 @@ export function BlogPostForm({
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {/* Submit */}
       <button
         type="submit"
         disabled={submitting || !isFormValid() || (isEditMode && !isDirty())}

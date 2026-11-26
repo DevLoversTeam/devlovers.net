@@ -100,7 +100,6 @@ export async function PATCH(
       );
     }
 
-    // Update difficulty if provided
     if (parsed.data.difficulty) {
       await db
         .update(quizQuestions)
@@ -108,7 +107,6 @@ export async function PATCH(
         .where(eq(quizQuestions.id, questionId));
     }
 
-    // Verify all submitted answer IDs belong to this question
     const dbAnswers = await db
       .select({ id: quizAnswers.id })
       .from(quizAnswers)
@@ -127,7 +125,6 @@ export async function PATCH(
       );
     }
 
-    // Upsert question text + explanation for dirty locales only
     await Promise.all(
       dirtyLocales.map(locale =>
         db
@@ -166,7 +163,6 @@ export async function PATCH(
       )
     );
 
-    // Upsert answer text translations for dirty locales only
     await Promise.all(
       dirtyLocales.flatMap(locale =>
         answers.map(answer =>
@@ -246,7 +242,6 @@ export async function DELETE(
 
     const { id: quizId, questionId } = parsedParams.data;
 
-    // Verify quiz is draft
     const [quiz] = await db
       .select({ id: quizzes.id, status: quizzes.status })
       .from(quizzes)
@@ -270,7 +265,6 @@ export async function DELETE(
       );
     }
 
-    // Verify question belongs to quiz
     const [question] = await db
       .select({ id: quizQuestions.id })
       .from(quizQuestions)
@@ -286,10 +280,8 @@ export async function DELETE(
       );
     }
 
-    // Delete question (cascades content, answers, answer translations)
     await db.delete(quizQuestions).where(eq(quizQuestions.id, questionId));
 
-    // Update questionsCount
     const [countRow] = await db
       .select({ total: sql<number>`COUNT(*)::int` })
       .from(quizQuestions)

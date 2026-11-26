@@ -240,7 +240,6 @@ export function BlogAuthorForm({
         </div>
       )}
 
-      {/* Profile photo */}
       <div>
         <label className={labelClass}>Profile Photo</label>
         <BlogImageUpload
@@ -250,7 +249,6 @@ export function BlogAuthorForm({
         />
       </div>
 
-      {/* Locale tabs + translation fields */}
       <div>
         <div className="mb-3 flex items-center justify-between">
           <label className={labelClass}>Translations</label>
@@ -321,7 +319,6 @@ export function BlogAuthorForm({
         </div>
       </div>
 
-       {/* Slug */}
       <div>
         <label className={labelClass}>Slug</label>
         <input
@@ -333,7 +330,6 @@ export function BlogAuthorForm({
         />
       </div>
 
-      {/* Social media */}
       <div>
         <div className="mb-2 flex items-center justify-between">
           <label className={labelClass}>Social Media</label>
@@ -381,7 +377,6 @@ export function BlogAuthorForm({
         </div>
       </div>
 
-      {/* Submit */}
       <div className="flex items-center gap-3">
         <button
           type="submit"

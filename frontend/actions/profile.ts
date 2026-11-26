@@ -23,7 +23,6 @@ export async function updateName(formData: FormData) {
   try {
     await updateUser(session.id, { name: name.trim() });
 
-    // Create notification
     const tNotify = await getTranslations('notifications.account');
     await createNotification({
       userId: session.id,
@@ -58,7 +57,6 @@ export async function updatePassword(formData: FormData) {
   }
 
   try {
-    // Better to fetch specifically for verification
     const { db } = await import('@/db');
     const { users } = await import('@/db/schema/users');
     const { eq } = await import('drizzle-orm');
@@ -79,7 +77,6 @@ export async function updatePassword(formData: FormData) {
     const newPasswordHash = await bcrypt.hash(newPassword, 10);
     await updateUser(session.id, { passwordHash: newPasswordHash });
 
-    // Create notification
     const tNotify = await getTranslations('notifications.account');
     await createNotification({
       userId: session.id,

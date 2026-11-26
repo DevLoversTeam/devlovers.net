@@ -62,8 +62,6 @@ const server = http.createServer(async (req, res) => {
   const raw = await readBody(req);
   const payload = normalizeReqPayload(raw);
 
-  // Nova Poshta API style payload:
-  // { apiKey, modelName, calledMethod, methodProperties }
   const modelName = String(payload.modelName || '');
   const calledMethod = String(payload.calledMethod || '');
   const props = payload.methodProperties || {};
@@ -71,8 +69,6 @@ const server = http.createServer(async (req, res) => {
   // Log minimal, no PII
   console.log(`[np-mock] ${modelName}.${calledMethod}`);
 
-  // 1) Create TTN / label (most important for Phase 5 success)
-  // Common: modelName: 'InternetDocument', calledMethod: 'save'
   if (modelName === 'InternetDocument' && calledMethod === 'save') {
     const ref = randomUUID();
     const ttn = `MOCKTTN${Math.floor(Math.random() * 1e8)
@@ -95,7 +91,6 @@ const server = http.createServer(async (req, res) => {
     );
   }
 
-  // 2) Status query (optional)
   if (
     modelName === 'InternetDocument' &&
     calledMethod === 'getStatusDocuments'
@@ -115,14 +110,12 @@ const server = http.createServer(async (req, res) => {
     );
   }
 
-  // 3) Cities / warehouses (safe defaults; not required for label success)
   if (
     (modelName === 'Address' && calledMethod === 'getCities') ||
     calledMethod === 'searchSettlements'
   ) {
     const cityRef = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 
-    // NP "searchSettlements" typically returns { data: [{ Addresses: [...] }] }
     if (calledMethod === 'searchSettlements') {
       return json(
         res,
@@ -136,7 +129,6 @@ const server = http.createServer(async (req, res) => {
                 DeliveryCity: cityRef,
                 CityRef: cityRef,
 
-                // These are commonly used by client mappers
                 MainDescription: 'Київ',
                 Present: 'м. Київ (mock)',
                 Description: 'Київ',
@@ -156,7 +148,6 @@ const server = http.createServer(async (req, res) => {
       );
     }
 
-    // getCities: return flat list
     return json(
       res,
       200,
@@ -225,7 +216,6 @@ const server = http.createServer(async (req, res) => {
     );
   }
 
-  // Default fallback: still success, empty data
   return json(res, 200, okNp([]));
 });
 

@@ -2,7 +2,6 @@ import Image from 'next/image';
 
 import { cn } from '@/lib/utils';
 
-// Tiptap JSON node shape
 interface TiptapNode {
   type?: string;
   attrs?: Record<string, any>;
@@ -62,7 +61,6 @@ function renderMarks(
 }
 
 function renderNode(node: TiptapNode, index: number): React.ReactNode {
-  // Text node (leaf)
   if (node.type === 'text') {
     if (node.marks?.length) {
       return renderMarks(node.text ?? '', node.marks, `text-${index}`);

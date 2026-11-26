@@ -114,7 +114,6 @@ export function BlogPostListTable({
 
   return (
     <>
-      {/* Mobile cards */}
       <div className="space-y-3 md:hidden">
         {posts.map(post => {
           const status = getStatus(post);
@@ -197,7 +196,6 @@ export function BlogPostListTable({
         })}
       </div>
 
-      {/* Desktop table */}
       <div className="hidden md:block">
         <table className="divide-border w-full divide-y text-sm">
           <thead className="bg-muted/50">

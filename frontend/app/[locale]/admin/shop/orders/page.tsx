@@ -220,7 +220,6 @@ export default async function AdminOrdersPage({
           </div>
         </form>
 
-        {/* Mobile cards */}
         <div className="md:hidden">
           {viewModels.length === 0 ? (
             <div className="border-border text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
@@ -300,7 +299,6 @@ export default async function AdminOrdersPage({
           )}
         </div>
 
-        {/* Desktop table */}
         <div className="hidden md:block">
           <div className="bg-background/80 overflow-hidden rounded-xl shadow-sm">
             <table className="divide-border min-w-full divide-y text-sm">

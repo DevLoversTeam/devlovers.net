@@ -6,7 +6,7 @@ import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground
 import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
 import { getCachedBlogPosts } from '@/db/queries/blog/blog-posts';
 import { getLocalizedMetadata } from '@/i18n/metadata';
-export const revalidate = 604800; // 7 days
+export const revalidate = 604800;
 
 export async function generateMetadata({
   params,

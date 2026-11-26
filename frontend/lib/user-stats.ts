@@ -7,10 +7,6 @@ import { getAllSponsors, getSponsors } from '@/lib/about/github-sponsors';
 import { type UserStats } from '@/lib/achievements';
 import { checkHasStarredRepo, resolveGitHubLogin } from '@/lib/github-stars';
 
-/**
- * Fetches and resolves all necessary dependencies to compute a user's `UserStats`
- * object required for evaluating achievements.
- */
 export async function getUserStatsForAchievements(
   userId: string
 ): Promise<UserStats | null> {
@@ -90,7 +86,7 @@ export async function getUserStatsForAchievements(
     isSponsor: !!everSponsor,
     uniqueQuizzes,
     totalPoints: user.points,
-    topLeaderboard: false, // Currently mocked or separate logic
+    topLeaderboard: false,
     hasStarredRepo,
     sponsorCount: matchedSponsor ? 1 : 0,
     hasNightOwl,

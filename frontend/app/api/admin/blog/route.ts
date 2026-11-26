@@ -54,7 +54,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const data = parsed.data;
 
-    // Check slug uniqueness
     const [existing] = await db
       .select({ id: blogPosts.id })
       .from(blogPosts)
@@ -90,7 +89,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         throw err;
       }
 
-    // Apply publish state if not draft
     if (data.publishMode !== 'draft') {
       await toggleBlogPostPublish(postId, {
         isPublished: data.publishMode === 'publish',

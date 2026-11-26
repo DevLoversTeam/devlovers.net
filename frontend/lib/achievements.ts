@@ -11,14 +11,12 @@ export type AchievementIconName =
   | 'Crown'
   | 'Code'
   | 'Infinity'
-  // batch 2
   | 'GithubLogo'
   | 'Medal'
   | 'Seal'
   | 'Moon'
   | 'Shield'
   | 'Waves'
-  // batch 3
   | 'Meteor'
   | 'Sparkle'
   | 'GraduationCap'
@@ -29,9 +27,7 @@ export type AchievementIconName =
 export interface Achievement {
   id: string;
   icon: AchievementIconName;
-  /** gradient colors for the badge circle [from, to] */
   gradient: [string, string];
-  /** glow color (css color) */
   glow: string;
 }
 
@@ -39,12 +35,10 @@ export interface EarnedAchievement extends Achievement {
   earned: boolean;
   /** 0–100, only meaningful when earned === false */
   progress?: number;
-  /** Date string when the achievement was earned */
   earnedAt?: string;
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
-  // ── Group 1: Progression (Attempts) ────────────────────────────────
   {
     id: 'first_blood',
     icon: 'Fire',
@@ -76,7 +70,6 @@ export const ACHIEVEMENTS: Achievement[] = [
     glow: 'rgba(220,38,38,0.6)',
   },
 
-  // ── Group 2: Uniqueness & Points ───────────────────────────────────
   {
     id: 'code_wizard',
     icon: 'Code',
@@ -114,7 +107,6 @@ export const ACHIEVEMENTS: Achievement[] = [
     glow: 'rgba(20,184,166,0.6)',
   },
 
-  // ── Group 3: Accuracy & Consistency ────────────────────────────────
   {
     id: 'sharpshooter',
     icon: 'Target',
@@ -158,7 +150,6 @@ export const ACHIEVEMENTS: Achievement[] = [
     glow: 'rgba(251,191,36,0.7)',
   },
 
-  // ── Group 4: Social & Special ──────────────────────────────────────
   {
     id: 'night_owl',
     icon: 'Moon',
@@ -297,7 +288,6 @@ export function computeAchievements(stats: UserStats): EarnedAchievement[] {
             : Math.min((stats.averageScore / 80) * 100, 100);
         break;
 
-      // ── Hard / Dedicated ─────────────────────────────────────
       case 'unstoppable':
         earned = stats.totalAttempts >= 100;
         progress = Math.min((stats.totalAttempts / 100) * 100, 100);

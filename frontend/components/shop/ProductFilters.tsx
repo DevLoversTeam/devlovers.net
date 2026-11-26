@@ -55,7 +55,6 @@ export function ProductFilters() {
 
   return (
     <aside className="space-y-8" aria-label={t('label')}>
-      {/* Category */}
       <section aria-labelledby={categoryGroupId}>
         <h3
           id={categoryGroupId}

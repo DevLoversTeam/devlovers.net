@@ -250,7 +250,6 @@ export function QuestionEditor({
   }
 
   async function handleSave() {
-    // Skip locale validation for difficulty-only saves
     if (dirtyLocales.size > 0) {
       const error = validate(editorState);
       if (error) {
@@ -348,8 +347,6 @@ export function QuestionEditor({
   const missingLocales = new Set(locales.filter(l => !question.content[l]));
   const currentLocale = editorState.locales[activeLocale];
 
-  // ── Row view ──
-
   if (!isEditing) {
     return (
       <div className="border-border flex items-center gap-3 rounded-lg border px-4 py-3">
@@ -395,8 +392,6 @@ export function QuestionEditor({
       </div>
     );
   }
-
-  // ── Edit view ──
 
   return (
     <div className="rounded-lg border-2 border-[var(--accent-primary)]">

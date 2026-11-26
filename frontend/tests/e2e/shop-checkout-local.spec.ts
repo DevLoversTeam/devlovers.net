@@ -510,7 +510,6 @@ async function addSeededProductToCart(args: {
     new RegExp(`/${locale}/shop/products/${product.slug}$`)
   );
 
-  // Keep flow deterministic: seed guest cart storage directly after product page visit.
   await page.evaluate(productId => {
     window.localStorage.setItem(
       'devlovers-cart:guest',

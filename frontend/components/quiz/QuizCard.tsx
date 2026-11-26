@@ -65,7 +65,7 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
   const statusBadge = getStatusBadge();
 
   const handleStart = () => {
-    const seed = makeSeed(); // runs on click, not render
+    const seed = makeSeed();
     router.push(`/quiz/${quiz.slug}?seed=${seed}`);
   };
 

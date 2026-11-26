@@ -76,7 +76,6 @@ export async function PATCH(
       );
     }
 
-    // Verify quiz exists
     const [quiz] = await db
       .select({ id: quizzes.id, status: quizzes.status })
       .from(quizzes)
@@ -92,7 +91,6 @@ export async function PATCH(
 
     const { status, isActive } = parsed.data;
 
-    // Publish validation: draft -> ready
     if (status === 'ready' && quiz.status !== 'ready') {
       const validationErrors = await validateQuizForPublish(quizId);
       if (validationErrors.length > 0) {
@@ -107,7 +105,6 @@ export async function PATCH(
       }
     }
 
-    // Build update object
     const updateData: Record<string, unknown> = {};
     if (status !== undefined) updateData.status = status;
     if (isActive !== undefined) updateData.isActive = isActive;

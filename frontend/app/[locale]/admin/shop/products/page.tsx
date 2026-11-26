@@ -147,7 +147,6 @@ export default async function AdminProductsPage({
       </header>
 
       <section className="mt-6" aria-label={t('listCaption')}>
-        {/* Mobile cards */}
         <div className="md:hidden">
           {rows.length === 0 ? (
             <div className="border-border text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
@@ -288,7 +287,6 @@ export default async function AdminProductsPage({
           )}
         </div>
 
-        {/* Desktop table */}
         <div className="hidden md:block">
           <div className="bg-background/80 overflow-x-auto rounded-xl shadow-sm">
             <table className="divide-border w-full table-fixed divide-y text-sm">

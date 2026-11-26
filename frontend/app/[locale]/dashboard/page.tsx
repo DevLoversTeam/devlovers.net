@@ -119,7 +119,6 @@ export default async function DashboardPage({
     }
   }
 
-  // 2. Calculate Trend Percentage (Last 3 vs Previous 3)
   let trendPercentage: number | null = null;
   if (attempts.length >= 6) {
     const last3 = attempts.slice(0, 3);
@@ -212,7 +211,6 @@ export default async function DashboardPage({
                 rel="noopener noreferrer"
                 className={sponsorBtnStyles}
               >
-                {/* Subtle gradient glow background effect */}
                 <div className="absolute inset-0 z-0 bg-linear-to-r from-transparent via-(--accent-primary)/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
                 <span className="relative z-10 flex items-center gap-2">

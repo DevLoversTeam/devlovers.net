@@ -95,7 +95,6 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
     setStatus('idle');
 
     const formData = new FormData(e.currentTarget);
-    // Replace the stale file input value with our accumulated files
     formData.delete('attachment');
     for (const f of accumulatedFilesRef.current) {
       formData.append('attachment', f);

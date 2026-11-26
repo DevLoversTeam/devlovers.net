@@ -234,7 +234,7 @@ export function ActivityHeatmapCard({
     heatmapData.forEach(day => {
       const yrMap = `${day.date.getFullYear()}-${day.date.getMonth()}`;
       const rowIdx = monthRowMap.get(yrMap) ?? 0;
-      const colIdx = day.date.getDate() - 1; // 0 to 30
+      const colIdx = day.date.getDate() - 1;
 
       const x = PAD_L + colIdx * COL_W;
       const y = PAD_T + rowIdx * ROW_H;
@@ -294,7 +294,7 @@ export function ActivityHeatmapCard({
 
   const getCircuitColor = (count: number) => {
     if (count > 0) return 'var(--accent-primary)';
-    return 'currentColor'; // fallback
+    return 'currentColor';
   };
   const getCircuitOpacity = (count: number) => {
     if (count === 1) return 0.4;

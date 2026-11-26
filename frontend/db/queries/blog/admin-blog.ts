@@ -13,8 +13,6 @@ import {
 
 const ADMIN_LOCALE = 'en';
 
-// ── List ────────────────────────────────────────────────────────
-
 export interface AdminBlogListItem {
   id: string;
   slug: string;
@@ -67,8 +65,6 @@ export async function getAdminBlogList(): Promise<AdminBlogListItem[]> {
     updatedAt: row.updatedAt,
   }));
 }
-
-// ── Detail (for editing) ────────────────────────────────────────
 
 export interface AdminBlogTranslation {
   title: string;
@@ -140,8 +136,6 @@ export async function getAdminBlogPostById(
   return { ...post, translations, categoryIds };
 }
 
-// ── Create ──────────────────────────────────────────────────────
-
 export interface CreateBlogPostInput {
   slug: string;
   authorId: string | null;
@@ -202,8 +196,6 @@ export async function createBlogPost(
 
   return postId;
 }
-
-// ── Update ──────────────────────────────────────────────────────
 
 export interface UpdateBlogPostInput {
   slug?: string;
@@ -270,13 +262,9 @@ export async function updateBlogPost(
   }
 }
 
-// ── Delete ──────────────────────────────────────────────────────
-
 export async function deleteBlogPost(postId: string): Promise<void> {
   await db.delete(blogPosts).where(eq(blogPosts.id, postId));
 }
-
-// ── Publish toggle ──────────────────────────────────────────────
 
 interface PublishOptions {
   isPublished: boolean;
@@ -302,8 +290,6 @@ export async function toggleBlogPostPublish(
     })
     .where(eq(blogPosts.id, postId));
 }
-
-// ── Dropdown data ───────────────────────────────────────────────
 
 export interface AdminBlogAuthorOption {
   id: string;
@@ -358,8 +344,6 @@ export async function getAdminBlogCategories(): Promise<
   }));
 }
 
-// ── Create category (inline from post form) ─────────────────────
-
 export interface CreateBlogCategoryInput {
   slug: string;
   translations: Record<string, { title: string; description?: string }>;
@@ -402,8 +386,6 @@ export async function createBlogCategory(
     title: input.translations[ADMIN_LOCALE]?.title ?? input.slug,
   };
 }
-
-// ── Create author (inline from post form) ────────────────────────
 
 export interface CreateBlogAuthorInput {
   slug: string;
@@ -462,8 +444,6 @@ export async function createBlogAuthor(
   };
 }
 
-// ── Preview helpers ─────────────────────────────────────────────
-
 export async function getBlogAuthorName(
   authorId: string,
   locale: string
@@ -504,8 +484,6 @@ export async function getBlogPostCategoryName(
     .limit(1);
   return row?.title ?? null;
 }
-
-// ── Authors management ──────────────────────────────────────────
 
 export interface AdminBlogAuthorListItem {
   id: string;
@@ -683,8 +661,6 @@ export async function deleteBlogAuthor(authorId: string): Promise<void> {
 
   await db.delete(blogAuthors).where(eq(blogAuthors.id, authorId));
 }
-
-// ── Categories management ───────────────────────────────────────
 
 export interface AdminBlogCategoryTranslation {
   title: string;

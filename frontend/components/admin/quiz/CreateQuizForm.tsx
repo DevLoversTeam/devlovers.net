@@ -158,7 +158,6 @@ export function CreateQuizForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Category */}
       <div className="space-y-2">
         <label className="text-foreground text-sm font-medium">Category</label>
         <div className="flex items-center gap-3">
@@ -192,7 +191,6 @@ export function CreateQuizForm({
         )}
       </div>
 
-      {/* Translations */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="text-foreground text-sm font-medium">
@@ -218,7 +216,6 @@ export function CreateQuizForm({
         />
       </div>
 
-      {/* Slug */}
       <div>
         <label className="text-foreground mb-1 block text-sm font-medium">
           Slug
@@ -235,7 +232,6 @@ export function CreateQuizForm({
         </p>
       </div>
 
-      {/* Time Limit */}
       <div>
         <label className="text-foreground mb-1 block text-sm font-medium">
           Time Limit (seconds)
@@ -250,10 +246,8 @@ export function CreateQuizForm({
         />
       </div>
 
-      {/* JSON Upload */}
       <JsonUploadArea onQuestionsChange={setQuestions} />
 
-      {/* Questions Preview */}
       {questions.length > 0 && (
         <div className="border-border bg-muted/30 rounded-lg border p-4">
           <p className="text-foreground text-sm font-medium">
@@ -266,10 +260,8 @@ export function CreateQuizForm({
         </div>
       )}
 
-      {/* Error */}
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {/* Submit */}
       <button
         type="submit"
         disabled={submitting}

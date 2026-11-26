@@ -10,7 +10,7 @@ import { getCachedBlogPostsByCategory } from '@/db/queries/blog/blog-posts';
 import { Link } from '@/i18n/routing';
 import { getBlogCategoryLabel } from '@/lib/blog/category-label';
 import { formatBlogDate } from '@/lib/blog/date';
-export const revalidate = 604800; // 7 days
+export const revalidate = 604800;
 
 export default async function BlogCategoryPage({
   params,

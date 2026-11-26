@@ -1,7 +1,3 @@
-/**
- * Test factories for quiz module
- * Creates consistent test data for unit and integration tests
- */
 
 export interface MockQuestion {
   id: string;
@@ -29,9 +25,6 @@ export interface MockQuizSession {
 
 let questionCounter = 0;
 
-/**
- * Creates a mock question with one correct answer
- */
 export function createMockQuestion(
   overrides?: Partial<MockQuestion>
 ): MockQuestion {
@@ -50,16 +43,10 @@ export function createMockQuestion(
   };
 }
 
-/**
- * Creates multiple mock questions
- */
 export function createMockQuestions(count: number): MockQuestion[] {
   return Array.from({ length: count }, () => createMockQuestion());
 }
 
-/**
- * Creates a mock quiz session for localStorage tests
- */
 export function createMockQuizSession(
   overrides?: Partial<MockQuizSession>
 ): MockQuizSession {
@@ -75,9 +62,6 @@ export function createMockQuizSession(
   };
 }
 
-/**
- * Creates a correct answers map from questions
- */
 export function createCorrectAnswersMap(
   questions: MockQuestion[]
 ): Record<string, string> {
@@ -91,9 +75,6 @@ export function createCorrectAnswersMap(
   return map;
 }
 
-/**
- * Reset counters between test files
- */
 export function resetFactoryCounters(): void {
   questionCounter = 0;
 }

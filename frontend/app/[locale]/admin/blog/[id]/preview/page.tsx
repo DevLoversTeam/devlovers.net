@@ -50,12 +50,10 @@ export default async function AdminBlogPreviewPage({
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-transparent">
-      {/* Preview banner */}
       <div className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-center text-sm font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">
         Preview Mode — This is how the post will appear on the public site
       </div>
 
-      {/* Admin controls bar */}
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <Link
           href={`/admin/blog/${id}`}
@@ -64,7 +62,6 @@ export default async function AdminBlogPreviewPage({
           &larr; Back to edit
         </Link>
 
-        {/* Locale tabs */}
         <div className="flex gap-1 rounded-md border border-border p-0.5">
           {locales.map(l => (
             <a
@@ -83,7 +80,6 @@ export default async function AdminBlogPreviewPage({
         </div>
       </div>
 
-      {/* Post content — matches PostDetails.tsx styling */}
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-3xl">
           {categoryName && (

@@ -2,7 +2,6 @@
 -- ASCII-only file: Cyrillic values are injected via hex->UTF8.
 SET client_encoding = 'UTF8';
 
--- Cities
 INSERT INTO np_cities (
   ref,
   name_ua,
@@ -47,7 +46,6 @@ SET
   is_active = true,
   updated_at = now();
 
--- Warehouses
 INSERT INTO np_warehouses (
   ref,
   city_ref,

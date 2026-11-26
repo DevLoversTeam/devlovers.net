@@ -211,7 +211,7 @@ export async function clearVerifiedQuestions(
   }
 }
 
-const ATTEMPT_REVIEW_TTL = 48 * 60 * 60; // 48 hours
+const ATTEMPT_REVIEW_TTL = 48 * 60 * 60;
 
 function getAttemptReviewCacheKey(
   attemptId: string,

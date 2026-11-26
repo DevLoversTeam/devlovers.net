@@ -59,7 +59,6 @@ export function BlogAuthorListTable({
 
   return (
     <>
-      {/* Mobile cards */}
       <div className="space-y-3 md:hidden">
         {authors.map(author => (
           <div
@@ -118,7 +117,6 @@ export function BlogAuthorListTable({
         ))}
       </div>
 
-      {/* Desktop table */}
       <div className="hidden md:block">
         <table className="divide-border w-full divide-y text-sm">
           <thead className="bg-muted/50">

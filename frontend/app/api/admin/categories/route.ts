@@ -58,7 +58,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const { slug, translations } = parsed.data;
 
-    // Auto displayOrder
     const [maxRow] = await db
       .select({ maxOrder: max(categories.displayOrder) })
       .from(categories);
@@ -84,7 +83,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const category = rows[0];
 
-    // Insert translations (cleanup orphan category on failure)
     try {
       await db.insert(categoryTranslations).values(
         locales.map(locale => ({

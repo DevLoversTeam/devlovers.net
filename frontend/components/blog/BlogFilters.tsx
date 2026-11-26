@@ -107,13 +107,6 @@ function SocialIcon({ platform }: { platform?: string }) {
   return <LinkIcon className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
 }
 
-/**
- * Normalize a tag/search input:
- * - removes leading "#"
- * - trims spaces
- * - lowercases
- * - collapses multiple spaces
- */
 export function normalizeTag(input: string) {
   return (input || '')
     .replace(/^#/, '')
@@ -134,10 +127,6 @@ function plainTextExcerpt(value?: any): string {
   return extractPlainText(value).trim();
 }
 
-/**
- * BlogFilters
- * - Renders BlogGrid with filtered posts
- */
 export default function BlogFilters({
   posts,
   categories = [],

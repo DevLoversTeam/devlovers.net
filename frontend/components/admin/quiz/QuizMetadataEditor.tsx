@@ -166,7 +166,6 @@ export function QuizMetadataEditor({
     <div className="border-border space-y-4 rounded-lg border p-4">
       <h3 className="text-foreground text-sm font-medium">Edit Metadata</h3>
 
-      {/* Locale tabs */}
       <div className="flex gap-1">
         {locales.map(locale => (
           <button
@@ -184,7 +183,6 @@ export function QuizMetadataEditor({
         ))}
       </div>
 
-      {/* Title + description for active locale */}
       <div className="space-y-3">
         <div>
           <label className="text-foreground mb-1 block text-xs font-medium">
@@ -212,7 +210,6 @@ export function QuizMetadataEditor({
         </div>
       </div>
 
-      {/* Time limit */}
       <div>
         <label className="text-foreground mb-1 block text-xs font-medium">
           Time Limit (minutes)
@@ -232,7 +229,6 @@ export function QuizMetadataEditor({
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {/* Actions */}
       <div className="flex gap-2">
         <button
           type="button"

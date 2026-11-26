@@ -87,7 +87,6 @@ export function QuizResultsSection({
         <div />
       </div>
 
-      {/* Rows */}
       <div className="flex flex-col gap-2">
         {[...attempts]
           .sort((a, b) => {
@@ -100,10 +99,9 @@ export function QuizResultsSection({
             const bucketB = scoreB < 70 ? 1 : scoreB < 100 ? 2 : 3;
 
             if (bucketA !== bucketB) {
-              return bucketA - bucketB; // Ascending order of buckets
+              return bucketA - bucketB;
             }
 
-            // If they are in the same bucket, sort by most recent first
             return (
               new Date(b.completedAt).getTime() -
               new Date(a.completedAt).getTime()

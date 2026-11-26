@@ -64,7 +64,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const { categoryId, slug, timeLimitSeconds, translations, questions } =
       parsed.data;
 
-    // Check duplicate slug within category
     const [existing] = await db
       .select({ id: quizzes.id })
       .from(quizzes)
@@ -81,11 +80,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Auto-assign displayOrder
     const maxOrder = await getMaxQuizDisplayOrder(categoryId);
     const displayOrder = maxOrder + 1;
 
-    // 1. Insert quiz
     const [quiz] = await db
       .insert(quizzes)
       .values({
@@ -102,7 +99,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const quizId = quiz.id;
 
     try {
-      // 2. Insert quiz translations
       await db.insert(quizTranslations).values(
         locales.map(locale => ({
           quizId,

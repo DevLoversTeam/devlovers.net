@@ -69,7 +69,6 @@ export function QuizListTable({
 
   return (
     <>
-      {/* Mobile cards */}
       <div className="space-y-3 md:hidden">
         {quizzes.map(quiz => (
           <div
@@ -126,7 +125,6 @@ export function QuizListTable({
         ))}
       </div>
 
-      {/* Desktop table */}
       <div className="hidden md:block">
         <div>
           <table className="divide-border w-full divide-y text-sm">

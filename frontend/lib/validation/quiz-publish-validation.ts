@@ -15,7 +15,6 @@ export async function validateQuizForPublish(
 ): Promise<string[]> {
   const errors: string[] = [];
 
-  // 1. Quiz translations
   const quizTrans = await db
     .select({
       locale: quizTranslations.locale,
@@ -37,7 +36,6 @@ export async function validateQuizForPublish(
       errors.push(`Quiz description empty for locale: ${t.locale}`);
   }
 
-  // 2. Questions
   const questions = await db
     .select({ id: quizQuestions.id, displayOrder: quizQuestions.displayOrder })
     .from(quizQuestions)
@@ -51,7 +49,6 @@ export async function validateQuizForPublish(
 
   const questionIds = questions.map(q => q.id);
 
-  // 3. Question content (all locales)
   const contentRows = await db
     .select({
       quizQuestionId: quizQuestionContent.quizQuestionId,
@@ -91,7 +88,6 @@ export async function validateQuizForPublish(
     }
   }
 
-  // 4. Answers
   const answers = await db
     .select({
       id: quizAnswers.id,
@@ -118,7 +114,6 @@ export async function validateQuizForPublish(
     }
   }
 
-  // 5. Answer translations
   const answerIds = answers.map(a => a.id);
   const answerTransRows =
     answerIds.length > 0
