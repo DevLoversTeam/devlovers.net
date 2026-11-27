@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
+import { OrderDetailField } from '@/components/shop/OrderDetailField';
 import {
   type AdminOrderDetail,
   type AdminOrderHistoryEntry,
@@ -809,43 +810,26 @@ export default async function OrderDetailPage({
               </dd>
             </div>
 
-            <div>
-              <dt className="text-muted-foreground text-xs">{tShop('orders.created')}</dt>
-              <dd className="text-sm">{createdFormatted}</dd>
-            </div>
+            <OrderDetailField label={tShop('orders.created')}>
+              {createdFormatted}
+            </OrderDetailField>
 
-            <div>
-              <dt className="text-muted-foreground text-xs">{t('provider')}</dt>
-              <dd className="text-sm">
-                {humanizePaymentProvider(order.paymentProvider, t)}
-              </dd>
-            </div>
+            <OrderDetailField label={t('provider')}>
+              {humanizePaymentProvider(order.paymentProvider, t)}
+            </OrderDetailField>
 
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('paymentReference')}
-              </dt>
-              <dd className="text-sm break-all">
-                {detailValue(order.paymentIntentId)}
-              </dd>
-            </div>
+            <OrderDetailField label={t('paymentReference')} breakAll>
+              {detailValue(order.paymentIntentId)}
+            </OrderDetailField>
           </dl>
 
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('idempotencyKey')}
-              </dt>
-              <dd className="text-sm break-all">{order.idempotencyKey}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('stockRestored')}
-              </dt>
-              <dd className="text-sm">
-                {order.stockRestored ? t('yes') : t('no')}
-              </dd>
-            </div>
+            <OrderDetailField label={t('idempotencyKey')} breakAll>
+              {order.idempotencyKey}
+            </OrderDetailField>
+            <OrderDetailField label={t('stockRestored')}>
+              {order.stockRestored ? t('yes') : t('no')}
+            </OrderDetailField>
             <div className="sm:col-span-2">
               <dt className="text-muted-foreground text-xs">
                 {t('restockedAt')}
@@ -867,89 +851,56 @@ export default async function OrderDetailPage({
           </h2>
 
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('customerAccount')}
-              </dt>
-              <dd className="text-sm">
-                {order.userId ? (
-                  customerSummary.accountName ||
-                  customerSummary.accountEmail ? (
-                    <div className="min-w-0">
-                      <div className="font-medium">
-                        {customerSummary.accountName ??
-                          customerSummary.accountEmail}
-                      </div>
-                      {customerSummary.accountName &&
-                      customerSummary.accountEmail ? (
-                        <div className="text-muted-foreground text-xs break-all">
-                          {customerSummary.accountEmail}
-                        </div>
-                      ) : null}
+            <OrderDetailField label={t('customerAccount')}>
+              {order.userId ? (
+                customerSummary.accountName || customerSummary.accountEmail ? (
+                  <div className="min-w-0">
+                    <div className="font-medium">
+                      {customerSummary.accountName ??
+                        customerSummary.accountEmail}
                     </div>
-                  ) : (
-                    t('accountUnavailable')
-                  )
+                    {customerSummary.accountName &&
+                    customerSummary.accountEmail ? (
+                      <div className="text-muted-foreground text-xs break-all">
+                        {customerSummary.accountEmail}
+                      </div>
+                    ) : null}
+                  </div>
                 ) : (
-                  t('guest')
-                )}
-              </dd>
-            </div>
+                  t('accountUnavailable')
+                )
+              ) : (
+                t('guest')
+              )}
+            </OrderDetailField>
 
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('recipientName')}
-              </dt>
-              <dd className="text-sm">
-                {detailValue(customerSummary.recipientName)}
-              </dd>
-            </div>
+            <OrderDetailField label={t('recipientName')}>
+              {detailValue(customerSummary.recipientName)}
+            </OrderDetailField>
 
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('recipientPhone')}
-              </dt>
-              <dd className="text-sm">
-                {detailValue(customerSummary.recipientPhone)}
-              </dd>
-            </div>
+            <OrderDetailField label={t('recipientPhone')}>
+              {detailValue(customerSummary.recipientPhone)}
+            </OrderDetailField>
 
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('recipientEmail')}
-              </dt>
-              <dd className="text-sm break-all">
-                {detailValue(customerSummary.recipientEmail)}
-              </dd>
-            </div>
+            <OrderDetailField label={t('recipientEmail')} breakAll>
+              {detailValue(customerSummary.recipientEmail)}
+            </OrderDetailField>
 
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('shippingProviderLabel')}
-              </dt>
-              <dd className="text-sm">{shippingProviderLabel}</dd>
-            </div>
+            <OrderDetailField label={t('shippingProviderLabel')}>
+              {shippingProviderLabel}
+            </OrderDetailField>
 
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('shippingMethod')}
-              </dt>
-              <dd className="text-sm">{shippingMethodLabel}</dd>
-            </div>
+            <OrderDetailField label={t('shippingMethod')}>
+              {shippingMethodLabel}
+            </OrderDetailField>
 
-            <div>
-              <dt className="text-muted-foreground text-xs">{t('city')}</dt>
-              <dd className="text-sm">{detailValue(customerSummary.city)}</dd>
-            </div>
+            <OrderDetailField label={t('city')}>
+              {detailValue(customerSummary.city)}
+            </OrderDetailField>
 
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('pickupPoint')}
-              </dt>
-              <dd className="text-sm">
-                {detailValue(customerSummary.pickupPoint)}
-              </dd>
-            </div>
+            <OrderDetailField label={t('pickupPoint')}>
+              {detailValue(customerSummary.pickupPoint)}
+            </OrderDetailField>
 
             <div className="sm:col-span-2">
               <dt className="text-muted-foreground text-xs">{t('address')}</dt>

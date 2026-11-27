@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 
 import BlogFilters from '@/components/blog/BlogFilters';
 import { BlogPageHeader } from '@/components/blog/BlogPageHeader';
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
 import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
 import { getCachedBlogPosts } from '@/db/queries/blog/blog-posts';
 import { getLocalizedMetadata } from '@/i18n/metadata';

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 
 import { hexToRgba } from '@/components/q&a/hexToRgba';
+import { getPageNumbers } from '@/lib/pagination';
 import { cn } from '@/lib/utils';
 
 interface PaginationProps {
@@ -171,52 +172,11 @@ export function Pagination({
 
   const effectiveTotalPages = Math.max(totalPages, 1);
 
-  const getPageNumbers = (): (number | 'ellipsis')[] => {
-    const pages: (number | 'ellipsis')[] = [];
-    const maxVisible = isMobile ? 3 : 5;
-
-    if (effectiveTotalPages <= maxVisible + 2) {
-      for (let i = 1; i <= effectiveTotalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      pages.push(1);
-
-      if (currentPage <= 3) {
-        for (
-          let i = 2;
-          i <= Math.min(maxVisible, effectiveTotalPages - 1);
-          i++
-        ) {
-          pages.push(i);
-        }
-        if (effectiveTotalPages > maxVisible) {
-          pages.push('ellipsis');
-        }
-      } else if (currentPage >= effectiveTotalPages - 2) {
-        pages.push('ellipsis');
-        for (
-          let i = effectiveTotalPages - maxVisible + 1;
-          i < effectiveTotalPages;
-          i++
-        ) {
-          if (i > 1) pages.push(i);
-        }
-      } else {
-        pages.push('ellipsis');
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
-        pages.push('ellipsis');
-      }
-
-      pages.push(effectiveTotalPages);
-    }
-
-    return pages;
-  };
-
-  const pages = getPageNumbers();
+  const pages = getPageNumbers(
+    currentPage,
+    effectiveTotalPages,
+    isMobile ? 3 : 5
+  );
 
   return (
     <div

@@ -1,13 +1,11 @@
 import { getTranslations } from 'next-intl/server';
 
+import { LegalEmailLink } from '@/components/legal/LegalEmailLink';
 import { getPublicSupportEmail } from '@/lib/legal/public-contact';
 
 import LegalBlock from './LegalBlock';
 
 export const RETURNS_POLICY_LAST_UPDATED = '2026-03-27';
-
-const linkClass =
-  'underline underline-offset-4 hover:text-blue-600 dark:hover:text-blue-400 transition-colors';
 
 export default async function ReturnsPolicyContent() {
   const t = await getTranslations('legal.returns');
@@ -29,11 +27,7 @@ export default async function ReturnsPolicyContent() {
 
       <LegalBlock id="contact" title={t('contact.title')}>
         <p>
-          {t('contact.body')}{' '}
-          <a className={linkClass} href={`mailto:${email}`}>
-            {email}
-          </a>
-          .
+          {t('contact.body')} <LegalEmailLink email={email} />.
         </p>
       </LegalBlock>
     </div>

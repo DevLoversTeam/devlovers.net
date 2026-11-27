@@ -4,7 +4,10 @@ import { ChevronRight, Shield } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 
-import { Badge, type BadgeProps } from '@/components/ui/badge';
+import {
+  getQuizProgressStatus,
+  QuizProgressBadge,
+} from '@/components/quiz/QuizProgressBadge';
 import {
   type CategoryTabStyle,
   categoryTabStyles,
@@ -35,40 +38,13 @@ function formatRelativeTime(date: Date, locale: string): string {
   return rtf.format(-diffSeconds, 'second');
 }
 
-type StatusConfig = {
-  variant: BadgeProps['variant'];
-  label: 'mastered' | 'needsReview' | 'study';
-  dotColor: string;
-};
-
-function getStatus(percentage: number): StatusConfig {
-  if (percentage === 100)
-    return {
-      variant: 'success',
-      label: 'mastered',
-      dotColor: 'bg-emerald-500',
-    };
-  if (percentage >= 70)
-    return {
-      variant: 'warning',
-      label: 'needsReview',
-      dotColor: 'bg-amber-500',
-    };
-  return { variant: 'danger', label: 'study', dotColor: 'bg-red-500' };
-}
-
 function ProgressBar({ percentage }: { percentage: number }) {
-  const color =
-    percentage === 100
-      ? 'bg-emerald-500'
-      : percentage >= 70
-        ? 'bg-amber-500'
-        : 'bg-red-500';
+  const { dotColor } = getQuizProgressStatus(percentage);
 
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-neutral-700">
       <div
-        className={`h-full rounded-full transition-all ${color}`}
+        className={`h-full rounded-full transition-all ${dotColor}`}
         style={{ width: `${percentage}%` }}
       />
     </div>
@@ -93,10 +69,10 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
   const router = useRouter();
 
   const pct = Number(attempt.percentage);
-  const status = getStatus(pct);
+  const status = getQuizProgressStatus(pct);
   const statusLabel =
     status.label === 'mastered' ? tQuizStatus('mastered') : t(status.label);
-  const isMastered = pct === 100;
+  const isMastered = status.label === 'mastered';
   const catStyle = getCategoryStyle(attempt.categorySlug);
 
   const baseStyles =
@@ -185,13 +161,11 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
           )}
         </div>
         <div className="flex w-19 shrink-0 items-center justify-center sm:w-21.5">
-          <Badge
-            variant={status.variant}
+          <QuizProgressBadge
+            status={status}
+            label={statusLabel}
             className="gap-1 rounded-full px-2 py-0.5 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs"
-          >
-            <span className={`h-1.5 w-1.5 rounded-full ${status.dotColor}`} />
-            {statusLabel}
-          </Badge>
+          />
         </div>
         {!isMastered ? (
           <ChevronRight className="-ml-1 h-4 w-4 shrink-0 text-gray-300 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-(--accent-primary) dark:text-gray-600" />
@@ -262,10 +236,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
         </div>
 
         <div className="flex justify-center">
-          <Badge variant={status.variant} className="gap-1.5 rounded-full">
-            <span className={`h-1.5 w-1.5 rounded-full ${status.dotColor}`} />
-            {statusLabel}
-          </Badge>
+          <QuizProgressBadge status={status} label={statusLabel} />
         </div>
 
         <div className="text-center">

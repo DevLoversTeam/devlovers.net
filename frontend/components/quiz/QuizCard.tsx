@@ -3,6 +3,10 @@
 import { Clock, FileText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
+import {
+  getQuizProgressStatus,
+  QuizProgressBadge,
+} from '@/components/quiz/QuizProgressBadge';
 import { Badge } from '@/components/ui/badge';
 import { categoryTabStyles } from '@/data/categoryStyles';
 import { useRouter } from '@/i18n/routing';
@@ -45,24 +49,9 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
       ? Math.round((userProgress.bestScore / userProgress.totalQuestions) * 100)
       : 0;
 
-  const getStatusBadge = () => {
-    if (!userProgress) return null;
-    if (percentage === 100)
-      return {
-        variant: 'success' as const,
-        label: tQuizStatus('mastered'),
-        dot: 'bg-emerald-500',
-      };
-    if (percentage >= 70)
-      return {
-        variant: 'warning' as const,
-        label: t('needsReview'),
-        dot: 'bg-amber-500',
-      };
-    return { variant: 'danger' as const, label: t('study'), dot: 'bg-red-500' };
-  };
-
-  const statusBadge = getStatusBadge();
+  const progressStatus = userProgress
+    ? getQuizProgressStatus(percentage)
+    : null;
 
   const handleStart = () => {
     const seed = makeSeed();
@@ -89,14 +78,15 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
           >
             {quiz.categoryName ?? t('uncategorized')}
           </Badge>
-          {statusBadge && (
-            <Badge
-              variant={statusBadge.variant}
-              className="gap-1.5 rounded-full"
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${statusBadge.dot}`} />
-              {statusBadge.label}
-            </Badge>
+          {progressStatus && (
+            <QuizProgressBadge
+              status={progressStatus}
+              label={
+                progressStatus.label === 'mastered'
+                  ? tQuizStatus('mastered')
+                  : t(progressStatus.label)
+              }
+            />
           )}
         </div>
         <h2 className="mb-2 text-xl font-semibold">

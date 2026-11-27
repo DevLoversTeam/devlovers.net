@@ -2,8 +2,8 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 import QaSection from '@/components/q&a/QaSection';
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import { Loader } from '@/components/shared/Loader';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
+import { Loader } from '@/components/ui/loader';
 import { getLocalizedMetadata } from '@/i18n/metadata';
 
 export async function generateMetadata({

@@ -6,9 +6,9 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
-import { Loader } from '@/components/shared/Loader';
 import { useCart } from '@/components/shop/CartProvider';
 import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
+import { Loader } from '@/components/ui/loader';
 import { Link, useRouter } from '@/i18n/routing';
 import {
   buildCheckoutShippingPayload,

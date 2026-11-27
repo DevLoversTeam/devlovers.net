@@ -1,6 +1,11 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { CheckoutOrderSummary } from '@/components/shop/checkout/CheckoutOrderSummary';
+import {
+  CheckoutNoticePage,
+  CheckoutPageShell,
+} from '@/components/shop/checkout/CheckoutPageShell';
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
 import { Link } from '@/i18n/routing';
@@ -60,35 +65,6 @@ const SHOP_OUTLINE_BTN = cn(
   SHOP_FOCUS
 );
 
-function CheckoutShell({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <main
-      className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
-      aria-labelledby="checkout-title"
-    >
-      <section className="border-border bg-card rounded-lg border p-8 text-center">
-        <h1 id="checkout-title" className="text-foreground text-2xl font-bold">
-          {title}
-        </h1>
-
-        {description ? (
-          <p className="text-muted-foreground mt-2 text-sm">{description}</p>
-        ) : null}
-
-        {children}
-      </section>
-    </main>
-  );
-}
-
 export default async function CheckoutSuccessPage({
   params,
   searchParams,
@@ -109,7 +85,8 @@ export default async function CheckoutSuccessPage({
   );
   if (!orderId) {
     return (
-      <CheckoutShell
+      <CheckoutNoticePage
+        titleId="checkout-title"
         title={t('errors.missingOrderId')}
         description={t('missingOrder.message')}
       >
@@ -122,17 +99,14 @@ export default async function CheckoutSuccessPage({
             {t('actions.goToCart')}
           </Link>
         </nav>
-      </CheckoutShell>
+      </CheckoutNoticePage>
     );
   }
 
   const statusToken = parseStatusToken(resolvedParams);
   if (isMonobankRedirectFlow(resolvedParams)) {
     return (
-      <main
-        className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
-        aria-labelledby="order-title"
-      >
+      <CheckoutPageShell aria-labelledby="order-title">
         <ClearCartOnMount enabled={clearCart} />
         <MonobankRedirectStatus
           orderId={orderId}
@@ -140,7 +114,7 @@ export default async function CheckoutSuccessPage({
           initialStatusToken={statusToken}
           paymentsDisabled={isPaymentsDisabled(resolvedParams)}
         />
-      </main>
+      </CheckoutPageShell>
     );
   }
 
@@ -153,14 +127,16 @@ export default async function CheckoutSuccessPage({
   if (!summaryAccess.ok) {
     if (summaryAccess.code === 'STATUS_TOKEN_MISCONFIGURED') {
       return (
-        <CheckoutShell
+        <CheckoutNoticePage
+          titleId="checkout-title"
           title={t('errors.unableToLoad')}
           description={t('errors.tryAgainLater')}
         />
       );
     }
     return (
-      <CheckoutShell
+      <CheckoutNoticePage
+        titleId="checkout-title"
         title={t('errors.orderNotFound')}
         description={t('notFoundOrder.message')}
       >
@@ -173,7 +149,7 @@ export default async function CheckoutSuccessPage({
             {t('actions.goToCart')}
           </Link>
         </nav>
-      </CheckoutShell>
+      </CheckoutNoticePage>
     );
   }
 
@@ -187,10 +163,7 @@ export default async function CheckoutSuccessPage({
   );
 
   return (
-    <main
-      className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
-      aria-labelledby="order-title"
-    >
+    <CheckoutPageShell aria-labelledby="order-title">
       <ClearCartOnMount enabled={clearCart} />
 
       <OrderStatusAutoRefresh paymentStatus={order.paymentStatus} />
@@ -220,61 +193,29 @@ export default async function CheckoutSuccessPage({
           </p>
         ) : null}
 
-        <section
-          className="mt-6 grid gap-6 md:grid-cols-2"
-          aria-label="Order summary"
-        >
-          <div className="border-border bg-muted/40 rounded-md border p-4">
-            <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
-              {tShop('orderSummary')}
-            </h2>
-
-            <dl className="mt-3 space-y-2 text-sm">
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">
-                  {t('success.totalAmount')}
-                </dt>
-                <dd className="text-foreground font-semibold">
-                  {formatMoney(totalMinor, order.currency, locale)}
-                </dd>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{tShop('items')}</dt>
-                <dd className="text-foreground font-medium">{itemsCount}</dd>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{t('paymentStatusLabel')}</dt>
-                <dd className="text-foreground font-semibold capitalize">
-                  {order.paymentStatus}
-                </dd>
-              </div>
-
-              {shipmentStatusLabel ? (
-                <div className="flex items-center justify-between gap-4">
-                  <dt className="text-muted-foreground">
-                    {tOrder('shippingStatus')}
-                  </dt>
-                  <dd className="text-foreground text-right font-medium">
-                    {shipmentStatusLabel}
-                  </dd>
-                </div>
-              ) : null}
-
-              {order.trackingNumber ? (
-                <div className="flex items-center justify-between gap-4">
-                  <dt className="text-muted-foreground">
-                    {tOrder('trackingNumber')}
-                  </dt>
-                  <dd className="text-foreground text-right font-medium [overflow-wrap:anywhere] break-words">
-                    {order.trackingNumber}
-                  </dd>
-                </div>
-              ) : null}
-            </dl>
-          </div>
-        </section>
+        <CheckoutOrderSummary
+          title={tShop('orderSummary')}
+          total={{
+            label: t('success.totalAmount'),
+            value: formatMoney(totalMinor, order.currency, locale),
+          }}
+          items={{ label: tShop('items'), value: itemsCount }}
+          paymentStatus={{
+            label: t('paymentStatusLabel'),
+            value: order.paymentStatus,
+          }}
+          capitalizePaymentStatus
+          shipmentStatus={
+            shipmentStatusLabel
+              ? { label: tOrder('shippingStatus'), value: shipmentStatusLabel }
+              : undefined
+          }
+          trackingNumber={
+            order.trackingNumber
+              ? { label: tOrder('trackingNumber'), value: order.trackingNumber }
+              : undefined
+          }
+        />
 
         <nav className="mt-8 flex flex-wrap gap-3" aria-label="Next steps">
           <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
@@ -286,6 +227,6 @@ export default async function CheckoutSuccessPage({
           </Link>
         </nav>
       </section>
-    </main>
+    </CheckoutPageShell>
   );
 }

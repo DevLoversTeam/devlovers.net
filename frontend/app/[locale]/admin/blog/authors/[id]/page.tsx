@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { BlogAuthorForm } from '@/components/admin/blog/BlogAuthorForm';
 import { getAdminBlogAuthorById } from '@/db/queries/blog/admin-blog';
 import { Link } from '@/i18n/routing';
@@ -23,7 +24,7 @@ export default async function AdminBlogAuthorEditPage({
   const csrfTokenImage = issueCsrfToken('admin:blog:image');
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <AdminPageContainer>
       <div className="mb-6">
         <Link
           href="/admin/blog/authors"
@@ -40,6 +41,6 @@ export default async function AdminBlogAuthorEditPage({
         csrfTokenAuthor={csrfTokenAuthor}
         csrfTokenImage={csrfTokenImage}
       />
-    </div>
+    </AdminPageContainer>
   );
 }

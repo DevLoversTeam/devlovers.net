@@ -1,5 +1,5 @@
+import { AdminTableActionLink } from '@/components/admin/AdminTableActionLink';
 import type { AdminQuizListItem } from '@/db/queries/quizzes/admin-quiz';
-import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 
 import { DeleteQuizButton } from './DeleteQuizButton';
@@ -108,12 +108,9 @@ export function QuizListTable({
             </dl>
 
             <div className="mt-3 flex gap-2">
-              <Link
-                href={`/admin/quiz/${quiz.id}`}
-                className="border-border text-foreground hover:bg-secondary inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
-              >
+              <AdminTableActionLink href={`/admin/quiz/${quiz.id}`}>
                 Edit
-              </Link>
+              </AdminTableActionLink>
               {canDelete(quiz) && (
                 <DeleteQuizButton
                   quizId={quiz.id}
@@ -176,12 +173,9 @@ export function QuizListTable({
                   </td>
                   <td className={TD}>
                     <div className="flex gap-2">
-                      <Link
-                        href={`/admin/quiz/${quiz.id}`}
-                        className="border-border text-foreground hover:bg-secondary inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
-                      >
+                      <AdminTableActionLink href={`/admin/quiz/${quiz.id}`}>
                         Edit
-                      </Link>
+                      </AdminTableActionLink>
                       {canDelete(quiz) && (
                         <DeleteQuizButton
                           quizId={quiz.id}

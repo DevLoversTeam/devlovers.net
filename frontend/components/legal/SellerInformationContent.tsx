@@ -1,5 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
+import { LegalEmailLink } from '@/components/legal/LegalEmailLink';
+import { LegalList } from '@/components/legal/LegalList';
 import { getPublicSellerInformation } from '@/lib/legal/public-seller-information';
 
 import LegalBlock from './LegalBlock';
@@ -35,13 +37,13 @@ export default async function SellerInformationContent() {
       label: t('fields.businessDetails'),
       value:
         seller.businessDetails.length > 0 ? (
-          <ul className="list-disc space-y-2 pl-5">
+          <LegalList>
             {seller.businessDetails.map(detail => (
               <li key={`${detail.label}:${detail.value}`}>
                 <strong>{detail.label}:</strong> {detail.value}
               </li>
             ))}
-          </ul>
+          </LegalList>
         ) : (
           placeholder(t('placeholders.toBeAdded'))
         ),
@@ -53,9 +55,7 @@ export default async function SellerInformationContent() {
       key: 'supportEmail',
       label: t('fields.supportEmail'),
       value: seller.supportEmail ? (
-        <a className={linkClass} href={`mailto:${seller.supportEmail}`}>
-          {seller.supportEmail}
-        </a>
+        <LegalEmailLink email={seller.supportEmail} />
       ) : (
         placeholder(t('placeholders.toBeAdded'))
       ),

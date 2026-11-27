@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowDown, CheckCircle, Linkedin, Star, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
 import type { PlatformStats } from '@/lib/about/stats';
 
 import { InteractiveGame } from './InteractiveGame';
