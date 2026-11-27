@@ -1,5 +1,5 @@
 import { AchievementsSection } from '@/components/dashboard/AchievementsSection';
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
 import { computeAchievements } from '@/lib/achievements';
 
 export default function AchievementsDemoPage() {

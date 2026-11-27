@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
 
 import { LeaderboardPodium } from './LeaderboardPodium';
 import { LeaderboardTable } from './LeaderboardTable';

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import QuizzesSection from '@/components/quiz/QuizzesSection';
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
 import { getActiveQuizzes } from '@/db/queries/quizzes/quiz';
 import { getLocalizedMetadata } from '@/i18n/metadata';
 

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import BlogPostRenderer from '@/components/blog/BlogPostRenderer';
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
 import { getCachedBlogPosts } from '@/db/queries/blog/blog-posts';
 import { Link } from '@/i18n/routing';
 import { getBlogCategoryLabel } from '@/lib/blog/category-label';

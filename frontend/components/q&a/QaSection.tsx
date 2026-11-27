@@ -11,7 +11,7 @@ import type { CategorySlug } from '@/components/q&a/types';
 import { useQaTabs } from '@/components/q&a/useQaTabs';
 import { useQuestionProgress } from '@/components/q&a/useQuestionProgress';
 import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
-import { Loader } from '@/components/shared/Loader';
+import { Loader } from '@/components/ui/loader';
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 import { categoryData } from '@/data/category';
 import { getCategoryTabStyle } from '@/data/categoryStyles';

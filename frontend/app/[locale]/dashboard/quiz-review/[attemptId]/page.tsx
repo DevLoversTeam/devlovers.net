@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 
 import { QuizReviewList } from '@/components/dashboard/QuizReviewList';
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
 import { categoryTabStyles } from '@/data/categoryStyles';
 import { getAttemptReviewDetails } from '@/db/queries/quizzes/quiz';
 import { Link, redirect } from '@/i18n/routing';

@@ -11,7 +11,7 @@ import { QuestionProgressSection } from '@/components/dashboard/QuestionProgress
 import { QuizResultsSection } from '@/components/dashboard/QuizResultsSection';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
 import { getUserQuestionProgressForDashboard } from '@/db/queries/question-progress';
 import {
   getUserLastAttemptPerQuiz,

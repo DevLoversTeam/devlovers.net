@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { BlogCategoryGrid } from '@/components/blog/BlogCategoryGrid';
 import { FeaturedPostCtaButton } from '@/components/blog/FeaturedPostCtaButton';
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
 import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
 import { getCachedBlogPostsByCategory } from '@/db/queries/blog/blog-posts';
 import { Link } from '@/i18n/routing';
