@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { CheckoutOrderSummary } from '@/components/shop/checkout/CheckoutOrderSummary';
 import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
 import { Link } from '@/i18n/routing';
 import {
@@ -570,69 +571,36 @@ export default function MonobankRedirectStatus({
         </p>
       ) : null}
 
-      <section
-        className="mt-6 grid gap-6 md:grid-cols-2"
-        aria-label="Order summary"
-      >
-        <div className="border-border bg-muted/40 rounded-md border p-4">
-          <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
-            {tShop('orderSummary')}
-          </h2>
-
-          <dl className="mt-3 space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">
-                {t('success.totalAmount')}
-              </dt>
-              <dd className="text-foreground font-semibold">
-                {order
-                  ? formatMoneyCode(
-                      order.totalAmountMinor,
-                      order.currency,
-                      locale
-                    )
-                  : '...'}
-              </dd>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">{tShop('items')}</dt>
-              <dd className="text-foreground font-medium">
-                {order ? order.itemsCount : '...'}
-              </dd>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">{t('paymentStatusLabel')}</dt>
-              <dd className="text-foreground font-semibold">
-                {localizedPaymentStatus}
-              </dd>
-            </div>
-
-            {localizedShipmentStatus ? (
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-muted-foreground">
-                  {tOrder('shippingStatus')}
-                </dt>
-                <dd className="text-foreground text-right font-medium">
-                  {localizedShipmentStatus}
-                </dd>
-              </div>
-            ) : null}
-
-            {order?.trackingNumber ? (
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-muted-foreground">
-                  {tOrder('trackingNumber')}
-                </dt>
-                <dd className="text-foreground text-right font-medium [overflow-wrap:anywhere] break-words">
-                  {order.trackingNumber}
-                </dd>
-              </div>
-            ) : null}
-          </dl>
-        </div>
-      </section>
+      <CheckoutOrderSummary
+        title={tShop('orderSummary')}
+        total={{
+          label: t('success.totalAmount'),
+          value: order
+            ? formatMoneyCode(order.totalAmountMinor, order.currency, locale)
+            : '...',
+        }}
+        items={{
+          label: tShop('items'),
+          value: order ? order.itemsCount : '...',
+        }}
+        paymentStatus={{
+          label: t('paymentStatusLabel'),
+          value: localizedPaymentStatus,
+        }}
+        shipmentStatus={
+          localizedShipmentStatus
+            ? {
+                label: tOrder('shippingStatus'),
+                value: localizedShipmentStatus,
+              }
+            : undefined
+        }
+        trackingNumber={
+          order?.trackingNumber
+            ? { label: tOrder('trackingNumber'), value: order.trackingNumber }
+            : undefined
+        }
+      />
 
       <nav className="mt-8 flex flex-wrap gap-3" aria-label="Next steps">
         <button

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { useAutoSlug } from '@/components/admin/useAutoSlug';
 import type { AdminBlogCategoryListItem } from '@/db/queries/blog/admin-blog';
 import { type Locale, locales } from '@/i18n/config';
@@ -221,13 +222,10 @@ export function BlogCategoryManager({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-foreground text-2xl font-bold">Categories</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Manage blog categories and display order
-          </p>
-        </div>
+      <AdminPageHeader
+        title="Categories"
+        description="Manage blog categories and display order"
+      >
         <button
           type="button"
           onClick={() => setShowCreate(!showCreate)}
@@ -235,7 +233,7 @@ export function BlogCategoryManager({
         >
           {showCreate ? 'Cancel' : '+ New Category'}
         </button>
-      </div>
+      </AdminPageHeader>
 
       {showCreate && (
         <div className="border-border bg-muted/30 mt-6 space-y-3 rounded-lg border p-4">

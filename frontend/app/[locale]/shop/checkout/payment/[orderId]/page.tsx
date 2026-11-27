@@ -1,6 +1,10 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import {
+  CheckoutNoticePage,
+  CheckoutPageShell,
+} from '@/components/shop/checkout/CheckoutPageShell';
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
 import { Link } from '@/i18n/routing';
@@ -91,35 +95,6 @@ function HeroCtaLink({
   );
 }
 
-function PageShell({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <main
-      className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
-      aria-labelledby="payment-title"
-    >
-      <section className="border-border bg-card rounded-lg border p-8 text-center">
-        <h1 id="payment-title" className="text-foreground text-2xl font-bold">
-          {title}
-        </h1>
-
-        {description ? (
-          <p className="text-muted-foreground mt-2 text-sm">{description}</p>
-        ) : null}
-
-        {children}
-      </section>
-    </main>
-  );
-}
-
 export default async function PaymentPage(props: PaymentPageProps) {
   const params = await props.params;
   const searchParams = props.searchParams
@@ -142,7 +117,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
 
   if (!orderId) {
     return (
-      <PageShell
+      <CheckoutNoticePage
+        titleId="payment-title"
         title={t('errors.invalidOrder')}
         description={t('missingOrder.message')}
       >
@@ -155,7 +131,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             {t('actions.continueShopping')}
           </HeroCtaLink>
         </nav>
-      </PageShell>
+      </CheckoutNoticePage>
     );
   }
 
@@ -167,7 +143,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
   if (!orderAccess.ok) {
     if (orderAccess.code === 'STATUS_TOKEN_MISCONFIGURED') {
       return (
-        <PageShell
+        <CheckoutNoticePage
+          titleId="payment-title"
           title={t('errors.unableToLoad')}
           description={t('errors.tryAgainLater')}
         />
@@ -175,7 +152,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
     }
 
     return (
-      <PageShell
+      <CheckoutNoticePage
+        titleId="payment-title"
         title={t('errors.orderNotFound')}
         description={t('notFoundOrder.message')}
       >
@@ -188,13 +166,14 @@ export default async function PaymentPage(props: PaymentPageProps) {
             {t('actions.continueShopping')}
           </HeroCtaLink>
         </nav>
-      </PageShell>
+      </CheckoutNoticePage>
     );
   }
   const order = orderAccess.order;
   if (order.paymentProvider !== 'stripe') {
     return (
-      <PageShell
+      <CheckoutNoticePage
+        titleId="payment-title"
         title={t('errors.orderNotFound')}
         description={t('notFoundOrder.message')}
       >
@@ -207,7 +186,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             {t('actions.continueShopping')}
           </HeroCtaLink>
         </nav>
-      </PageShell>
+      </CheckoutNoticePage>
     );
   }
 
@@ -253,7 +232,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
       <>
         <ClearCartOnMount enabled={clearCart} />
 
-        <PageShell
+        <CheckoutNoticePage
+          titleId="payment-title"
           title={t('payment.statusMessages.alreadyPaid')}
           description={t('success.paymentConfirmed')}
         >
@@ -271,7 +251,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
               {t('actions.continueShopping')}
             </Link>
           </nav>
-        </PageShell>
+        </CheckoutNoticePage>
       </>
     );
   }
@@ -279,10 +259,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <main
-      className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
-      aria-labelledby="pay-order-title"
-    >
+    <CheckoutPageShell aria-labelledby="pay-order-title">
       <ClearCartOnMount enabled={clearCart} />
 
       <header className="mb-6">
@@ -386,6 +363,6 @@ export default async function PaymentPage(props: PaymentPageProps) {
           </dl>
         </aside>
       </section>
-    </main>
+    </CheckoutPageShell>
   );
 }

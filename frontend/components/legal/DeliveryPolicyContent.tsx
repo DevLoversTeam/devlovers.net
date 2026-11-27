@@ -1,13 +1,12 @@
 import { getTranslations } from 'next-intl/server';
 
+import { LegalEmailLink } from '@/components/legal/LegalEmailLink';
+import { LegalList } from '@/components/legal/LegalList';
 import { getPublicSupportEmail } from '@/lib/legal/public-contact';
 
 import LegalBlock from './LegalBlock';
 
 export const DELIVERY_POLICY_LAST_UPDATED = '2026-03-27';
-
-const linkClass =
-  'underline underline-offset-4 hover:text-blue-600 dark:hover:text-blue-400 transition-colors';
 
 export default async function DeliveryPolicyContent() {
   const t = await getTranslations('legal.delivery');
@@ -17,11 +16,11 @@ export default async function DeliveryPolicyContent() {
     <div className="space-y-6">
       <LegalBlock id="methods" title={t('methods.title')}>
         <p className="mb-4">{t('methods.body')}</p>
-        <ul className="list-disc space-y-2 pl-5">
+        <LegalList>
           <li>{t('methods.items.warehouse')}</li>
           <li>{t('methods.items.locker')}</li>
           <li>{t('methods.items.courier')}</li>
-        </ul>
+        </LegalList>
       </LegalBlock>
 
       <LegalBlock id="availability" title={t('availability.title')}>
@@ -38,11 +37,7 @@ export default async function DeliveryPolicyContent() {
 
       <LegalBlock id="support" title={t('support.title')}>
         <p>
-          {t('support.body')}{' '}
-          <a className={linkClass} href={`mailto:${email}`}>
-            {email}
-          </a>
-          .
+          {t('support.body')} <LegalEmailLink email={email} />.
         </p>
       </LegalBlock>
     </div>

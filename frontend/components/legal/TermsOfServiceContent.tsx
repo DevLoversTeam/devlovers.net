@@ -1,13 +1,12 @@
 import { getTranslations } from 'next-intl/server';
 
+import { LegalEmailLink } from '@/components/legal/LegalEmailLink';
+import { LegalList } from '@/components/legal/LegalList';
 import { getPublicSupportEmail } from '@/lib/legal/public-contact';
 
 import LegalBlock from './LegalBlock';
 
 export const TERMS_LAST_UPDATED = '2025-12-14';
-
-const linkClass =
-  'underline underline-offset-4 hover:text-blue-600 dark:hover:text-blue-400 transition-colors';
 
 export default async function TermsOfServiceContent() {
   const t = await getTranslations('legal.terms');
@@ -24,18 +23,18 @@ export default async function TermsOfServiceContent() {
       </LegalBlock>
 
       <LegalBlock id="features" title={t('features.title')}>
-        <ul className="list-disc space-y-2 pl-5">
+        <LegalList>
           <li>{t('features.feature1')}</li>
           <li>{t('features.feature2')}</li>
           <li>{t('features.feature3')}</li>
-        </ul>
+        </LegalList>
       </LegalBlock>
 
       <LegalBlock id="prohibited" title={t('prohibited.title')}>
-        <ul className="list-disc space-y-2 pl-5">
+        <LegalList>
           <li>{t('prohibited.item1')}</li>
           <li>{t('prohibited.item2')}</li>
-        </ul>
+        </LegalList>
       </LegalBlock>
 
       <LegalBlock id="ip" title={t('ip.title')}>
@@ -60,11 +59,7 @@ export default async function TermsOfServiceContent() {
 
       <LegalBlock id="contact" title={t('contact.title')}>
         <p>
-          {t('contact.content')}{' '}
-          <a className={linkClass} href={`mailto:${email}`}>
-            {email}
-          </a>
-          .
+          {t('contact.content')} <LegalEmailLink email={email} />.
         </p>
       </LegalBlock>
     </div>

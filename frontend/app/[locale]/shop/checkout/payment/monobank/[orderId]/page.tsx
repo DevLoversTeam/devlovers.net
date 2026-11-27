@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import {
+  CheckoutNoticePage,
+  CheckoutPageShell,
+} from '@/components/shop/checkout/CheckoutPageShell';
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { Link } from '@/i18n/routing';
 import { getCheckoutPaymentPageOrderSummary } from '@/lib/services/orders';
@@ -50,21 +54,16 @@ export default async function MonobankGooglePayPage(props: PaymentPageProps) {
 
   if (!orderId) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        <section className="border-border bg-card rounded-lg border p-8 text-center">
-          <h1 className="text-foreground text-2xl font-bold">
-            {t('errors.invalidOrder')}
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            {t('missingOrder.message')}
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
-              {t('actions.backToCart')}
-            </Link>
-          </div>
-        </section>
-      </main>
+      <CheckoutNoticePage
+        title={t('errors.invalidOrder')}
+        description={t('missingOrder.message')}
+      >
+        <div className="mt-6 flex justify-center">
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
+            {t('actions.backToCart')}
+          </Link>
+        </div>
+      </CheckoutNoticePage>
     );
   }
 
@@ -76,41 +75,30 @@ export default async function MonobankGooglePayPage(props: PaymentPageProps) {
   if (!orderAccess.ok) {
     if (orderAccess.code === 'STATUS_TOKEN_MISCONFIGURED') {
       return (
-        <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-          <section className="border-border bg-card rounded-lg border p-8 text-center">
-            <h1 className="text-foreground text-2xl font-bold">
-              {t('errors.unableToLoad')}
-            </h1>
-            <p className="text-muted-foreground mt-2 text-sm">
-              {t('errors.tryAgainLater')}
-            </p>
-          </section>
-        </main>
+        <CheckoutNoticePage
+          title={t('errors.unableToLoad')}
+          description={t('errors.tryAgainLater')}
+        />
       );
     }
 
     return (
-      <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        <section className="border-border bg-card rounded-lg border p-8 text-center">
-          <h1 className="text-foreground text-2xl font-bold">
-            {t('errors.orderNotFound')}
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            {t('notFoundOrder.message')}
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
-              {t('actions.backToCart')}
-            </Link>
-          </div>
-        </section>
-      </main>
+      <CheckoutNoticePage
+        title={t('errors.orderNotFound')}
+        description={t('notFoundOrder.message')}
+      >
+        <div className="mt-6 flex justify-center">
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
+            {t('actions.backToCart')}
+          </Link>
+        </div>
+      </CheckoutNoticePage>
     );
   }
   const order = orderAccess.order;
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+    <CheckoutPageShell>
       <ClearCartOnMount enabled={clearCart} />
 
       <section className="border-border bg-card rounded-lg border p-8">
@@ -144,6 +132,6 @@ export default async function MonobankGooglePayPage(props: PaymentPageProps) {
           <MonobankGooglePayClient orderId={order.id} statusToken={statusToken} />
         </div>
       </section>
-    </main>
+    </CheckoutPageShell>
   );
 }

@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { CreateQuizForm } from '@/components/admin/quiz/CreateQuizForm';
 import { getAdminCategoryList } from '@/db/queries/categories/admin-categories';
 import { Link } from '@/i18n/routing';
@@ -15,7 +16,7 @@ export default async function AdminQuizNewPage() {
   const csrfTokenCategory = issueCsrfToken('admin:category:create');
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <AdminPageContainer>
       <div className="mb-6">
         <Link
           href="/admin/quiz"
@@ -32,6 +33,6 @@ export default async function AdminQuizNewPage() {
         csrfTokenQuiz={csrfTokenQuiz}
         csrfTokenCategory={csrfTokenCategory}
       />
-    </div>
+    </AdminPageContainer>
   );
 }

@@ -3,8 +3,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { AdminTableActionLink } from '@/components/admin/AdminTableActionLink';
 import type { AdminBlogListItem } from '@/db/queries/blog/admin-blog';
-import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 
 const TH =
@@ -167,19 +167,15 @@ export function BlogPostListTable({
                       ? 'Unpublish'
                       : 'Publish'}
                 </button>
-                <Link
+                <AdminTableActionLink
                   href={`/admin/blog/${post.id}/preview`}
                   target="_blank"
-                  className="border-border text-foreground hover:bg-secondary inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
                 >
                   Preview
-                </Link>
-                <Link
-                  href={`/admin/blog/${post.id}`}
-                  className="border-border text-foreground hover:bg-secondary inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
-                >
+                </AdminTableActionLink>
+                <AdminTableActionLink href={`/admin/blog/${post.id}`}>
                   Edit
-                </Link>
+                </AdminTableActionLink>
                 {canDelete(post) && (
                   <button
                     type="button"
@@ -262,19 +258,15 @@ export function BlogPostListTable({
                             ? 'Unpublish'
                             : 'Publish'}
                       </button>
-                      <Link
+                      <AdminTableActionLink
                         href={`/admin/blog/${post.id}/preview`}
                         target="_blank"
-                        className="border-border text-foreground hover:bg-secondary inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
                       >
                         Preview
-                      </Link>
-                      <Link
-                        href={`/admin/blog/${post.id}`}
-                        className="border-border text-foreground hover:bg-secondary inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
-                      >
+                      </AdminTableActionLink>
+                      <AdminTableActionLink href={`/admin/blog/${post.id}`}>
                         Edit
-                      </Link>
+                      </AdminTableActionLink>
                       <button
                         type="button"
                         onClick={() => handleDelete(post.id)}

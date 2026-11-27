@@ -6,6 +6,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
+import { OrderDetailField } from '@/components/shop/OrderDetailField';
 import { db } from '@/db';
 import {
   type CustomerOrderItem,
@@ -413,48 +414,31 @@ export default async function OrderDetailPage({
           </div>
 
           {isAdmin && (
-            <div>
-              <dt className="text-muted-foreground text-xs">{t('provider')}</dt>
-              <dd className="text-sm">{String(order.paymentProvider)}</dd>
-            </div>
+            <OrderDetailField label={t('provider')}>
+              {String(order.paymentProvider)}
+            </OrderDetailField>
           )}
         </dl>
 
         {isAdmin && (
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('paymentReference')}
-              </dt>
-              <dd className="text-sm break-all">
-                {order.paymentIntentId ?? '-'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('idempotencyKey')}
-              </dt>
-              <dd className="text-sm break-all">{order.idempotencyKey}</dd>
-            </div>
+            <OrderDetailField label={t('paymentReference')} breakAll>
+              {order.paymentIntentId ?? '-'}
+            </OrderDetailField>
+            <OrderDetailField label={t('idempotencyKey')} breakAll>
+              {order.idempotencyKey}
+            </OrderDetailField>
           </dl>
         )}
 
         {isAdmin && (
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('stockRestored')}
-              </dt>
-              <dd className="text-sm">
-                {order.stockRestored ? t('yes') : t('no')}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('restockedAt')}
-              </dt>
-              <dd className="text-sm">{restockedFormatted}</dd>
-            </div>
+            <OrderDetailField label={t('stockRestored')}>
+              {order.stockRestored ? t('yes') : t('no')}
+            </OrderDetailField>
+            <OrderDetailField label={t('restockedAt')}>
+              {restockedFormatted}
+            </OrderDetailField>
           </dl>
         )}
       </section>

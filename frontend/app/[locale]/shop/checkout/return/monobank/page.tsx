@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import {
+  CheckoutNoticePage,
+  CheckoutPageShell,
+} from '@/components/shop/checkout/CheckoutPageShell';
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { Link } from '@/i18n/routing';
 import {
@@ -52,32 +56,27 @@ export default async function MonobankReturnPage({
 
   if (!orderId) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        <section className="border-border bg-card rounded-lg border p-8 text-center">
-          <h1 className="text-foreground text-2xl font-bold">
-            {t('errors.missingOrderId')}
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            {t('missingOrder.message')}
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
-              {t('actions.backToCart')}
-            </Link>
-          </div>
-        </section>
-      </main>
+      <CheckoutNoticePage
+        title={t('errors.missingOrderId')}
+        description={t('missingOrder.message')}
+      >
+        <div className="mt-6 flex justify-center">
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
+            {t('actions.backToCart')}
+          </Link>
+        </div>
+      </CheckoutNoticePage>
     );
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+    <CheckoutPageShell>
       <ClearCartOnMount enabled={clearCart} />
       <MonobankReturnStatus
         orderId={orderId}
         statusToken={statusToken}
         locale={locale}
       />
-    </main>
+    </CheckoutPageShell>
   );
 }
