@@ -1,7 +1,6 @@
-import crypto from 'node:crypto';
-
 import { NextRequest } from 'next/server';
 
+import { getRequestId } from '@/lib/http/getRequestId';
 import { logError, logWarn } from '@/lib/logging';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import { authorizeOrderMutationAccess } from '@/lib/services/shop/order-access';
@@ -70,8 +69,7 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,

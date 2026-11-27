@@ -137,7 +137,6 @@ export function BlogTiptapEditor({
   return (
     <div className="border-border rounded-md border">
       <div className="border-border bg-background sticky top-0 z-10 flex flex-wrap gap-0.5 border-b px-2 py-1.5">
-        {/* Text formatting */}
         <ToolbarButton
           active={editor.isActive('bold')}
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -169,7 +168,6 @@ export function BlogTiptapEditor({
 
         <ToolbarDivider />
 
-        {/* Structure */}
         <ToolbarButton
           active={editor.isActive('heading', { level: 2 })}
           onClick={() =>
@@ -205,7 +203,6 @@ export function BlogTiptapEditor({
 
         <ToolbarDivider />
 
-        {/* Lists */}
         <ToolbarButton
           active={editor.isActive('bulletList')}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -237,7 +234,6 @@ export function BlogTiptapEditor({
 
         <ToolbarDivider />
 
-        {/* Media */}
         <ToolbarButton
           active={editor.isActive('link')}
           onClick={handleLinkClick}

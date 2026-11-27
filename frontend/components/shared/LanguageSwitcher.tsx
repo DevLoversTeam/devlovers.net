@@ -2,10 +2,10 @@
 
 import { Check, Globe } from 'lucide-react';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-
 import { useTranslations } from 'next-intl';
+import { useRef, useState } from 'react';
 
+import { useOutsideMouseDown } from '@/hooks/useOutsideMouseDown';
 import { type Locale, locales } from '@/i18n/config';
 import { Link } from '@/i18n/routing';
 
@@ -29,19 +29,7 @@ export default function LanguageSwitcher() {
   const allowRestoreKey = 'quiz-allow-restore';
   const isQuizPage = pathname.startsWith('/quiz/');
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  useOutsideMouseDown(dropdownRef, isOpen, () => setIsOpen(false));
 
   return (
     <div className="relative flex items-center" ref={dropdownRef}>

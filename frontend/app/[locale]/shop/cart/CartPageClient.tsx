@@ -6,8 +6,9 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
-import { Loader } from '@/components/shared/Loader';
 import { useCart } from '@/components/shop/CartProvider';
+import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
+import { Loader } from '@/components/ui/loader';
 import { Link, useRouter } from '@/i18n/routing';
 import {
   buildCheckoutShippingPayload,
@@ -32,15 +33,13 @@ import {
   SHOP_CART_SELECTABLE_CARD_IDLE,
   SHOP_CART_SELECTABLE_CARD_SELECTED,
   SHOP_CART_SELECTABLE_CARD_TALL,
-  SHOP_CTA_INSET,
-  SHOP_CTA_WAVE,
   SHOP_DISABLED,
   SHOP_FOCUS,
   SHOP_LINK_BASE,
   SHOP_LINK_XS,
-  shopCtaGradient,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 
 import {
   resolveDefaultMethodForProvider,
@@ -146,12 +145,6 @@ function normalizeShippingCity(raw: unknown): ShippingCity | null {
   };
 }
 
-function readTrimmedNonEmptyString(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 function normalizeShippingMethod(raw: unknown): ShippingMethod | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return null;
@@ -162,9 +155,9 @@ function normalizeShippingMethod(raw: unknown): ShippingMethod | null {
     return null;
   }
 
-  const methodCode = readTrimmedNonEmptyString(item.methodCode);
-  const title = readTrimmedNonEmptyString(item.title);
-  const quoteFingerprint = readTrimmedNonEmptyString(item.quoteFingerprint);
+  const methodCode = trimToNull(item.methodCode);
+  const title = trimToNull(item.title);
+  const quoteFingerprint = trimToNull(item.quoteFingerprint);
   const amountMinor = item.amountMinor;
 
   if (!methodCode || !isValidDeliveryMethodCode(methodCode)) {
@@ -390,6 +383,7 @@ export default function CartPage({
   const { cart, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
   const t = useTranslations('shop.cart');
+  const tShop = useTranslations('shop');
   const tOrders = useTranslations('shop.orders');
   const tColors = useTranslations('shop.catalog.colors');
 
@@ -1448,24 +1442,7 @@ export default function CartPage({
 
           <div className="mx-auto mt-8 w-full max-w-md">
             <Link href="/shop/products" className={SHOP_CART_HERO_CTA}>
-              <span
-                className="absolute inset-0"
-                style={shopCtaGradient(
-                  '--shop-hero-btn-bg',
-                  '--shop-hero-btn-bg-hover'
-                )}
-                aria-hidden="true"
-              />
-              <span
-                className={SHOP_CTA_WAVE}
-                style={shopCtaGradient(
-                  '--shop-hero-btn-bg-hover',
-                  '--shop-hero-btn-bg'
-                )}
-                aria-hidden="true"
-              />
-              <span className={SHOP_CTA_INSET} aria-hidden="true" />
-              <span className="relative z-10">{t('startShopping')}</span>
+              <ShopCtaContent>{t('startShopping')}</ShopCtaContent>
             </Link>
 
             {ordersCard ? <div className="mt-6">{ordersCard}</div> : null}
@@ -2228,7 +2205,7 @@ export default function CartPage({
                       'text-sm tracking-wider uppercase'
                     )}
                   >
-                    {t('summary.heading')}
+                    {tShop('orderSummary')}
                   </h2>
                 </div>
 
@@ -2295,7 +2272,7 @@ export default function CartPage({
                   <div className="border-border border-t pt-4">
                     <div className="flex items-center justify-between">
                       <span className="text-foreground text-base font-semibold">
-                        {t('summary.total')}
+                        {tShop('total')}
                       </span>
 
                       <span
@@ -2370,25 +2347,7 @@ export default function CartPage({
                     className={SHOP_CART_HERO_CTA}
                     aria-busy={isCheckingOut}
                   >
-                    <span
-                      className="absolute inset-0"
-                      style={shopCtaGradient(
-                        '--shop-hero-btn-bg',
-                        '--shop-hero-btn-bg-hover'
-                      )}
-                      aria-hidden="true"
-                    />
-                    <span
-                      className={SHOP_CTA_WAVE}
-                      style={shopCtaGradient(
-                        '--shop-hero-btn-bg-hover',
-                        '--shop-hero-btn-bg'
-                      )}
-                      aria-hidden="true"
-                    />
-                    <span className={SHOP_CTA_INSET} aria-hidden="true" />
-
-                    <span className="relative z-10 inline-flex min-w-0 items-center justify-center gap-2">
+                    <ShopCtaContent className="relative z-10 inline-flex min-w-0 items-center justify-center gap-2">
                       {isCheckingOut ? (
                         <Loader2
                           className="h-4 w-4 animate-spin"
@@ -2403,7 +2362,7 @@ export default function CartPage({
                       {isCheckingOut ? (
                         <span className="sr-only">{t('checkout.placing')}</span>
                       ) : null}
-                    </span>
+                    </ShopCtaContent>
                   </button>
 
                   {recoveryHref && !checkoutError ? (

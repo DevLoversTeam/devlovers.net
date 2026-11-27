@@ -45,7 +45,6 @@ export function useQuizSession({ quizId, state }: UseQuizSessionParams): void {
     const allowRestore = sessionStorage.getItem(QUIZ_ALLOW_RESTORE_KEY);
     if (allowRestore) sessionStorage.removeItem(QUIZ_ALLOW_RESTORE_KEY);
 
-    // Fresh visit (no restore flag) — clear any stale session
     if (!isReload && !allowRestore) {
       const saved = loadQuizSession(quizId);
       if (saved) clearQuizSession(quizId);

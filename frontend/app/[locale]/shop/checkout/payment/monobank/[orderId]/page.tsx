@@ -1,9 +1,19 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import {
+  CheckoutNoticePage,
+  CheckoutPageShell,
+} from '@/components/shop/checkout/CheckoutPageShell';
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { Link } from '@/i18n/routing';
 import { getCheckoutPaymentPageOrderSummary } from '@/lib/services/orders';
+import {
+  type CheckoutSearchParams,
+  parseCheckoutOrderId,
+  parseStatusToken,
+  shouldClearCart,
+} from '@/lib/shop/checkout-search-params';
 import { formatMoney } from '@/lib/shop/currency';
 import {
   SHOP_FOCUS,
@@ -11,15 +21,12 @@ import {
   SHOP_OUTLINE_BTN_INTERACTIVE,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
-import { orderIdParamSchema } from '@/lib/validation/shop';
 
 import MonobankGooglePayClient from '../MonobankGooglePayClient';
 
-type SearchParams = Record<string, string | string[] | undefined>;
-
 type PaymentPageProps = {
   params: Promise<{ locale: string; orderId: string }>;
-  searchParams?: Promise<SearchParams>;
+  searchParams?: Promise<CheckoutSearchParams>;
 };
 
 export const metadata: Metadata = {
@@ -36,55 +43,27 @@ const SHOP_OUTLINE_BTN = cn(
   SHOP_FOCUS
 );
 
-function getStringParam(params: SearchParams | undefined, key: string): string {
-  const raw = params?.[key];
-  if (!raw) return '';
-  if (Array.isArray(raw)) return raw[0] ?? '';
-  return raw;
-}
-
-function parseStatusToken(params: SearchParams | undefined): string | null {
-  const value = getStringParam(params, 'statusToken').trim();
-  return value.length ? value : null;
-}
-
-function shouldClearCart(params: SearchParams | undefined): boolean {
-  const value = getStringParam(params, 'clearCart');
-  return value === '1' || value === 'true';
-}
-
-function parseOrderId(rawOrderId: string): string | null {
-  const parsed = orderIdParamSchema.safeParse({ id: rawOrderId });
-  if (!parsed.success) return null;
-  return parsed.data.id;
-}
-
 export default async function MonobankGooglePayPage(props: PaymentPageProps) {
   const { locale, orderId: rawOrderId } = await props.params;
   const searchParams = props.searchParams ? await props.searchParams : undefined;
 
   const t = await getTranslations('shop.checkout');
-  const orderId = parseOrderId(rawOrderId);
+  const orderId = parseCheckoutOrderId(rawOrderId);
   const statusToken = parseStatusToken(searchParams);
   const clearCart = shouldClearCart(searchParams);
 
   if (!orderId) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        <section className="border-border bg-card rounded-lg border p-8 text-center">
-          <h1 className="text-foreground text-2xl font-bold">
-            {t('errors.invalidOrder')}
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            {t('missingOrder.message')}
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
-              {t('actions.backToCart')}
-            </Link>
-          </div>
-        </section>
-      </main>
+      <CheckoutNoticePage
+        title={t('errors.invalidOrder')}
+        description={t('missingOrder.message')}
+      >
+        <div className="mt-6 flex justify-center">
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
+            {t('actions.backToCart')}
+          </Link>
+        </div>
+      </CheckoutNoticePage>
     );
   }
 
@@ -96,41 +75,30 @@ export default async function MonobankGooglePayPage(props: PaymentPageProps) {
   if (!orderAccess.ok) {
     if (orderAccess.code === 'STATUS_TOKEN_MISCONFIGURED') {
       return (
-        <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-          <section className="border-border bg-card rounded-lg border p-8 text-center">
-            <h1 className="text-foreground text-2xl font-bold">
-              {t('errors.unableToLoad')}
-            </h1>
-            <p className="text-muted-foreground mt-2 text-sm">
-              {t('errors.tryAgainLater')}
-            </p>
-          </section>
-        </main>
+        <CheckoutNoticePage
+          title={t('errors.unableToLoad')}
+          description={t('errors.tryAgainLater')}
+        />
       );
     }
 
     return (
-      <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        <section className="border-border bg-card rounded-lg border p-8 text-center">
-          <h1 className="text-foreground text-2xl font-bold">
-            {t('errors.orderNotFound')}
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            {t('notFoundOrder.message')}
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
-              {t('actions.backToCart')}
-            </Link>
-          </div>
-        </section>
-      </main>
+      <CheckoutNoticePage
+        title={t('errors.orderNotFound')}
+        description={t('notFoundOrder.message')}
+      >
+        <div className="mt-6 flex justify-center">
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
+            {t('actions.backToCart')}
+          </Link>
+        </div>
+      </CheckoutNoticePage>
     );
   }
   const order = orderAccess.order;
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+    <CheckoutPageShell>
       <ClearCartOnMount enabled={clearCart} />
 
       <section className="border-border bg-card rounded-lg border p-8">
@@ -164,6 +132,6 @@ export default async function MonobankGooglePayPage(props: PaymentPageProps) {
           <MonobankGooglePayClient orderId={order.id} statusToken={statusToken} />
         </div>
       </section>
-    </main>
+    </CheckoutPageShell>
   );
 }

@@ -3,6 +3,7 @@ import 'server-only';
 import { asc, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readDbRows } from '@/db/readDbRows';
 import { orderItems, orders, returnItems, returnRequests } from '@/db/schema';
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { buildAdminAuditDedupeKey } from '@/lib/services/shop/events/dedupe-key';
@@ -63,13 +64,6 @@ type OrderForReturnRow = {
 export type ReturnRequestWithItems = ReturnRequestRow & {
   items: ReturnItemRow[];
 };
-
-function readRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const maybe = res as { rows?: unknown };
-  if (Array.isArray(maybe.rows)) return maybe.rows as T[];
-  return [];
-}
 
 function returnError(
   code:
@@ -319,7 +313,7 @@ async function applyReturnRestockMove(args: {
     end as status
   `);
 
-  const status = readRows<{ status: string }>(res)[0]?.status;
+  const status = readDbRows<{ status: string }>(res)[0]?.status;
   if (
     status === 'applied' ||
     status === 'already' ||
@@ -347,7 +341,7 @@ async function restockReturnItems(returnRequestId: string, orderId: string) {
       and ri.product_id is not null
     group by ri.product_id
   `);
-  const productsToRelease = readRows<{ product_id: string; quantity: number }>(
+  const productsToRelease = readDbRows<{ product_id: string; quantity: number }>(
     grouped
   );
   if (productsToRelease.length === 0) {
@@ -563,7 +557,7 @@ export async function createReturnRequest(args: {
     from inserted_request ir
   `);
 
-  const insertedReturnId = readRows<{ return_request_id: string }>(insertRes)[0]
+  const insertedReturnId = readDbRows<{ return_request_id: string }>(insertRes)[0]
     ?.return_request_id;
 
   if (insertedReturnId) {
@@ -839,7 +833,7 @@ async function applyTransition(args: {
     from updated_request ur
   `);
 
-  if (readRows<{ id: string }>(result).length === 0) {
+  if (readDbRows<{ id: string }>(result).length === 0) {
     const latest = await loadReturnById(args.returnRequestId);
     if (!latest) {
       throw returnError('RETURN_NOT_FOUND', 'Return request not found.');

@@ -14,7 +14,6 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-// Map GitHub sponsor tier color → achievement id
 const TIER_ACHIEVEMENT: Record<'gold' | 'silver' | 'bronze', string> = {
   gold: 'golden_patron',
   silver: 'silver_patron',
@@ -29,7 +28,6 @@ export default async function LeaderboardPage() {
     getAllStargazers(),
   ]);
 
-  // Build O(1) lookup sets for stargazer matching
   const stargazerLogins = new Set(stargazerList.map(s => s.login));
   const stargazerAvatars = new Set(stargazerList.map(s => s.avatarBase));
 
@@ -50,7 +48,6 @@ export default async function LeaderboardPage() {
     const isSponsor = !!matchedSponsor;
     let achievements = user.achievements ?? [];
 
-    // ── Inject sponsor achievement based on GitHub tier color ──────────
     if (matchedSponsor) {
       const achievementId = TIER_ACHIEVEMENT[matchedSponsor.tierColor];
       const def = ACHIEVEMENTS.find(a => a.id === achievementId);
@@ -67,8 +64,6 @@ export default async function LeaderboardPage() {
       }
     }
 
-    // ── Inject star_gazer if user has starred the repo ─────────────────
-    // Match by GitHub login (username) or by avatar URL base
     const avatarBase = user.avatar?.split('?')[0] ?? '';
     const isGitHubAvatar = (() => {
       try {

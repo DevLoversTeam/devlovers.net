@@ -1,13 +1,13 @@
 import 'server-only';
 
-import crypto from 'node:crypto';
-
 import { and, eq } from 'drizzle-orm';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
+import { getRequestId } from '@/lib/http/getRequestId';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import {
   OrderNotFoundError,
@@ -27,12 +27,6 @@ import { orderIdParamSchema } from '@/lib/validation/shop';
 
 export const dynamic = 'force-dynamic';
 
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
-
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -40,8 +34,7 @@ export async function GET(
   const startedAtMs = Date.now();
   const requestedResponseMode =
     request.nextUrl.searchParams.get('view') === 'lite' ? 'lite' : 'full';
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const rawParams = await context.params;
   const parsed = orderIdParamSchema.safeParse(rawParams);

@@ -3,6 +3,12 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
+import {
+  fetchCheckoutOrderStatus,
+  getCheckoutOrderStatusErrorCode,
+} from '@/lib/shop/checkout-order-status';
+import { trimToNull } from '@/lib/utils/trim-to-null';
+
 type Props = {
   paymentStatus: string;
 };
@@ -22,12 +28,6 @@ const TERMINAL_STATUSES = new Set([
 type StatusFetchResult =
   | { ok: true; paymentStatus: string }
   | { ok: false; status: number; code: string };
-
-function normalizeQueryValue(value: string | null): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length ? trimmed : null;
-}
 
 function isTerminal(status: string): boolean {
   return TERMINAL_STATUSES.has(status);
@@ -53,14 +53,6 @@ function withJitter(delayMs: number): number {
   return Math.max(0, Math.floor(delayMs * jitterMultiplier));
 }
 
-function getErrorCode(payload: unknown): string {
-  if (!payload || typeof payload !== 'object') return 'INTERNAL_ERROR';
-  const code = (payload as Record<string, unknown>).code;
-  if (typeof code !== 'string') return 'INTERNAL_ERROR';
-  const trimmed = code.trim();
-  return trimmed.length ? trimmed : 'INTERNAL_ERROR';
-}
-
 function parseLitePaymentStatus(payload: unknown): string | null {
   if (!payload || typeof payload !== 'object') return null;
   const root = payload as Record<string, unknown>;
@@ -72,30 +64,15 @@ function parseLitePaymentStatus(payload: unknown): string | null {
 
 async function fetchLiteOrderStatus(args: {
   orderId: string;
-  tokenKey: string | null;
-  tokenValue: string | null;
+  statusToken: string | null;
   signal: AbortSignal;
 }): Promise<StatusFetchResult> {
-  const qp = new URLSearchParams();
-  qp.set('view', 'lite');
-  if (args.tokenKey && args.tokenValue) qp.set(args.tokenKey, args.tokenValue);
-
-  const endpoint = `/api/shop/orders/${encodeURIComponent(args.orderId)}/status?${qp.toString()}`;
-
-  const res = await fetch(endpoint, {
-    method: 'GET',
-    cache: 'no-store',
-    headers: { 'Cache-Control': 'no-store' },
-    credentials: 'same-origin',
-    signal: args.signal,
-  });
-
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    return { ok: false, status: res.status, code: getErrorCode(body) };
+  const { ok, status, payload } = await fetchCheckoutOrderStatus(args);
+  if (!ok) {
+    return { ok: false, status, code: getCheckoutOrderStatusErrorCode(payload) };
   }
 
-  const paymentStatus = parseLitePaymentStatus(body);
+  const paymentStatus = parseLitePaymentStatus(payload);
   if (!paymentStatus) {
     return { ok: false, status: 500, code: 'INVALID_STATUS_RESPONSE' };
   }
@@ -117,12 +94,10 @@ export default function OrderStatusAutoRefresh({ paymentStatus }: Props) {
     let attempts = 0;
 
     const params = new URLSearchParams(window.location.search);
-    const orderId = normalizeQueryValue(params.get('orderId'));
+    const orderId = trimToNull(params.get('orderId'));
     if (!orderId) return;
 
-    const tokenKey = params.has('statusToken') ? 'statusToken' : null;
-    const tokenValue =
-      tokenKey === null ? null : normalizeQueryValue(params.get(tokenKey));
+    const statusToken = trimToNull(params.get('statusToken'));
 
     const wait = async (delayMs: number) =>
       new Promise<void>(resolve => {
@@ -139,8 +114,7 @@ export default function OrderStatusAutoRefresh({ paymentStatus }: Props) {
         activeController = controller;
         const result = await fetchLiteOrderStatus({
           orderId,
-          tokenKey,
-          tokenValue,
+          statusToken,
           signal: controller.signal,
         }).catch(
           (): StatusFetchResult => ({

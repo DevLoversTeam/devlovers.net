@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { QuizEditorList } from '@/components/admin/quiz/QuizEditorList';
 import { QuizMetadataEditor } from '@/components/admin/quiz/QuizMetadataEditor';
 import { QuizStatusControls } from '@/components/admin/quiz/QuizStatusControls';
@@ -38,7 +39,7 @@ export default async function AdminQuizEditPage({
   const csrfTokenUpdate = issueCsrfToken('admin:quiz:update');
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <AdminPageContainer>
       <div className="mb-6">
         <Link
           href="/admin/quiz"
@@ -107,6 +108,6 @@ export default async function AdminQuizEditPage({
         csrfTokenDelete={csrfTokenDelete}
         isDraft={isDraft}
       />
-    </div>
+    </AdminPageContainer>
   );
 }

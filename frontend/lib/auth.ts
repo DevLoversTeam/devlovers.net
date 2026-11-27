@@ -9,7 +9,7 @@ import { users } from '@/db/schema/users';
 import { readServerEnv } from '@/lib/env/server-env';
 
 const AUTH_COOKIE_NAME = 'auth_session';
-const AUTH_TOKEN_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+const AUTH_TOKEN_MAX_AGE = 60 * 60 * 24 * 7;
 
 const _AUTH_SECRET = readServerEnv('AUTH_SECRET');
 

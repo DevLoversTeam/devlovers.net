@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useId, useState, useTransition } from 'react';
 
+import { normalizeActionErrorCode } from './normalizeActionErrorCode';
 import { getAdminOrderShippingActionVisibility } from './shippingActionVisibility';
 
 type ActionName =
@@ -20,24 +21,16 @@ type Props = {
   shipmentStatus: string | null;
 };
 
-function normalizeActionErrorCode(error: unknown): string {
-  if (error instanceof TypeError) {
-    return 'NETWORK_ERROR';
-  }
-
-  if (error instanceof Error && error.message.trim().length > 0) {
-    return error.message;
-  }
-
-  return 'NETWORK_ERROR';
-}
-
-function mapShippingError(code: string, t: (key: string) => string): string {
+function mapShippingError(
+  code: string,
+  t: (key: string) => string,
+  securityError: string
+): string {
   switch (code) {
     case 'NETWORK_ERROR':
       return t('errors.network');
     case 'CSRF_REJECTED':
-      return t('errors.security');
+      return securityError;
     case 'SHIPMENT_ALREADY_EXISTS':
     case 'SHIPMENT_RECOVERY_NOT_ALLOWED':
       return t('errors.recoverNotAvailable');
@@ -66,6 +59,8 @@ export function ShippingActions({
 }: Props) {
   const router = useRouter();
   const t = useTranslations('shop.orders.detail.shippingControls');
+  const tDetail = useTranslations('shop.orders.detail');
+  const securityError = tDetail('actionSecurityError');
   const [isPending, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +86,9 @@ export function ShippingActions({
         body: JSON.stringify({ action }),
       });
     } catch (err) {
-      setError(mapShippingError(normalizeActionErrorCode(err), t));
+      setError(
+        mapShippingError(normalizeActionErrorCode(err), t, securityError)
+      );
       setIsSubmitting(false);
       return;
     }
@@ -105,7 +102,11 @@ export function ShippingActions({
 
     if (!res.ok) {
       setError(
-        mapShippingError(json?.code ?? json?.message ?? `HTTP_${res.status}`, t)
+        mapShippingError(
+          json?.code ?? json?.message ?? `HTTP_${res.status}`,
+          t,
+          securityError
+        )
       );
       setIsSubmitting(false);
       return;

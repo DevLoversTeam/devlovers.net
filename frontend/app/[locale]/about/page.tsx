@@ -1,19 +1,14 @@
-import { getTranslations } from 'next-intl/server';
-
 import { CommunitySection } from '@/components/about/CommunitySection';
 import { FeaturesSection } from '@/components/about/FeaturesSection';
 import { HeroSection } from '@/components/about/HeroSection';
 import { PricingSection } from '@/components/about/PricingSection';
 import { TopicsSection } from '@/components/about/TopicsSection';
+import { getLocalizedMetadata } from '@/i18n/metadata';
 import { getSponsors } from '@/lib/about/github-sponsors';
 import { getPlatformStats } from '@/lib/about/stats';
 
 export async function generateMetadata() {
-  const t = await getTranslations('about');
-  return {
-    title: t('metaTitle'),
-    description: t('metaDescription'),
-  };
+  return getLocalizedMetadata('about');
 }
 
 export default async function AboutPage() {

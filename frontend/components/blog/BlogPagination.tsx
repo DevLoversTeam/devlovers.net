@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
+import { getPageNumbers } from '@/lib/pagination';
 import { cn } from '@/lib/utils';
 
 interface BlogPaginationProps {
@@ -19,6 +20,7 @@ export function BlogPagination({
   accentColor,
 }: BlogPaginationProps) {
   const t = useTranslations('blog.pagination');
+  const tPagination = useTranslations('common.pagination');
   const accentSoft = `color-mix(in srgb, ${accentColor} 16%, transparent)`;
   const accentGlow = `color-mix(in srgb, ${accentColor} 22%, transparent)`;
   const [isMobile, setIsMobile] = useState(false);
@@ -33,44 +35,7 @@ export function BlogPagination({
 
   if (totalPages <= 1) return null;
 
-  const getPageNumbers = (): (number | 'ellipsis')[] => {
-    const pages: (number | 'ellipsis')[] = [];
-    const maxVisible = isMobile ? 3 : 5;
-
-    if (totalPages <= maxVisible + 2) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      pages.push(1);
-
-      if (currentPage <= 3) {
-        for (let i = 2; i <= Math.min(maxVisible, totalPages - 1); i++) {
-          pages.push(i);
-        }
-        if (totalPages > maxVisible) {
-          pages.push('ellipsis');
-        }
-      } else if (currentPage >= totalPages - 2) {
-        pages.push('ellipsis');
-        for (let i = totalPages - maxVisible + 1; i < totalPages; i++) {
-          if (i > 1) pages.push(i);
-        }
-      } else {
-        pages.push('ellipsis');
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
-        pages.push('ellipsis');
-      }
-
-      pages.push(totalPages);
-    }
-
-    return pages;
-  };
-
-  const pages = getPageNumbers();
+  const pages = getPageNumbers(currentPage, totalPages, isMobile ? 3 : 5);
 
   return (
     <nav
@@ -94,7 +59,7 @@ export function BlogPagination({
             ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
             : 'text-gray-700 hover:bg-[var(--qa-accent-soft)] dark:text-gray-300'
         )}
-        aria-label={t('previousPage')}
+        aria-label={tPagination('previousPage')}
       >
         ← <span className="hidden sm:inline">{t('previous')}</span>
       </button>
@@ -128,7 +93,7 @@ export function BlogPagination({
                     }
                   : undefined
               }
-              aria-label={t('page', { page })}
+              aria-label={tPagination('page', { page })}
               aria-current={page === currentPage ? 'page' : undefined}
             >
               {page}
@@ -147,7 +112,7 @@ export function BlogPagination({
             ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
             : 'text-gray-700 hover:bg-[var(--qa-accent-soft)] dark:text-gray-300'
         )}
-        aria-label={t('nextPage')}
+        aria-label={tPagination('nextPage')}
       >
         <span className="hidden sm:inline">{t('next')}</span> →
       </button>

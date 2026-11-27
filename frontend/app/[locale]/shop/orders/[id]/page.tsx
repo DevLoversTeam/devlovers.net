@@ -6,7 +6,13 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
+import { OrderDetailField } from '@/components/shop/OrderDetailField';
 import { db } from '@/db';
+import {
+  type CustomerOrderItem,
+  customerOrderItemProjection,
+  toCustomerOrderItem,
+} from '@/db/queries/shop/order-item-snapshot';
 import { orderItems, orders } from '@/db/schema';
 import { Link } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
@@ -19,6 +25,7 @@ import {
 } from '@/lib/services/shop/fulfillment-stage';
 import { type CurrencyCode, formatMoney } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
+import { createOrderDateFormatter } from '@/lib/shop/order-date';
 import {
   SHOP_FOCUS,
   SHOP_LINK_BASE,
@@ -50,20 +57,11 @@ type OrderDetail = {
   shippingStatus: string | null;
   trackingNumber: string | null;
   stockRestored: boolean;
-  restockedAt: string | null;
+  restockedAt: Date | null;
   idempotencyKey: string;
-  createdAt: string;
+  createdAt: Date;
   updatedAt: string;
-  items: Array<{
-    id: string;
-    productId: string;
-    productTitle: string | null;
-    productSlug: string | null;
-    productSku: string | null;
-    quantity: number;
-    unitPrice: string;
-    lineTotal: string;
-  }>;
+  items: CustomerOrderItem[];
 };
 
 function shortOrderId(id: string) {
@@ -82,12 +80,6 @@ function safeFormatMoneyMajor(
   } catch {
     return `${major} ${currency}`;
   }
-}
-
-function safeFormatDateTime(iso: string, dtf: Intl.DateTimeFormat): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return dtf.format(d);
 }
 
 function fulfillmentStageLabelKey(stage: CanonicalFulfillmentStage): string {
@@ -162,41 +154,6 @@ function shippingStatusLabel(
   }
 }
 
-function toOrderItem(
-  item: {
-    id: string | null;
-    productId: string | null;
-    productTitle: string | null;
-    productSlug: string | null;
-    productSku: string | null;
-    quantity: number | null;
-    unitPrice: string | null;
-    lineTotal: string | null;
-  } | null
-): OrderDetail['items'][number] | null {
-  if (!item || !item.id) return null;
-
-  if (
-    !item.productId ||
-    item.quantity === null ||
-    !item.unitPrice ||
-    !item.lineTotal
-  ) {
-    throw new Error('Corrupt order item row: required columns are null');
-  }
-
-  return {
-    id: item.id,
-    productId: item.productId,
-    productTitle: item.productTitle,
-    productSlug: item.productSlug,
-    productSku: item.productSku,
-    quantity: item.quantity,
-    unitPrice: item.unitPrice,
-    lineTotal: item.lineTotal,
-  };
-}
-
 export default async function OrderDetailPage({
   params,
 }: {
@@ -206,6 +163,8 @@ export default async function OrderDetailPage({
 
   const { locale, id } = await params;
   const t = await getTranslations('shop.orders.detail');
+  const tNavigation = await getTranslations('navigation');
+  const tShop = await getTranslations('shop');
 
   const user = await getCurrentUser();
   if (!user) {
@@ -249,16 +208,7 @@ export default async function OrderDetailPage({
           createdAt: orders.createdAt,
           updatedAt: orders.updatedAt,
         },
-        item: {
-          id: orderItems.id,
-          productId: orderItems.productId,
-          productTitle: orderItems.productTitle,
-          productSlug: orderItems.productSlug,
-          productSku: orderItems.productSku,
-          quantity: orderItems.quantity,
-          unitPrice: orderItems.unitPrice,
-          lineTotal: orderItems.lineTotal,
-        },
+        item: customerOrderItemProjection,
       })
       .from(orders)
       .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
@@ -287,7 +237,7 @@ export default async function OrderDetailPage({
     });
 
     const items = rows
-      .map(r => toOrderItem(r.item))
+      .map(r => toCustomerOrderItem(r.item))
       .filter((i): i is NonNullable<typeof i> => i !== null);
 
     order = {
@@ -303,9 +253,9 @@ export default async function OrderDetailPage({
       trackingNumber: base.trackingNumber,
       stockRestored: base.stockRestored,
       idempotencyKey: base.idempotencyKey,
-      createdAt: base.createdAt.toISOString(),
+      createdAt: base.createdAt,
       updatedAt: base.updatedAt.toISOString(),
-      restockedAt: base.restockedAt ? base.restockedAt.toISOString() : null,
+      restockedAt: base.restockedAt,
       items,
     };
   } catch (error) {
@@ -314,25 +264,20 @@ export default async function OrderDetailPage({
   }
 
   const currency: CurrencyCode = order.currency === 'UAH' ? 'UAH' : 'USD';
-  const dtf = new Intl.DateTimeFormat(locale, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  const formatOrderDateTime = createOrderDateFormatter(locale);
 
   const totalFormatted = safeFormatMoneyMajor(
     order.totalAmount,
     currency,
     locale
   );
-  const createdFormatted = safeFormatDateTime(order.createdAt, dtf);
+  const createdFormatted = formatOrderDateTime(order.createdAt);
   const paymentStatusFormatted = paymentStatusLabel(order.paymentStatus, t);
   const fulfillmentStageFormatted = t(
     fulfillmentStageLabelKey(order.fulfillmentStage)
   );
   const shippingStatusFormatted = shippingStatusLabel(order.shippingStatus, t);
-  const restockedFormatted = order.restockedAt
-    ? safeFormatDateTime(order.restockedAt, dtf)
-    : '-';
+  const restockedFormatted = formatOrderDateTime(order.restockedAt);
   const NAV_LINK = cn(SHOP_NAV_LINK_BASE, 'text-lg', SHOP_FOCUS);
 
   const PRODUCT_LINK = cn(
@@ -351,13 +296,13 @@ export default async function OrderDetailPage({
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase">
-            {t('orderReference')}
+            {tShop('orders.orderDetails')}
           </p>
           <h1
             id="order-heading"
             className="mt-2 truncate text-2xl font-semibold"
           >
-            {t('orderNumber', { id: shortOrderId(order.id) })}
+            {tShop('orders.orderNumber', { id: shortOrderId(order.id) })}
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
             {t('placedOn', { date: createdFormatted })}
@@ -372,7 +317,7 @@ export default async function OrderDetailPage({
             {t('myOrders')}
           </Link>
           <Link className={NAV_LINK} href="/shop">
-            {t('shop')}
+            {tNavigation('shop')}
           </Link>
         </nav>
       </header>
@@ -390,7 +335,7 @@ export default async function OrderDetailPage({
               id="order-summary-heading"
               className="mt-2 text-xl font-semibold"
             >
-              {t('orderSummary')}
+              {tShop('orderSummary')}
             </h2>
             <p className="text-muted-foreground mt-2 text-sm">
               {t('orderNumberLabel', { id: shortOrderId(order.id) })}
@@ -420,14 +365,14 @@ export default async function OrderDetailPage({
         <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <dt className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
-              {t('total')}
+              {tShop('total')}
             </dt>
             <dd className="mt-1 text-base font-semibold">{totalFormatted}</dd>
           </div>
 
           <div>
             <dt className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
-              {t('paymentStatus')}
+              {tShop('orders.paymentStatusLabel')}
             </dt>
             <dd className="mt-1 text-sm font-medium">
               {paymentStatusFormatted}
@@ -469,48 +414,31 @@ export default async function OrderDetailPage({
           </div>
 
           {isAdmin && (
-            <div>
-              <dt className="text-muted-foreground text-xs">{t('provider')}</dt>
-              <dd className="text-sm">{String(order.paymentProvider)}</dd>
-            </div>
+            <OrderDetailField label={t('provider')}>
+              {String(order.paymentProvider)}
+            </OrderDetailField>
           )}
         </dl>
 
         {isAdmin && (
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('paymentReference')}
-              </dt>
-              <dd className="text-sm break-all">
-                {order.paymentIntentId ?? '-'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('idempotencyKey')}
-              </dt>
-              <dd className="text-sm break-all">{order.idempotencyKey}</dd>
-            </div>
+            <OrderDetailField label={t('paymentReference')} breakAll>
+              {order.paymentIntentId ?? '-'}
+            </OrderDetailField>
+            <OrderDetailField label={t('idempotencyKey')} breakAll>
+              {order.idempotencyKey}
+            </OrderDetailField>
           </dl>
         )}
 
         {isAdmin && (
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('stockRestored')}
-              </dt>
-              <dd className="text-sm">
-                {order.stockRestored ? t('yes') : t('no')}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('restockedAt')}
-              </dt>
-              <dd className="text-sm">{restockedFormatted}</dd>
-            </div>
+            <OrderDetailField label={t('stockRestored')}>
+              {order.stockRestored ? t('yes') : t('no')}
+            </OrderDetailField>
+            <OrderDetailField label={t('restockedAt')}>
+              {restockedFormatted}
+            </OrderDetailField>
           </dl>
         )}
       </section>
@@ -521,11 +449,11 @@ export default async function OrderDetailPage({
       >
         <div className="border-border border-b p-4">
           <h2 id="order-items-heading" className="text-lg font-semibold">
-            {t('items')}
+            {tShop('items')}
           </h2>
         </div>
 
-        <ul className="divide-border divide-y" aria-label={t('items')}>
+        <ul className="divide-border divide-y" aria-label={tShop('items')}>
           {order.items.map(it => (
             <li key={it.id} className="p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

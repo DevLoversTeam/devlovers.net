@@ -15,13 +15,10 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 vi.mock('@/lib/logging', async () => {
-  const actual = await vi.importActual<any>('@/lib/logging');
-  return {
-    ...actual,
-    logWarn: () => {},
-    logError: () => {},
-    logInfo: () => {},
-  };
+  const { createQuietLoggingMock } = await import(
+    '@/lib/tests/helpers/quiet-logging'
+  );
+  return createQuietLoggingMock();
 });
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;

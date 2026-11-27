@@ -1,68 +1,46 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import {
+  CheckoutNoticePage,
+  CheckoutPageShell,
+} from '@/components/shop/checkout/CheckoutPageShell';
+import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
+import { getLocalizedMetadata } from '@/i18n/metadata';
 import { Link } from '@/i18n/routing';
 import { OrderNotFoundError } from '@/lib/services/errors';
 import { getOrderSummary } from '@/lib/services/orders';
 import { resolveCheckoutDisplayCurrency } from '@/lib/shop/checkout-display-currency';
+import {
+  type CheckoutSearchParams,
+  getCheckoutSearchParam,
+  parseCheckoutOrderId,
+  parseStatusToken,
+} from '@/lib/shop/checkout-search-params';
 import { formatMoney } from '@/lib/shop/currency';
 import {
   SHOP_CTA_BASE,
-  SHOP_CTA_INSET,
   SHOP_CTA_INTERACTIVE,
-  SHOP_CTA_WAVE,
   SHOP_DISABLED,
   SHOP_FOCUS,
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
-  shopCtaGradient,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
-import { orderIdParamSchema } from '@/lib/validation/shop';
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({
-    locale,
-    namespace: 'shop.checkout.errorPage',
-  });
-
-  return {
-    title: t('metaTitle'),
-    description: t('metaDescription'),
-  };
+  return getLocalizedMetadata('shop.checkout.errorPage', locale);
 }
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-type SearchParams = Record<string, string | string[] | undefined>;
-
 function isPromise<T>(value: unknown): value is Promise<T> {
   return !!value && typeof (value as any).then === 'function';
-}
-
-function getStringParam(params: SearchParams | undefined, key: string): string {
-  if (!params) return '';
-  const raw = params[key];
-  if (!raw) return '';
-  if (Array.isArray(raw)) return raw[0] ?? '';
-  return raw;
-}
-
-function parseOrderId(searchParams?: SearchParams): string | null {
-  const raw = getStringParam(searchParams, 'orderId');
-  const parsed = orderIdParamSchema.safeParse({ id: raw });
-  return parsed.success ? parsed.data.id : null;
-}
-
-function parseStatusToken(searchParams?: SearchParams): string | null {
-  const raw = getStringParam(searchParams, 'statusToken').trim();
-  return raw.length > 0 ? raw : null;
 }
 
 const SHOP_HERO_CTA_SM = cn(
@@ -86,69 +64,41 @@ export default async function CheckoutErrorPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: Promise<SearchParams> | SearchParams;
+  searchParams?: Promise<CheckoutSearchParams> | CheckoutSearchParams;
 }) {
   const { locale } = await params;
   const t = await getTranslations('shop.checkout');
+  const tShop = await getTranslations('shop');
 
-  const resolvedSearchParams = isPromise<SearchParams>(searchParams)
+  const resolvedSearchParams = isPromise<CheckoutSearchParams>(searchParams)
     ? await searchParams
     : searchParams;
 
-  const orderId = parseOrderId(resolvedSearchParams);
+  const orderId = parseCheckoutOrderId(
+    getCheckoutSearchParam(resolvedSearchParams, 'orderId')
+  );
   const statusToken = parseStatusToken(resolvedSearchParams);
 
   if (!orderId) {
     return (
-      <main
-        className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
-        aria-labelledby="checkout-error-title"
+      <CheckoutNoticePage
+        titleId="checkout-error-title"
+        title={t('errors.missingOrderId')}
+        description={t('errors.missingOrderIdDescription')}
       >
-        <section className="border-border bg-card rounded-lg border p-8 text-center">
-          <h1
-            id="checkout-error-title"
-            className="text-foreground text-2xl font-bold"
-          >
-            {t('errors.missingOrderId')}
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            {t('errors.missingOrderIdDescription')}
-          </p>
+        <nav
+          className="mt-6 flex flex-wrap justify-center gap-3"
+          aria-label={t('errorPage.checkoutNavigation')}
+        >
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
+            {t('actions.backToCart')}
+          </Link>
 
-          <nav
-            className="mt-6 flex flex-wrap justify-center gap-3"
-            aria-label={t('errorPage.checkoutNavigation')}
-          >
-            <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
-              {t('actions.backToCart')}
-            </Link>
-
-            <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
-              <span
-                className="absolute inset-0"
-                style={shopCtaGradient(
-                  '--shop-hero-btn-bg',
-                  '--shop-hero-btn-bg-hover'
-                )}
-                aria-hidden="true"
-              />
-              <span
-                className={SHOP_CTA_WAVE}
-                style={shopCtaGradient(
-                  '--shop-hero-btn-bg-hover',
-                  '--shop-hero-btn-bg'
-                )}
-                aria-hidden="true"
-              />
-              <span className={SHOP_CTA_INSET} aria-hidden="true" />
-
-              <span className="relative z-10">
-                {t('actions.continueShopping')}
-              </span>
-            </Link>
-          </nav>
-        </section>
-      </main>
+          <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
+            <ShopCtaContent>{t('actions.continueShopping')}</ShopCtaContent>
+          </Link>
+        </nav>
+      </CheckoutNoticePage>
     );
   }
 
@@ -159,75 +109,33 @@ export default async function CheckoutErrorPage({
   } catch (error) {
     if (error instanceof OrderNotFoundError) {
       return (
-        <main
-          className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
-          aria-labelledby="checkout-error-title"
+        <CheckoutNoticePage
+          titleId="checkout-error-title"
+          title={t('errors.orderNotFound')}
+          description={t('errors.orderNotFoundDescription')}
         >
-          <section className="border-border bg-card rounded-lg border p-8 text-center">
-            <h1
-              id="checkout-error-title"
-              className="text-foreground text-2xl font-bold"
-            >
-              {t('errors.orderNotFound')}
-            </h1>
-            <p className="text-muted-foreground mt-2 text-sm">
-              {t('errors.orderNotFoundDescription')}
-            </p>
+          <nav
+            className="mt-6 flex flex-wrap justify-center gap-3"
+            aria-label={t('errorPage.checkoutNavigation')}
+          >
+            <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
+              {t('actions.backToCart')}
+            </Link>
 
-            <nav
-              className="mt-6 flex flex-wrap justify-center gap-3"
-              aria-label={t('errorPage.checkoutNavigation')}
-            >
-              <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
-                {t('actions.backToCart')}
-              </Link>
-
-              <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
-                <span
-                  className="absolute inset-0"
-                  style={shopCtaGradient(
-                    '--shop-hero-btn-bg',
-                    '--shop-hero-btn-bg-hover'
-                  )}
-                  aria-hidden="true"
-                />
-                <span
-                  className={SHOP_CTA_WAVE}
-                  style={shopCtaGradient(
-                    '--shop-hero-btn-bg-hover',
-                    '--shop-hero-btn-bg'
-                  )}
-                  aria-hidden="true"
-                />
-                <span className={SHOP_CTA_INSET} aria-hidden="true" />
-
-                <span className="relative z-10">
-                  {t('actions.continueShopping')}
-                </span>
-              </Link>
-            </nav>
-          </section>
-        </main>
+            <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
+              <ShopCtaContent>{t('actions.continueShopping')}</ShopCtaContent>
+            </Link>
+          </nav>
+        </CheckoutNoticePage>
       );
     }
 
     return (
-      <main
-        className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
-        aria-labelledby="checkout-error-title"
-      >
-        <section className="border-border bg-card rounded-lg border p-8 text-center">
-          <h1
-            id="checkout-error-title"
-            className="text-foreground text-2xl font-bold"
-          >
-            {t('errors.unableToLoad')}
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            {t('errors.tryAgainLater')}
-          </p>
-        </section>
-      </main>
+      <CheckoutNoticePage
+        titleId="checkout-error-title"
+        title={t('errors.unableToLoad')}
+        description={t('errors.tryAgainLater')}
+      />
     );
   }
 
@@ -239,10 +147,7 @@ export default async function CheckoutErrorPage({
   const currency = resolveCheckoutDisplayCurrency(order.currency);
 
   return (
-    <main
-      className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
-      aria-labelledby="checkout-error-title"
-    >
+    <CheckoutPageShell aria-labelledby="checkout-error-title">
       <section className="border-border bg-card rounded-lg border p-8 shadow-sm">
         <header>
           <h1
@@ -260,18 +165,18 @@ export default async function CheckoutErrorPage({
 
         <section
           className="border-border bg-muted/30 text-foreground mt-6 rounded-md border p-4 text-sm"
-          aria-label={t('errorPage.orderDetails')}
+          aria-label={tShop('orders.orderDetails')}
         >
           <dl className="space-y-2">
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">{t('error.orderLabel')}</dt>
+              <dt className="text-muted-foreground">{tShop('orders.orderLabel')}</dt>
               <dd className="text-muted-foreground font-mono text-xs">
                 {order.id}
               </dd>
             </div>
 
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">{t('error.totalLabel')}</dt>
+              <dt className="text-muted-foreground">{tShop('total')}</dt>
               <dd className="text-foreground font-semibold">
                 {totalMinor == null
                   ? '-'
@@ -281,7 +186,7 @@ export default async function CheckoutErrorPage({
 
             <div className="flex items-center justify-between gap-4">
               <dt className="text-muted-foreground">
-                {t('error.statusLabel')}
+                {t('paymentStatusLabel')}
               </dt>
               <dd className="text-foreground font-semibold capitalize">
                 {order.paymentStatus}
@@ -307,25 +212,7 @@ export default async function CheckoutErrorPage({
               }`}
               className={SHOP_HERO_CTA_SM}
             >
-              <span
-                className="absolute inset-0"
-                style={shopCtaGradient(
-                  '--shop-hero-btn-bg',
-                  '--shop-hero-btn-bg-hover'
-                )}
-                aria-hidden="true"
-              />
-              <span
-                className={SHOP_CTA_WAVE}
-                style={shopCtaGradient(
-                  '--shop-hero-btn-bg-hover',
-                  '--shop-hero-btn-bg'
-                )}
-                aria-hidden="true"
-              />
-              <span className={SHOP_CTA_INSET} aria-hidden="true" />
-
-              <span className="relative z-10">{t('error.retryPayment')}</span>
+              <ShopCtaContent>{t('error.retryPayment')}</ShopCtaContent>
             </Link>
           ) : null}
 
@@ -334,6 +221,6 @@ export default async function CheckoutErrorPage({
           </Link>
         </nav>
       </section>
-    </main>
+    </CheckoutPageShell>
   );
 }

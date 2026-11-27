@@ -4,12 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { useAutoSlug } from '@/components/admin/useAutoSlug';
 import type { AdminBlogCategoryListItem } from '@/db/queries/blog/admin-blog';
-import { slugify } from '@/lib/shop/slug';
+import { type Locale, locales } from '@/i18n/config';
 import { cn } from '@/lib/utils';
-
-const LOCALES = ['en', 'uk', 'pl'] as const;
-type Locale = (typeof LOCALES)[number];
 
 const inputClass =
   'border-border bg-background text-foreground w-full rounded-md border px-3 py-1.5 text-sm';
@@ -36,10 +35,12 @@ export function BlogCategoryManager({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
 
-  // ── Create form state ──────────────────────────────────────────
-
-  const [createSlug, setCreateSlug] = useState('');
-  const [createSlugTouched, setCreateSlugTouched] = useState(false);
+  const {
+    slug: createSlug,
+    updateFromTitle: updateCreateSlugFromTitle,
+    setManualSlug: setManualCreateSlug,
+    resetSlug: resetCreateSlug,
+  } = useAutoSlug();
   const [createTitles, setCreateTitles] = useState({ en: '', uk: '', pl: '' });
   const [createDescs, setCreateDescs] = useState({ en: '', uk: '', pl: '' });
   const [createError, setCreateError] = useState('');
@@ -47,9 +48,7 @@ export function BlogCategoryManager({
 
   function handleCreateTitleChange(locale: Locale, value: string) {
     setCreateTitles(prev => ({ ...prev, [locale]: value }));
-    if (locale === 'en' && !createSlugTouched) {
-      setCreateSlug(slugify(value));
-    }
+    updateCreateSlugFromTitle(locale, value);
   }
 
   async function handleCreate() {
@@ -74,7 +73,7 @@ export function BlogCategoryManager({
         body: JSON.stringify({
           slug: createSlug.trim(),
           translations: Object.fromEntries(
-            LOCALES.map(l => [l, {
+            locales.map(l => [l, {
               title: createTitles[l].trim(),
               description: createDescs[l].trim() || undefined,
             }])
@@ -89,8 +88,7 @@ export function BlogCategoryManager({
       }
 
       setShowCreate(false);
-      setCreateSlug('');
-      setCreateSlugTouched(false);
+      resetCreateSlug();
       setCreateTitles({ en: '', uk: '', pl: '' });
       setCreateDescs({ en: '', uk: '', pl: '' });
       router.refresh();
@@ -100,8 +98,6 @@ export function BlogCategoryManager({
       setCreating(false);
     }
   }
-
-  // ── Edit form state ────────────────────────────────────────────
 
   const [editSlug, setEditSlug] = useState('');
   const [editTitles, setEditTitles] = useState({ en: '', uk: '', pl: '' });
@@ -152,7 +148,7 @@ export function BlogCategoryManager({
         body: JSON.stringify({
           slug: editSlug.trim(),
           translations: Object.fromEntries(
-            LOCALES.map(l => [l, {
+            locales.map(l => [l, {
               title: editTitles[l].trim(),
               description: editDescs[l].trim() || undefined,
             }])
@@ -174,8 +170,6 @@ export function BlogCategoryManager({
       setSaving(false);
     }
   }
-
-  // ── Delete ─────────────────────────────────────────────────────
 
   async function handleDelete(categoryId: string) {
     if (!confirm('Delete this category?')) return;
@@ -203,8 +197,6 @@ export function BlogCategoryManager({
     }
   }
 
-  // ── Reorder ────────────────────────────────────────────────────
-
   async function handleSwap(id1: string, id2: string) {
     setReorderingId(id1);
     try {
@@ -228,17 +220,12 @@ export function BlogCategoryManager({
     }
   }
 
-  // ── Render ─────────────────────────────────────────────────────
-
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-foreground text-2xl font-bold">Categories</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Manage blog categories and display order
-          </p>
-        </div>
+      <AdminPageHeader
+        title="Categories"
+        description="Manage blog categories and display order"
+      >
         <button
           type="button"
           onClick={() => setShowCreate(!showCreate)}
@@ -246,9 +233,8 @@ export function BlogCategoryManager({
         >
           {showCreate ? 'Cancel' : '+ New Category'}
         </button>
-      </div>
+      </AdminPageHeader>
 
-      {/* Create form */}
       {showCreate && (
         <div className="border-border bg-muted/30 mt-6 space-y-3 rounded-lg border p-4">
           <p className="text-foreground text-sm font-medium">New Category</p>
@@ -258,16 +244,13 @@ export function BlogCategoryManager({
             <input
               type="text"
               value={createSlug}
-              onChange={e => {
-                setCreateSlug(e.target.value);
-                setCreateSlugTouched(true);
-              }}
+              onChange={e => setManualCreateSlug(e.target.value)}
               className={`${inputClass} max-w-xs`}
               placeholder="category-slug"
             />
           </div>
 
-          {LOCALES.map(locale => (
+          {locales.map(locale => (
             <div key={locale} className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-muted-foreground mb-1 block text-xs">
@@ -309,7 +292,6 @@ export function BlogCategoryManager({
         </div>
       )}
 
-      {/* Category list */}
       <div className="mt-6 space-y-2">
         {categories.length === 0 && (
           <div className="border-border text-muted-foreground rounded-lg border border-dashed p-8 text-center text-sm">
@@ -325,9 +307,7 @@ export function BlogCategoryManager({
               key={cat.id}
               className="border-border bg-background rounded-lg border"
             >
-              {/* Row summary */}
               <div className="flex items-center gap-3 px-4 py-3">
-                {/* Reorder buttons */}
                 <div className="flex shrink-0 flex-col gap-0.5">
                   <button
                     type="button"
@@ -349,7 +329,6 @@ export function BlogCategoryManager({
                   </button>
                 </div>
 
-                {/* Info */}
                 <div className="min-w-0 flex-1">
                   <div className="text-foreground text-sm font-medium">
                     {cat.title}
@@ -361,12 +340,10 @@ export function BlogCategoryManager({
                   )}
                 </div>
 
-                {/* Post count */}
                 <span className="text-muted-foreground shrink-0 text-xs">
                   {cat.postCount} {cat.postCount === 1 ? 'post' : 'posts'}
                 </span>
 
-                {/* Actions */}
                 <div className="flex shrink-0 gap-2">
                   <button
                     type="button"
@@ -392,7 +369,6 @@ export function BlogCategoryManager({
                 </div>
               </div>
 
-              {/* Inline edit form */}
               {isEditing && (
                 <div className="border-border border-t px-4 py-3 space-y-3">
                   <div>
@@ -405,7 +381,7 @@ export function BlogCategoryManager({
                     />
                   </div>
 
-                  {LOCALES.map(locale => (
+                  {locales.map(locale => (
                     <div key={locale} className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-muted-foreground mb-1 block text-xs">

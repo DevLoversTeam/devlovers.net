@@ -10,8 +10,6 @@ import type {
   TextNode,
 } from '@/components/q&a/types';
 
-// ── AnswerBlock[] → TipTap JSONContent ──
-
 function textNodeToTipTap(node: TextNode): JSONContent {
   const marks: { type: string; attrs?: Record<string, any> }[] = [];
   if (node.bold || node.boldItalic) marks.push({ type: 'bold' });
@@ -50,7 +48,6 @@ function listEntryToTipTap(entry: ListEntry): JSONContent {
     return { type: 'listItem', content };
   }
 
-  // Plain TextNode as list item
   return {
     type: 'listItem',
     content: [
@@ -117,8 +114,6 @@ export function answerBlocksToTipTap(blocks: AnswerBlock[]): JSONContent {
 
   return { type: 'doc', content };
 }
-
-// ── TipTap JSONContent → AnswerBlock[] ──
 
 function tipTapToTextNode(node: JSONContent): TextNode {
   const result: TextNode = { text: node.text ?? '' };

@@ -13,6 +13,7 @@ import {
 import AIWordHelper from '@/components/q&a/AIWordHelper';
 import CodeBlock from '@/components/q&a/CodeBlock';
 import FloatingExplainButton from '@/components/q&a/FloatingExplainButton';
+import { hexToRgba } from '@/components/q&a/hexToRgba';
 import HighlightCachedTerms from '@/components/q&a/HighlightCachedTerms';
 import SelectableText from '@/components/q&a/SelectableText';
 import type {
@@ -48,15 +49,6 @@ const EMPTY_QUESTION_IDS: ReadonlySet<string> = new Set();
 
 function normalizeCachedTerm(term: string): string {
   return term.toLowerCase().trim();
-}
-
-function hexToRgba(hex: string, alpha: number): string {
-  const normalized = hex.replace('#', '');
-  if (normalized.length !== 6) return `rgba(0, 0, 0, ${alpha})`;
-  const r = parseInt(normalized.slice(0, 2), 16);
-  const g = parseInt(normalized.slice(2, 4), 16);
-  const b = parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function isListItemBlock(value: ListEntry): value is ListItemBlock {

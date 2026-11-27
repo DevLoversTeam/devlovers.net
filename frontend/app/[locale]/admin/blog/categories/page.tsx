@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { BlogCategoryManager } from '@/components/admin/blog/BlogCategoryManager';
 import { getAdminBlogCategoriesFull } from '@/db/queries/blog/admin-blog';
 import { issueCsrfToken } from '@/lib/security/csrf';
@@ -16,7 +17,7 @@ export default async function AdminBlogCategoriesPage() {
   const csrfTokenReorder = issueCsrfToken('admin:blog-category:reorder');
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <AdminPageContainer>
       <BlogCategoryManager
         categories={categories}
         csrfTokenCreate={csrfTokenCreate}
@@ -24,7 +25,7 @@ export default async function AdminBlogCategoriesPage() {
         csrfTokenDelete={csrfTokenDelete}
         csrfTokenReorder={csrfTokenReorder}
       />
-    </div>
+    </AdminPageContainer>
   );
 }
 

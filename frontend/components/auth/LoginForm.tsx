@@ -29,6 +29,8 @@ export function LoginForm({
   const emailLastLoginBadgeId =
     lastLoginMethod === 'email' ? 'last-login-email-badge' : undefined;
   const t = useTranslations('auth.login');
+  const tNavigation = useTranslations('navigation');
+  const loginLabel = tNavigation('login');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -110,7 +112,7 @@ export function LoginForm({
 
   return (
     <AuthShell
-      title={t('title')}
+      title={loginLabel}
       footer={
         <p className="text-sm text-gray-600">
           {t('noAccount')}{' '}
@@ -122,7 +124,7 @@ export function LoginForm({
             }
             className="underline"
           >
-            {t('signupLink')}
+            {tNavigation('signup')}
           </Link>
         </p>
       }
@@ -180,7 +182,7 @@ export function LoginForm({
             aria-describedby={emailLastLoginBadgeId}
             className="w-full"
           >
-            {loading ? t('submitting') : t('submit')}
+            {loading ? t('submitting') : loginLabel}
           </Button>
           {lastLoginMethod === 'email' && (
             <LastLoginBadge id={emailLastLoginBadgeId} />

@@ -3,8 +3,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { AdminTableActionLink } from '@/components/admin/AdminTableActionLink';
 import type { AdminBlogAuthorListItem } from '@/db/queries/blog/admin-blog';
-import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 
 const TH =
@@ -59,7 +59,6 @@ export function BlogAuthorListTable({
 
   return (
     <>
-      {/* Mobile cards */}
       <div className="space-y-3 md:hidden">
         {authors.map(author => (
           <div
@@ -93,12 +92,9 @@ export function BlogAuthorListTable({
             </div>
 
             <div className="mt-3 flex gap-2">
-              <Link
-                href={`/admin/blog/authors/${author.id}`}
-                className="border-border text-foreground hover:bg-secondary inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
-              >
+              <AdminTableActionLink href={`/admin/blog/authors/${author.id}`}>
                 Edit
-              </Link>
+              </AdminTableActionLink>
               <button
                 type="button"
                 onClick={() => handleDelete(author.id)}
@@ -118,7 +114,6 @@ export function BlogAuthorListTable({
         ))}
       </div>
 
-      {/* Desktop table */}
       <div className="hidden md:block">
         <table className="divide-border w-full divide-y text-sm">
           <thead className="bg-muted/50">
@@ -157,12 +152,11 @@ export function BlogAuthorListTable({
                 </td>
                 <td className={TD}>
                   <div className="flex justify-center gap-2">
-                    <Link
+                    <AdminTableActionLink
                       href={`/admin/blog/authors/${author.id}`}
-                      className="border-border text-foreground hover:bg-secondary inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
                     >
                       Edit
-                    </Link>
+                    </AdminTableActionLink>
                     <button
                       type="button"
                       onClick={() => handleDelete(author.id)}

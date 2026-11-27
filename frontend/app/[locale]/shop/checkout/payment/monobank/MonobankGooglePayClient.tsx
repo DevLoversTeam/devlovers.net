@@ -3,20 +3,19 @@
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
 import { Link, useRouter } from '@/i18n/routing';
 import { generateIdempotencyKey } from '@/lib/shop/idempotency';
 import {
   SHOP_CTA_BASE,
-  SHOP_CTA_INSET,
   SHOP_CTA_INTERACTIVE,
-  SHOP_CTA_WAVE,
   SHOP_DISABLED,
   SHOP_FOCUS,
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
-  shopCtaGradient,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 
 type MonobankGooglePayClientProps = {
   orderId: string;
@@ -85,31 +84,6 @@ const SHOP_OUTLINE_BTN = cn(
   SHOP_DISABLED
 );
 
-function HeroCtaInner({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <span
-        className="absolute inset-0"
-        style={shopCtaGradient(
-          '--shop-hero-btn-bg',
-          '--shop-hero-btn-bg-hover'
-        )}
-        aria-hidden="true"
-      />
-      <span
-        className={SHOP_CTA_WAVE}
-        style={shopCtaGradient(
-          '--shop-hero-btn-bg-hover',
-          '--shop-hero-btn-bg'
-        )}
-        aria-hidden="true"
-      />
-      <span className={SHOP_CTA_INSET} aria-hidden="true" />
-      <span className="relative z-10">{children}</span>
-    </>
-  );
-}
-
 function loadGooglePayScript(): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
   if (window.google?.payments?.api?.PaymentsClient) return Promise.resolve();
@@ -152,12 +126,6 @@ function loadGooglePayScript(): Promise<void> {
   return promise;
 }
 
-function normalizeToken(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
-}
-
 function buildPendingReturnPath(orderId: string, statusToken: string | null) {
   const params = new URLSearchParams({ orderId });
   if (statusToken) params.set('statusToken', statusToken);
@@ -171,7 +139,7 @@ function buildStatusTokenQuery(statusToken: string | null) {
 }
 
 function extractGToken(payload: GooglePayPaymentData | null): string | null {
-  return normalizeToken(payload?.paymentMethodData?.tokenizationData?.token);
+  return trimToNull(payload?.paymentMethodData?.tokenizationData?.token);
 }
 
 function createPaymentsClient(): GooglePayPaymentsClient | null {
@@ -549,11 +517,11 @@ export default function MonobankGooglePayClient({
             onClick={onInvoiceFallback}
             disabled={isInvoiceSubmitting}
           >
-            <HeroCtaInner>
+            <ShopCtaContent>
               {isInvoiceSubmitting
                 ? t('monobankGooglePay.invoiceLoading')
                 : t('monobankGooglePay.invoiceFallback')}
-            </HeroCtaInner>
+            </ShopCtaContent>
           </button>
         </div>
       ) : null}

@@ -114,7 +114,10 @@ describe('admin order detail query shaping', () => {
     const detail = await getAdminOrderDetail('order-1');
 
     expect(detail).not.toBeNull();
-    expect(detail?.items.map(item => item.id)).toEqual(['item-a', 'item-b']);
+    expect(detail?.items).toEqual([
+      { ...itemA, unitPrice: '10.00', lineTotal: '10.00' },
+      { ...itemB, unitPrice: '8.00', lineTotal: '16.00' },
+    ]);
     expect(detail?.shipmentStatus).toBe('succeeded');
     expect(detail?.shipmentAttemptCount).toBe(2);
     expect(detail?.shipmentLastErrorCode).toBeNull();

@@ -33,6 +33,7 @@ export function CatalogProductsClient({
 }) {
   const searchParams = useSearchParams();
   const t = useTranslations('shop.catalog');
+  const tProducts = useTranslations('shop.products');
 
   const baseQuery = React.useMemo(
     () => stripPageParam(searchParams),
@@ -119,7 +120,7 @@ export function CatalogProductsClient({
     <section aria-label={t('results')}>
       <ul
         className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-        aria-label={t('products')}
+        aria-label={tProducts('label')}
       >
         {products.map(p => (
           <li key={p.id} className="min-w-0">

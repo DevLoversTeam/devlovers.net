@@ -1,7 +1,12 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import {
+  CheckoutNoticePage,
+  CheckoutPageShell,
+} from '@/components/shop/checkout/CheckoutPageShell';
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
+import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
 import { Link } from '@/i18n/routing';
 import {
   getStripeEnv,
@@ -10,20 +15,23 @@ import {
 import { logError } from '@/lib/logging';
 import { getCheckoutPaymentPageOrderSummary } from '@/lib/services/orders';
 import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
+import {
+  type CheckoutSearchParams,
+  getCheckoutSearchParam,
+  parseCheckoutOrderId,
+  parseStatusToken,
+  shouldClearCart,
+} from '@/lib/shop/checkout-search-params';
 import { formatMoney } from '@/lib/shop/currency';
 import {
   SHOP_CTA_BASE,
-  SHOP_CTA_INSET,
   SHOP_CTA_INTERACTIVE,
-  SHOP_CTA_WAVE,
   SHOP_DISABLED,
   SHOP_FOCUS,
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
-  shopCtaGradient,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
-import { orderIdParamSchema } from '@/lib/validation/shop';
 
 import StripePaymentClient from '../StripePaymentClient';
 
@@ -34,30 +42,6 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-function getOrderId(params: { orderId?: string }) {
-  const parsed = orderIdParamSchema.safeParse({ id: params.orderId ?? '' });
-  if (!parsed.success) return null;
-  return parsed.data.id;
-}
-
-function resolveClientSecret(
-  searchParams?: Record<string, string | string[] | undefined>
-) {
-  const raw = searchParams?.clientSecret;
-  if (!raw) return '';
-  if (Array.isArray(raw)) return raw[0] ?? '';
-  return raw;
-}
-
-function parseStatusToken(
-  searchParams?: Record<string, string | string[] | undefined>
-): string | null {
-  const raw = searchParams?.statusToken;
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  const normalized = (value ?? '').trim();
-  return normalized.length > 0 ? normalized : null;
-}
 
 async function buildStatusMessage(status: string) {
   const t = await getTranslations('shop.checkout.payment.statusMessages');
@@ -73,17 +57,9 @@ function canInitializeStripeForPaymentStatus(status: string): boolean {
   );
 }
 
-function shouldClearCart(
-  searchParams?: Record<string, string | string[] | undefined>
-): boolean {
-  const raw = searchParams?.clearCart;
-  const v = Array.isArray(raw) ? raw[0] : raw;
-  return v === 'true' || v === '1';
-}
-
 type PaymentPageProps = {
   params: Promise<{ locale: string; orderId: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  searchParams?: Promise<CheckoutSearchParams>;
 };
 
 const SHOP_HERO_CTA_SM = cn(
@@ -114,56 +90,8 @@ function HeroCtaLink({
 }) {
   return (
     <Link href={href} className={cn(SHOP_HERO_CTA_SM, className)}>
-      <span
-        className="absolute inset-0"
-        style={shopCtaGradient(
-          '--shop-hero-btn-bg',
-          '--shop-hero-btn-bg-hover'
-        )}
-        aria-hidden="true"
-      />
-      {/* hover wave overlay */}
-      <span
-        className={SHOP_CTA_WAVE}
-        style={shopCtaGradient(
-          '--shop-hero-btn-bg-hover',
-          '--shop-hero-btn-bg'
-        )}
-        aria-hidden="true"
-      />
-      <span className={SHOP_CTA_INSET} aria-hidden="true" />
-
-      <span className="relative z-10">{children}</span>
+      <ShopCtaContent>{children}</ShopCtaContent>
     </Link>
-  );
-}
-
-function PageShell({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <main
-      className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
-      aria-labelledby="payment-title"
-    >
-      <section className="border-border bg-card rounded-lg border p-8 text-center">
-        <h1 id="payment-title" className="text-foreground text-2xl font-bold">
-          {title}
-        </h1>
-
-        {description ? (
-          <p className="text-muted-foreground mt-2 text-sm">{description}</p>
-        ) : null}
-
-        {children}
-      </section>
-    </main>
   );
 }
 
@@ -183,12 +111,14 @@ export default async function PaymentPage(props: PaymentPageProps) {
     : '';
 
   const t = await getTranslations('shop.checkout');
+  const tShop = await getTranslations('shop');
 
-  const orderId = getOrderId(params);
+  const orderId = parseCheckoutOrderId(params.orderId);
 
   if (!orderId) {
     return (
-      <PageShell
+      <CheckoutNoticePage
+        titleId="payment-title"
         title={t('errors.invalidOrder')}
         description={t('missingOrder.message')}
       >
@@ -201,7 +131,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             {t('actions.continueShopping')}
           </HeroCtaLink>
         </nav>
-      </PageShell>
+      </CheckoutNoticePage>
     );
   }
 
@@ -213,7 +143,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
   if (!orderAccess.ok) {
     if (orderAccess.code === 'STATUS_TOKEN_MISCONFIGURED') {
       return (
-        <PageShell
+        <CheckoutNoticePage
+          titleId="payment-title"
           title={t('errors.unableToLoad')}
           description={t('errors.tryAgainLater')}
         />
@@ -221,7 +152,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
     }
 
     return (
-      <PageShell
+      <CheckoutNoticePage
+        titleId="payment-title"
         title={t('errors.orderNotFound')}
         description={t('notFoundOrder.message')}
       >
@@ -234,13 +166,14 @@ export default async function PaymentPage(props: PaymentPageProps) {
             {t('actions.continueShopping')}
           </HeroCtaLink>
         </nav>
-      </PageShell>
+      </CheckoutNoticePage>
     );
   }
   const order = orderAccess.order;
   if (order.paymentProvider !== 'stripe') {
     return (
-      <PageShell
+      <CheckoutNoticePage
+        titleId="payment-title"
         title={t('errors.orderNotFound')}
         description={t('notFoundOrder.message')}
       >
@@ -253,7 +186,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             {t('actions.continueShopping')}
           </HeroCtaLink>
         </nav>
-      </PageShell>
+      </CheckoutNoticePage>
     );
   }
 
@@ -262,7 +195,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
   });
   const stripeEnv = getStripeEnv();
 
-  let clientSecret = resolveClientSecret(searchParams);
+  let clientSecret = getCheckoutSearchParam(searchParams, 'clientSecret');
   const publishableKey = paymentsEnabled ? stripeEnv.publishableKey : null;
   const shouldInitStripePaymentIntent = canInitializeStripeForPaymentStatus(
     order.paymentStatus
@@ -299,7 +232,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
       <>
         <ClearCartOnMount enabled={clearCart} />
 
-        <PageShell
+        <CheckoutNoticePage
+          titleId="payment-title"
           title={t('payment.statusMessages.alreadyPaid')}
           description={t('success.paymentConfirmed')}
         >
@@ -314,10 +248,10 @@ export default async function PaymentPage(props: PaymentPageProps) {
             </HeroCtaLink>
 
             <Link href={`${shopBase}/products`} className={SHOP_OUTLINE_BTN}>
-              {t('payment.continueShopping')}
+              {t('actions.continueShopping')}
             </Link>
           </nav>
-        </PageShell>
+        </CheckoutNoticePage>
       </>
     );
   }
@@ -325,10 +259,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <main
-      className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
-      aria-labelledby="pay-order-title"
-    >
+    <CheckoutPageShell aria-labelledby="pay-order-title">
       <ClearCartOnMount enabled={clearCart} />
 
       <header className="mb-6">
@@ -396,12 +327,12 @@ export default async function PaymentPage(props: PaymentPageProps) {
           aria-label="Order summary"
         >
           <h2 className="text-foreground text-lg font-semibold">
-            {t('payment.orderSummary')}
+            {tShop('orderSummary')}
           </h2>
 
           <dl className="text-muted-foreground mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between">
-              <dt>{t('payment.items')}</dt>
+              <dt>{tShop('items')}</dt>
               <dd
                 data-testid="payment-summary-items"
                 className="text-foreground font-medium"
@@ -421,7 +352,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             </div>
 
             <div className="flex items-center justify-between">
-              <dt>{t('payment.status')}</dt>
+              <dt>{t('paymentStatusLabel')}</dt>
               <dd
                 data-testid="payment-summary-status"
                 className="text-foreground font-semibold capitalize"
@@ -432,6 +363,6 @@ export default async function PaymentPage(props: PaymentPageProps) {
           </dl>
         </aside>
       </section>
-    </main>
+    </CheckoutPageShell>
   );
 }

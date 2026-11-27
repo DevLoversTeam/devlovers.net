@@ -7,14 +7,7 @@ import { db } from '@/db';
 import { adminAuditLog, orders, shippingShipments } from '@/db/schema';
 import { applyShippingAdminAction } from '@/lib/services/shop/shipping/admin-actions';
 import { toDbMoney } from '@/lib/shop/money';
-
-async function cleanup(orderId: string) {
-  await db.delete(adminAuditLog).where(eq(adminAuditLog.orderId, orderId));
-  await db
-    .delete(shippingShipments)
-    .where(eq(shippingShipments.orderId, orderId));
-  await db.delete(orders).where(eq(orders.id, orderId));
-}
+import { cleanupAdminTestOrder } from '@/lib/tests/helpers/cleanup-admin-test-order';
 
 describe.sequential('admin shipping action canonical audit', () => {
   it('recover_initial_shipment inserts admin_audit_log row and queues missing shipment', async () => {
@@ -79,7 +72,7 @@ describe.sequential('admin shipping action canonical audit', () => {
       expect(logs[0]?.requestId).toBe(requestId);
       expect(logs[0]?.orderId).toBe(orderId);
     } finally {
-      await cleanup(orderId);
+      await cleanupAdminTestOrder(orderId);
     }
   });
 
@@ -165,7 +158,7 @@ describe.sequential('admin shipping action canonical audit', () => {
       expect(logs[0]?.requestId).toBe(requestId);
       expect(logs[0]?.orderId).toBe(orderId);
     } finally {
-      await cleanup(orderId);
+      await cleanupAdminTestOrder(orderId);
     }
   });
 
@@ -229,7 +222,7 @@ describe.sequential('admin shipping action canonical audit', () => {
       expect(logs[0]?.requestId).toBe(requestId);
       expect(logs[0]?.orderId).toBe(orderId);
     } finally {
-      await cleanup(orderId);
+      await cleanupAdminTestOrder(orderId);
     }
   });
 
@@ -296,7 +289,7 @@ describe.sequential('admin shipping action canonical audit', () => {
         .limit(1);
       expect(orderRow?.shippingStatus).toBe('delivered');
     } finally {
-      await cleanup(orderId);
+      await cleanupAdminTestOrder(orderId);
     }
   });
 
@@ -355,7 +348,7 @@ describe.sequential('admin shipping action canonical audit', () => {
         .limit(1);
       expect(shipment?.status).toBe('queued');
     } finally {
-      await cleanup(orderId);
+      await cleanupAdminTestOrder(orderId);
     }
   });
 });

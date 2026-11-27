@@ -2,10 +2,11 @@ import { getTranslations } from 'next-intl/server';
 
 import BlogFilters from '@/components/blog/BlogFilters';
 import { BlogPageHeader } from '@/components/blog/BlogPageHeader';
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
 import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
 import { getCachedBlogPosts } from '@/db/queries/blog/blog-posts';
-export const revalidate = 604800; // 7 days
+import { getLocalizedMetadata } from '@/i18n/metadata';
+export const revalidate = 604800;
 
 export async function generateMetadata({
   params,
@@ -13,12 +14,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'blog' });
-
-  return {
-    title: t('metaTitle'),
-    description: t('metaDescription'),
-  };
+  return getLocalizedMetadata('blog', locale);
 }
 
 export default async function BlogPage({

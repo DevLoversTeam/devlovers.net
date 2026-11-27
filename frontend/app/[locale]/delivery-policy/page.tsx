@@ -4,6 +4,7 @@ import DeliveryPolicyContent, {
   DELIVERY_POLICY_LAST_UPDATED,
 } from '@/components/legal/DeliveryPolicyContent';
 import LegalPageShell from '@/components/legal/LegalPageShell';
+import { getLocalizedMetadata } from '@/i18n/metadata';
 
 export async function generateMetadata({
   params,
@@ -11,12 +12,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'legal.delivery' });
-
-  return {
-    title: t('metaTitle'),
-    description: t('metaDescription'),
-  };
+  return getLocalizedMetadata('legal.delivery', locale);
 }
 
 export default async function DeliveryPolicyPage() {

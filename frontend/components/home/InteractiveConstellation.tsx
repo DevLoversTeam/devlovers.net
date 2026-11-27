@@ -189,7 +189,6 @@ export function InteractiveConstellation() {
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Colors
       const isDark =
         theme === 'dark' || document.documentElement.classList.contains('dark');
       const r = isDark ? 255 : 30;

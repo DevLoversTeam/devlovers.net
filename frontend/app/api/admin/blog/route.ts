@@ -8,24 +8,18 @@ import {
   toggleBlogPostPublish,
 } from '@/db/queries/blog/admin-blog';
 import { blogPosts } from '@/db/schema/blog';
+import { requireAdminApi } from '@/lib/auth/admin';
 import {
-  AdminApiDisabledError,
-  AdminForbiddenError,
-  AdminUnauthorizedError,
-  requireAdminApi,
-} from '@/lib/auth/admin';
+  getAdminBlogAccessErrorResponse,
+  readAdminBlogJson,
+} from '@/lib/blog/admin-route-responses';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import { createBlogPostSchema } from '@/lib/validation/admin-blog';
 
 export const runtime = 'nodejs';
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const blocked = guardBrowserSameOrigin(request);
@@ -43,17 +37,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return csrfResult;
     }
 
-    let rawBody: unknown;
-    try {
-      rawBody = await request.json();
-    } catch {
-      return noStoreJson(
-        { error: 'Invalid JSON body', code: 'INVALID_BODY' },
-        { status: 400 }
-      );
-    }
+    const body = await readAdminBlogJson(request);
+    if (!body.ok) return body.response;
 
-    const parsed = createBlogPostSchema.safeParse(rawBody);
+    const parsed = createBlogPostSchema.safeParse(body.data);
     if (!parsed.success) {
       return noStoreJson(
         {
@@ -67,7 +54,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const data = parsed.data;
 
-    // Check slug uniqueness
     const [existing] = await db
       .select({ id: blogPosts.id })
       .from(blogPosts)
@@ -103,7 +89,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         throw err;
       }
 
-    // Apply publish state if not draft
     if (data.publishMode !== 'draft') {
       await toggleBlogPostPublish(postId, {
         isPublished: data.publishMode === 'publish',
@@ -117,12 +102,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return noStoreJson({ success: true, postId });
   } catch (error) {
-    if (error instanceof AdminApiDisabledError)
-      return noStoreJson({ code: error.code }, { status: 403 });
-    if (error instanceof AdminUnauthorizedError)
-      return noStoreJson({ code: error.code }, { status: 401 });
-    if (error instanceof AdminForbiddenError)
-      return noStoreJson({ code: error.code }, { status: 403 });
+    const accessError = getAdminBlogAccessErrorResponse(error);
+    if (accessError) return accessError;
 
     logError('admin_blog_post_create_failed', error, {});
     return noStoreJson(

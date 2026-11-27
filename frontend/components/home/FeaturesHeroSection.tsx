@@ -1,7 +1,7 @@
 import { BrainCircuit, MessageCircleQuestion, TrendingUp } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
 import { Link } from '@/i18n/routing';
 
 import { FlipCardQA } from './FlipCardQA';

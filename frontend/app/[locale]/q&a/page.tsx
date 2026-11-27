@@ -2,8 +2,9 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 import QaSection from '@/components/q&a/QaSection';
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import { Loader } from '@/components/shared/Loader';
+import { DynamicGridBackground } from '@/components/ui/dynamic-grid-background';
+import { Loader } from '@/components/ui/loader';
+import { getLocalizedMetadata } from '@/i18n/metadata';
 
 export async function generateMetadata({
   params,
@@ -11,12 +12,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'qa' });
-
-  return {
-    title: t('metaTitle'),
-    description: t('metaDescription'),
-  };
+  return getLocalizedMetadata('qa', locale);
 }
 
 export default async function QAPage({

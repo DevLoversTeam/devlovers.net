@@ -1,6 +1,4 @@
-import crypto from 'node:crypto';
-
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { getAdminOrderDetail } from '@/db/queries/shop/admin-orders';
 import {
@@ -9,25 +7,16 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { getRequestId } from '@/lib/http/getRequestId';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError, logWarn } from '@/lib/logging';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 
 export const runtime = 'nodejs';
 
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-function toStringOrNull(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
 }
 
 function maskName(value: string | null): string | null {
@@ -68,21 +57,21 @@ function maskShippingAddress(raw: unknown): Record<string, unknown> | null {
   const recipient = isRecord(raw.recipient) ? raw.recipient : {};
 
   return {
-    provider: toStringOrNull(raw.provider),
-    methodCode: toStringOrNull(raw.methodCode),
+    provider: trimToNull(raw.provider),
+    methodCode: trimToNull(raw.methodCode),
     selection: {
-      cityRef: toStringOrNull(selection.cityRef),
-      cityNameUa: toStringOrNull(selection.cityNameUa),
-      cityNameRu: toStringOrNull(selection.cityNameRu),
-      warehouseRef: toStringOrNull(selection.warehouseRef),
-      warehouseName: toStringOrNull(selection.warehouseName),
-      addressLine1: maskAddress(toStringOrNull(selection.addressLine1)),
-      addressLine2: maskAddress(toStringOrNull(selection.addressLine2)),
+      cityRef: trimToNull(selection.cityRef),
+      cityNameUa: trimToNull(selection.cityNameUa),
+      cityNameRu: trimToNull(selection.cityNameRu),
+      warehouseRef: trimToNull(selection.warehouseRef),
+      warehouseName: trimToNull(selection.warehouseName),
+      addressLine1: maskAddress(trimToNull(selection.addressLine1)),
+      addressLine2: maskAddress(trimToNull(selection.addressLine2)),
     },
     recipient: {
-      fullName: maskName(toStringOrNull(recipient.fullName)),
-      phone: maskPhone(toStringOrNull(recipient.phone)),
-      email: maskEmail(toStringOrNull(recipient.email)),
+      fullName: maskName(trimToNull(recipient.fullName)),
+      phone: maskPhone(trimToNull(recipient.phone)),
+      email: maskEmail(trimToNull(recipient.email)),
     },
   };
 }
@@ -93,8 +82,7 @@ export async function GET(
 ) {
   const startedAtMs = Date.now();
 
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const baseMeta = {
     requestId,

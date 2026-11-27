@@ -5,8 +5,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
 import { db } from '@/db';
+import { readOptionalDbRows } from '@/db/readDbRows';
 import { orders, stripeEvents } from '@/db/schema';
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
+import { getRequestId } from '@/lib/http/getRequestId';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { verifyWebhookSignature } from '@/lib/psp/stripe';
 import { guardNonBrowserOnly } from '@/lib/security/origin';
@@ -30,9 +32,13 @@ import {
 export const runtime = 'nodejs';
 
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { insertPaymentEventFromUpdatedOrderSql } from '@/lib/services/shop/events/insert-payment-event-from-updated-order-sql';
 import { orderShippingEligibilityWhereSql } from '@/lib/services/shop/shipping/eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
-import { shippingStatusTransitionWhereSql } from '@/lib/services/shop/transitions/shipping-state';
+import {
+  insertQueuedInitialShipmentSql,
+  shippingStatusCanBeQueuedSql,
+} from '@/lib/services/shop/shipping/queued-initial-shipment-sql';
 
 const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
 
@@ -454,12 +460,6 @@ type RestoreStripeRefundOrder = Parameters<
   typeof restoreStripeRefundFailure
 >[0]['order'];
 
-function readDbRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const anyRes = res as { rows?: unknown };
-  return Array.isArray(anyRes?.rows) ? (anyRes.rows as T[]) : [];
-}
-
 type StripeOrderPaymentSnapshot = {
   id: string;
   paymentStatus: typeof orders.$inferSelect.paymentStatus;
@@ -528,6 +528,48 @@ type StripePaidApplyArgs = {
 async function applyStripePaidAndQueueShipmentAtomic(
   args: StripePaidApplyArgs
 ): Promise<{ applied: boolean; shipmentQueued: boolean }> {
+  const enqueueShipmentCtes = sql`
+    eligible_for_enqueue as (
+      select o.id
+      from orders o
+      where o.id = ${args.orderId}::uuid
+        and o.payment_provider = 'stripe'
+        and o.shipping_required = true
+        and o.shipping_provider = 'nova_poshta'
+        and o.shipping_method_code is not null
+        and ${orderShippingEligibilityWhereSql({
+          paymentStatusColumn: sql`o.payment_status`,
+          orderStatusColumn: sql`o.status`,
+          inventoryStatusColumn: sql`o.inventory_status`,
+          pspStatusReasonColumn: sql`o.psp_status_reason`,
+        })}
+    ),
+    inserted_shipment as (
+      ${insertQueuedInitialShipmentSql({
+        orderIdColumn: sql`id`,
+        eligibleOrders: sql`eligible_for_enqueue`,
+        now: args.now,
+        onConflict: 'requeue',
+      })}
+    ),
+    queued_order_ids as (
+      select order_id from inserted_shipment
+      union
+      select s.order_id
+      from shipping_shipments s
+      where s.order_id in (select id from eligible_for_enqueue)
+        and s.status = 'queued'
+    ),
+    mark_queued as (
+      update orders
+      set shipping_status = 'queued'::shipping_status,
+          updated_at = ${args.now}
+      where id in (select order_id from queued_order_ids)
+        and ${shippingStatusCanBeQueuedSql}
+      returning id
+    )
+  `;
+
   const res = args.canonicalDualWriteEnabled
     ? await db.execute(sql`
         with updated_order as (
@@ -558,101 +600,19 @@ async function applyStripePaidAndQueueShipmentAtomic(
             shipping_method_code
         ),
         inserted_payment_event as (
-          insert into payment_events (
-            order_id,
-            provider,
-            event_name,
-            event_source,
-            event_ref,
-            attempt_id,
-            provider_payment_intent_id,
-            provider_charge_id,
-            amount_minor,
-            currency,
-            payload,
-            dedupe_key,
-            occurred_at,
-            created_at
-          )
-          select
-            uo.id,
-            'stripe',
-            'paid_applied',
-            'stripe_webhook',
-            ${args.stripeEventId},
-            null,
-            ${args.paymentIntentId},
-            ${args.pspChargeId},
-            uo.total_amount_minor::bigint,
-            uo.currency,
-            ${JSON.stringify(args.canonicalEventPayload)}::jsonb,
-            ${args.canonicalEventDedupeKey},
-            ${args.now},
-            ${args.now}
-          from updated_order uo
-          on conflict (dedupe_key) do nothing
-          returning id
+          ${insertPaymentEventFromUpdatedOrderSql({
+            provider: sql`'stripe'`,
+            eventName: sql`'paid_applied'`,
+            eventSource: sql`'stripe_webhook'`,
+            eventRef: args.stripeEventId,
+            providerPaymentIntentId: args.paymentIntentId,
+            providerChargeId: args.pspChargeId,
+            payload: args.canonicalEventPayload,
+            dedupeKey: args.canonicalEventDedupeKey,
+            now: args.now,
+          })}
         ),
-        eligible_for_enqueue as (
-          select o.id
-          from orders o
-          where o.id = ${args.orderId}::uuid
-            and o.payment_provider = 'stripe'
-            and o.shipping_required = true
-            and o.shipping_provider = 'nova_poshta'
-            and o.shipping_method_code is not null
-            and ${orderShippingEligibilityWhereSql({
-              paymentStatusColumn: sql`o.payment_status`,
-              orderStatusColumn: sql`o.status`,
-              inventoryStatusColumn: sql`o.inventory_status`,
-              pspStatusReasonColumn: sql`o.psp_status_reason`,
-            })}
-        ),
-        inserted_shipment as (
-          insert into shipping_shipments (
-            order_id,
-            provider,
-            status,
-            attempt_count,
-            created_at,
-            updated_at
-          )
-          select
-            id,
-            'nova_poshta',
-            'queued',
-            0,
-            ${args.now},
-            ${args.now}
-          from eligible_for_enqueue
-          on conflict (order_id) do update
-          set status = 'queued',
-              updated_at = ${args.now}
-          where shipping_shipments.provider = 'nova_poshta'
-            and shipping_shipments.status is distinct from 'queued'
-          returning order_id
-        ),
-        queued_order_ids as (
-          select order_id from inserted_shipment
-          union
-          select s.order_id
-          from shipping_shipments s
-          where s.order_id in (select id from eligible_for_enqueue)
-            and s.status = 'queued'
-        ),
-        mark_queued as (
-          update orders
-          set shipping_status = 'queued'::shipping_status,
-              updated_at = ${args.now}
-          where id in (select order_id from queued_order_ids)
-            and shipping_status is distinct from 'queued'::shipping_status
-            and ${shippingStatusTransitionWhereSql({
-              column: sql`shipping_status`,
-              to: 'queued',
-              allowNullFrom: true,
-            })}
-          returning id
-        )
+        ${enqueueShipmentCtes}
         select
           (select count(*)::int from updated_order) as updated_count,
           (select count(*)::int from inserted_shipment) as inserted_shipment_count,
@@ -685,66 +645,7 @@ async function applyStripePaidAndQueueShipmentAtomic(
             shipping_provider,
             shipping_method_code
         ),
-        eligible_for_enqueue as (
-          select o.id
-          from orders o
-          where o.id = ${args.orderId}::uuid
-            and o.payment_provider = 'stripe'
-            and o.shipping_required = true
-            and o.shipping_provider = 'nova_poshta'
-            and o.shipping_method_code is not null
-            and ${orderShippingEligibilityWhereSql({
-              paymentStatusColumn: sql`o.payment_status`,
-              orderStatusColumn: sql`o.status`,
-              inventoryStatusColumn: sql`o.inventory_status`,
-              pspStatusReasonColumn: sql`o.psp_status_reason`,
-            })}
-        ),
-        inserted_shipment as (
-          insert into shipping_shipments (
-            order_id,
-            provider,
-            status,
-            attempt_count,
-            created_at,
-            updated_at
-          )
-          select
-            id,
-            'nova_poshta',
-            'queued',
-            0,
-            ${args.now},
-            ${args.now}
-          from eligible_for_enqueue
-          on conflict (order_id) do update
-          set status = 'queued',
-              updated_at = ${args.now}
-          where shipping_shipments.provider = 'nova_poshta'
-            and shipping_shipments.status is distinct from 'queued'
-          returning order_id
-        ),
-        queued_order_ids as (
-          select order_id from inserted_shipment
-          union
-          select s.order_id
-          from shipping_shipments s
-          where s.order_id in (select id from eligible_for_enqueue)
-            and s.status = 'queued'
-        ),
-        mark_queued as (
-          update orders
-          set shipping_status = 'queued'::shipping_status,
-              updated_at = ${args.now}
-          where id in (select order_id from queued_order_ids)
-            and shipping_status is distinct from 'queued'::shipping_status
-            and ${shippingStatusTransitionWhereSql({
-              column: sql`shipping_status`,
-              to: 'queued',
-              allowNullFrom: true,
-            })}
-          returning id
-        )
+        ${enqueueShipmentCtes}
         select
           (select count(*)::int from updated_order) as updated_count,
           (select count(*)::int from inserted_shipment) as inserted_shipment_count,
@@ -752,7 +653,7 @@ async function applyStripePaidAndQueueShipmentAtomic(
           (select count(*)::int from mark_queued) as mark_queued_count
       `);
 
-  const row = readDbRows<{
+  const row = readOptionalDbRows<{
     updated_count?: number;
     inserted_shipment_count?: number;
     queued_shipment_count?: number;
@@ -767,8 +668,7 @@ async function applyStripePaidAndQueueShipmentAtomic(
 export async function POST(request: NextRequest) {
   const startedAtMs = Date.now();
 
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const baseMeta = {
     requestId,
@@ -1505,28 +1405,12 @@ export async function POST(request: NextRequest) {
               })}
           ),
           ensured_shipment as (
-            insert into shipping_shipments (
-              order_id,
-              provider,
-              status,
-              attempt_count,
-              created_at,
-              updated_at
-            )
-            select
-              eo.id,
-              'nova_poshta',
-              'queued',
-              0,
-              ${now},
-              ${now}
-            from eligible_order eo
-            on conflict (order_id) do update
-            set status = 'queued',
-                updated_at = ${now}
-            where shipping_shipments.provider = 'nova_poshta'
-              and shipping_shipments.status is distinct from 'queued'
-            returning order_id
+            ${insertQueuedInitialShipmentSql({
+              orderIdColumn: sql`eo.id`,
+              eligibleOrders: sql`eligible_order eo`,
+              now: now,
+              onConflict: 'requeue',
+            })}
           ),
           existing_shipment as (
             select order_id
@@ -1553,12 +1437,7 @@ export async function POST(request: NextRequest) {
               pspStatusReasonColumn: sql`o.psp_status_reason`,
             })}
           )
-            and shipping_status is distinct from 'queued'::shipping_status
-            and ${shippingStatusTransitionWhereSql({
-              column: sql`shipping_status`,
-              to: 'queued',
-              allowNullFrom: true,
-            })}
+            and ${shippingStatusCanBeQueuedSql}
         `);
       }
 

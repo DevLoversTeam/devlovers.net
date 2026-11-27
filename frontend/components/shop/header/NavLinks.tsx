@@ -37,6 +37,7 @@ export function NavLinks({
   const t = useTranslations('shop.catalog.categories');
   const tProducts = useTranslations('shop.products');
   const tNav = useTranslations('shop.admin.navigation');
+  const tNavigation = useTranslations('navigation');
 
   const navLinks = useMemo(
     () => [
@@ -91,7 +92,7 @@ export function NavLinks({
               icon={Store}
               isActive={isShopHome}
             >
-              {tNav('shop')}
+              {tNavigation('shop')}
             </HeaderButton>
           </li>
         ) : null}

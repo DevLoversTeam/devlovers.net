@@ -3,9 +3,11 @@ import 'server-only';
 import { and, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readDbRows } from '@/db/readDbRows';
 import { npCities, npWarehouses, orders, orderShipping } from '@/db/schema';
 import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 import { evaluateOrderShippingEligibility } from '@/lib/services/shop/shipping/eligibility';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 import type { AdminOrderShippingEditInput } from '@/lib/validation/shop-admin-shipping';
 
 type EditableShippingStateRow = {
@@ -58,25 +60,12 @@ function invalid(code: string, message: string, status = 409) {
   return new AdminOrderShippingEditError(code, message, status);
 }
 
-function readRows<T>(value: unknown): T[] {
-  if (Array.isArray(value)) return value as T[];
-  const maybe = value as { rows?: unknown };
-  if (Array.isArray(maybe.rows)) return maybe.rows as T[];
-  return [];
-}
-
 function first<T>(value: unknown): T | null {
-  return readRows<T>(value)[0] ?? null;
+  return readDbRows<T>(value)[0] ?? null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-function readString(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
 }
 
 function readQuoteSnapshot(raw: unknown): Record<string, unknown> | undefined {
@@ -91,7 +80,7 @@ function toComparableSnapshot(
   const root = isRecord(raw) ? raw : {};
   const selection = isRecord(root.selection) ? root.selection : {};
   const recipient = isRecord(root.recipient) ? root.recipient : {};
-  const methodCode = readString(root.methodCode) ?? fallbackMethodCode;
+  const methodCode = trimToNull(root.methodCode) ?? fallbackMethodCode;
 
   if (
     methodCode !== 'NP_WAREHOUSE' &&
@@ -105,16 +94,16 @@ function toComparableSnapshot(
     provider: 'nova_poshta',
     methodCode,
     selection: {
-      cityRef: readString(selection.cityRef),
-      warehouseRef: readString(selection.warehouseRef),
-      addressLine1: readString(selection.addressLine1),
-      addressLine2: readString(selection.addressLine2),
+      cityRef: trimToNull(selection.cityRef),
+      warehouseRef: trimToNull(selection.warehouseRef),
+      addressLine1: trimToNull(selection.addressLine1),
+      addressLine2: trimToNull(selection.addressLine2),
     },
     recipient: {
-      fullName: readString(recipient.fullName),
-      phone: readString(recipient.phone),
-      email: readString(recipient.email),
-      comment: readString(recipient.comment),
+      fullName: trimToNull(recipient.fullName),
+      phone: trimToNull(recipient.phone),
+      email: trimToNull(recipient.email),
+      comment: trimToNull(recipient.comment),
     },
   };
 }

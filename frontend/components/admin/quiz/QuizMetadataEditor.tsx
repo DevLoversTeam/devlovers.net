@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-const LOCALES = ['en', 'uk', 'pl'] as const;
+import { locales } from '@/i18n/config';
+
 const LOCALE_LABELS: Record<string, string> = { en: 'EN', uk: 'UK', pl: 'PL' };
 
 interface QuizMetadataEditorProps {
@@ -34,7 +35,7 @@ export function QuizMetadataEditor({
     timeLimit: number | null
   ) {
     const t: Record<string, { title: string; description: string }> = {};
-    for (const locale of LOCALES) {
+    for (const locale of locales) {
       t[locale] = {
         title: trans[locale]?.title ?? '',
         description: trans[locale]?.description ?? '',
@@ -79,7 +80,7 @@ export function QuizMetadataEditor({
   }
 
   async function handleSave() {
-    for (const locale of LOCALES) {
+    for (const locale of locales) {
       if (!draft.translations[locale].title.trim()) {
         setError(`Title is required for ${LOCALE_LABELS[locale]}`);
         setActiveLocale(locale);
@@ -165,9 +166,8 @@ export function QuizMetadataEditor({
     <div className="border-border space-y-4 rounded-lg border p-4">
       <h3 className="text-foreground text-sm font-medium">Edit Metadata</h3>
 
-      {/* Locale tabs */}
       <div className="flex gap-1">
-        {LOCALES.map(locale => (
+        {locales.map(locale => (
           <button
             key={locale}
             type="button"
@@ -183,7 +183,6 @@ export function QuizMetadataEditor({
         ))}
       </div>
 
-      {/* Title + description for active locale */}
       <div className="space-y-3">
         <div>
           <label className="text-foreground mb-1 block text-xs font-medium">
@@ -211,7 +210,6 @@ export function QuizMetadataEditor({
         </div>
       </div>
 
-      {/* Time limit */}
       <div>
         <label className="text-foreground mb-1 block text-xs font-medium">
           Time Limit (minutes)
@@ -231,7 +229,6 @@ export function QuizMetadataEditor({
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {/* Actions */}
       <div className="flex gap-2">
         <button
           type="button"

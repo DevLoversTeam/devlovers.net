@@ -14,7 +14,6 @@ import {
   getOrCreateQuizAnswersCache,
 } from '@/lib/quiz/quiz-answers-redis';
 
-// Correct answers now stay on the server, replacing client-side encrypted blobs.
 describe('server-side quiz answer cache', () => {
   beforeEach(() => {
     vi.resetAllMocks();

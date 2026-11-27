@@ -1,4 +1,4 @@
-import { defaultLocale, type Locale, locales } from '@/i18n/config';
+import { defaultLocale, isSupportedLocale, type Locale } from '@/i18n/config';
 import { SIZES } from '@/lib/config/catalog';
 import type { ShopProduct } from '@/lib/validation/shop';
 
@@ -108,10 +108,6 @@ const APPAREL_SIZE_GUIDE_CONTENT: Record<Locale, ApparelSizeGuide> = {
     },
   },
 };
-
-function isSupportedLocale(locale: string): locale is Locale {
-  return locales.some(candidate => candidate === locale);
-}
 
 export function getApparelSizeGuide(locale: string): ApparelSizeGuide {
   const normalized = isSupportedLocale(locale) ? locale : defaultLocale;

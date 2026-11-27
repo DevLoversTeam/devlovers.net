@@ -5,8 +5,8 @@ import { DesktopNav } from '@/components/header/DesktopNav';
 import { MobileActions } from '@/components/header/MobileActions';
 import { useMobileMenu } from '@/components/header/MobileMenuContext';
 import { GitHubStarButton } from '@/components/shared/GitHubStarButton';
-import { Loader } from '@/components/shared/Loader';
 import { Logo } from '@/components/shared/Logo';
+import { Loader } from '@/components/ui/loader';
 
 import { MobileMenuProvider } from './MobileMenuContext';
 

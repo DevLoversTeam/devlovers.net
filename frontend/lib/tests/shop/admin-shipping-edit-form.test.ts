@@ -148,4 +148,55 @@ describe('admin shipping edit form', () => {
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it.each([
+    {
+      error: new TypeError('Failed to fetch'),
+      expectedKey: 'shippingEditor.errors.network',
+    },
+    { error: new Error('   '), expectedKey: 'shippingEditor.errors.network' },
+    { error: undefined, expectedKey: 'shippingEditor.errors.network' },
+    { error: new Error('ORIGIN_BLOCKED'), expectedKey: 'actionSecurityError' },
+  ])(
+    'maps a rejected PATCH to the $expectedKey message',
+    async ({ error, expectedKey }) => {
+      const fetchMock = vi.fn().mockRejectedValueOnce(error);
+      vi.stubGlobal('fetch', fetchMock);
+
+      const { ShippingEditForm } =
+        await import('@/app/[locale]/admin/shop/orders/[id]/ShippingEditForm');
+
+      render(
+        createElement(ShippingEditForm, {
+          orderId: '550e8400-e29b-41d4-a716-446655440102',
+          csrfToken: 'csrf-token',
+          initialShipping: {
+            methodCode: 'NP_COURIER',
+            cityRef: 'city-ref',
+            cityLabel: null,
+            warehouseRef: null,
+            warehouseLabel: null,
+            addressLine1: 'Khreshchatyk 1',
+            addressLine2: null,
+            recipientFullName: 'Test User',
+            recipientPhone: '+380501112233',
+            recipientEmail: null,
+            recipientComment: null,
+          },
+        })
+      );
+
+      const submitButton = screen.getByRole('button', {
+        name: 'shop.orders.detail.shippingEditor.save',
+      });
+      fireEvent.click(submitButton);
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        `shop.orders.detail.${expectedKey}`
+      );
+      expect(fetchMock).toHaveBeenCalledOnce();
+      expect(submitButton).toBeEnabled();
+      expect(refreshMock).not.toHaveBeenCalled();
+    }
+  );
 });

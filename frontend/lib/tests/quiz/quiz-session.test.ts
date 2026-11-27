@@ -146,7 +146,6 @@ describe('quiz-session', () => {
     });
 
     it('does nothing if session does not exist', () => {
-      // Should not throw
       expect(() => clearQuizSession('non-existent')).not.toThrow();
     });
   });

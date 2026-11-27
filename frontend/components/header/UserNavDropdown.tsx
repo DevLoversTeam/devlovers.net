@@ -1,10 +1,11 @@
 'use client';
 
-import { LayoutDashboard, LogOut, Settings, User } from 'lucide-react';
+import { LayoutDashboard, Settings, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { LogoutButton } from '@/components/auth/logoutButton';
+import { useOutsideMouseDown } from '@/hooks/useOutsideMouseDown';
 import { Link } from '@/i18n/routing';
 
 type UserNavDropdownProps = {
@@ -19,23 +20,8 @@ export function UserNavDropdown({
   const tAria = useTranslations('aria');
   const t = useTranslations('navigation');
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
   const closeMenu = () => setIsOpen(false);
+  useOutsideMouseDown(dropdownRef, isOpen, closeMenu);
 
   return (
     <div className="relative flex items-center" ref={dropdownRef}>

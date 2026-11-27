@@ -4,6 +4,7 @@ import { AlertTriangle, Bookmark, RefreshCw, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type CSSProperties, useState } from 'react';
 
+import { hexToRgba } from '@/components/q&a/hexToRgba';
 import type { QaQuestionFilter } from '@/components/q&a/types';
 import type {
   ProgressMutationResult,
@@ -27,15 +28,6 @@ type QuestionProgressToolbarProps = {
   onRetry: () => Promise<unknown>;
 };
 
-function hexToRgba(hex: string, alpha: number): string {
-  const normalized = hex.replace('#', '');
-  if (normalized.length !== 6) return `rgba(0, 0, 0, ${alpha})`;
-  const r = parseInt(normalized.slice(0, 2), 16);
-  const g = parseInt(normalized.slice(2, 4), 16);
-  const b = parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 export function QuestionProgressToolbar({
   categoryLabel,
   accentColor,
@@ -51,6 +43,7 @@ export function QuestionProgressToolbar({
   onRetry,
 }: QuestionProgressToolbarProps) {
   const t = useTranslations('qa');
+  const tCommon = useTranslations('common');
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [resetFailed, setResetFailed] = useState(false);
@@ -220,7 +213,7 @@ export function QuestionProgressToolbar({
         })}
         errorMessage={resetFailed ? t('syncError.reset') : null}
         confirmText={t('reset.confirm')}
-        cancelText={t('reset.cancel')}
+        cancelText={tCommon('cancel')}
         variant="danger"
         isConfirming={isResetting}
         onConfirm={() => void confirmReset()}

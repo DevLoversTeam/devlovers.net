@@ -1,23 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import {
-  AdminApiDisabledError,
-  AdminForbiddenError,
-  AdminUnauthorizedError,
-  requireAdminApi,
-} from '@/lib/auth/admin';
+import { requireAdminApi } from '@/lib/auth/admin';
+import { getAdminBlogAccessErrorResponse } from '@/lib/blog/admin-route-responses';
 import { uploadImage } from '@/lib/cloudinary';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
 export const runtime = 'nodejs';
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const blocked = guardBrowserSameOrigin(request);
@@ -69,12 +60,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return noStoreJson({ url: result.url, publicId: result.publicId });
   } catch (error) {
-    if (error instanceof AdminApiDisabledError)
-      return noStoreJson({ code: error.code }, { status: 403 });
-    if (error instanceof AdminUnauthorizedError)
-      return noStoreJson({ code: error.code }, { status: 401 });
-    if (error instanceof AdminForbiddenError)
-      return noStoreJson({ code: error.code }, { status: 403 });
+    const accessError = getAdminBlogAccessErrorResponse(error);
+    if (accessError) return accessError;
 
     logError('admin_blog_image_upload_failed', error, {});
     return noStoreJson(

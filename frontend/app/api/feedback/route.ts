@@ -7,7 +7,7 @@ import {
   rateLimitResponse,
 } from '@/lib/security/rate-limit';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_FILES = 5;
 const EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[a-zA-Z0-9.-]{1,253}$/;
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const rl = await enforceRateLimit({
     key: `feedback:${subject}`,
     limit: 5,
-    windowSeconds: 3600, // 5 submissions per IP per hour
+    windowSeconds: 3600,
   });
   if (!rl.ok)
     return rateLimitResponse({ retryAfterSeconds: rl.retryAfterSeconds });
@@ -59,7 +59,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false }, { status: 400 });
   }
 
-  // Strip CRLF and RFC 5322 specials from email before use in headers
   const safeEmail = email.replace(/[\r\n<>"]/g, '');
 
   const rawFiles = formData.getAll('attachment');
@@ -97,7 +96,6 @@ export async function POST(req: NextRequest) {
     auth: { user: gmailUser, pass: gmailPass },
   });
 
-  // Sanitize name for use in email header (strip CR/LF and RFC 5322 specials)
   const safeNameForHeader = name.replace(/[\r\n"<>\\]/g, '');
 
   try {

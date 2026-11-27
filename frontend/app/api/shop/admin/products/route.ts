@@ -1,6 +1,4 @@
-import crypto from 'node:crypto';
-
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import {
   parseAdminProductForm,
@@ -12,6 +10,8 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { getRequestId } from '@/lib/http/getRequestId';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -20,12 +20,6 @@ import { createProduct, deleteProduct } from '@/lib/services/products';
 import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 
 export const runtime = 'nodejs';
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
-
 type SaleRuleViolation = {
   currency: string;
   field: 'originalPriceMinor';
@@ -94,8 +88,7 @@ function getSaleViolationFromFormData(
 export async function POST(request: NextRequest) {
   const startedAtMs = Date.now();
 
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const blocked = guardBrowserSameOrigin(request);
   if (blocked) {

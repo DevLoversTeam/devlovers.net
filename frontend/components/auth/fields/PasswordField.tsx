@@ -9,6 +9,8 @@ import {
   PASSWORD_MIN_LEN,
 } from '@/lib/auth/signup-constraints';
 
+import { clearCustomValidity, setRequiredValidity } from './fieldValidity';
+
 type PasswordFieldProps = {
   name?: string;
   id?: string;
@@ -39,10 +41,7 @@ export function PasswordField({
   const handleInvalid = (e: React.InvalidEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
 
-    if (input.validity.valueMissing) {
-      input.setCustomValidity(t('validation.required'));
-      return;
-    }
+    if (setRequiredValidity(input, () => t('validation.required'))) return;
 
     if (utf8ByteLength(input.value) > PASSWORD_MAX_BYTES) {
       input.setCustomValidity(
@@ -75,7 +74,7 @@ export function PasswordField({
         t('validation.passwordTooLongBytes', { PASSWORD_MAX_BYTES })
       );
     } else {
-      input.setCustomValidity('');
+      clearCustomValidity(e);
     }
   };
 

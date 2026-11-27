@@ -151,7 +151,6 @@ export function AdminSidebar() {
           <PanelLeftClose className="h-3.5 w-3.5" />
         )}
       </button>
-      {/* Header */}
       <div className="border-border flex h-14 items-center border-b px-3">
         <Link
           href="/admin"
@@ -169,7 +168,6 @@ export function AdminSidebar() {
         </Link>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3">
         {NAV_SECTIONS.map(section => (
           <div key={section.label} className="mb-4">
@@ -226,7 +224,6 @@ export function AdminSidebar() {
         ))}
       </nav>
 
-      {/* Footer: collapse toggle + back to site */}
       <div className="border-border space-y-1 border-t p-2">
         <Link
           href="/"

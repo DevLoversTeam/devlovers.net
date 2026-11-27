@@ -1,13 +1,12 @@
 import { getTranslations } from 'next-intl/server';
 
+import { LegalEmailLink } from '@/components/legal/LegalEmailLink';
+import { LegalList } from '@/components/legal/LegalList';
 import { getPublicSupportEmail } from '@/lib/legal/public-contact';
 
 import LegalBlock from './LegalBlock';
 
 export const PAYMENT_POLICY_LAST_UPDATED = '2026-03-27';
-
-const linkClass =
-  'underline underline-offset-4 hover:text-blue-600 dark:hover:text-blue-400 transition-colors';
 
 export default async function PaymentPolicyContent() {
   const t = await getTranslations('legal.payment');
@@ -17,10 +16,10 @@ export default async function PaymentPolicyContent() {
     <div className="space-y-6">
       <LegalBlock id="methods" title={t('methods.title')}>
         <p className="mb-4">{t('methods.body')}</p>
-        <ul className="list-disc space-y-2 pl-5">
+        <LegalList>
           <li>{t('methods.items.stripe')}</li>
           <li>{t('methods.items.monobank')}</li>
-        </ul>
+        </LegalList>
       </LegalBlock>
 
       <LegalBlock id="confirmation" title={t('confirmation.title')}>
@@ -33,11 +32,7 @@ export default async function PaymentPolicyContent() {
 
       <LegalBlock id="support" title={t('support.title')}>
         <p>
-          {t('support.body')}{' '}
-          <a className={linkClass} href={`mailto:${email}`}>
-            {email}
-          </a>
-          .
+          {t('support.body')} <LegalEmailLink email={email} />.
         </p>
       </LegalBlock>
     </div>

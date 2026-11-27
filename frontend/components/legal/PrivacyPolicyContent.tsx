@@ -1,13 +1,12 @@
 import { getTranslations } from 'next-intl/server';
 
+import { LegalEmailLink } from '@/components/legal/LegalEmailLink';
+import { LegalList } from '@/components/legal/LegalList';
 import { getPublicSupportEmail } from '@/lib/legal/public-contact';
 
 import LegalBlock from './LegalBlock';
 
 export const PRIVACY_LAST_UPDATED = '2025-12-14';
-
-const linkClass =
-  'underline underline-offset-4 hover:text-blue-600 dark:hover:text-blue-400 transition-colors';
 
 export default async function PrivacyPolicyContent() {
   const t = await getTranslations('legal.privacy');
@@ -17,16 +16,12 @@ export default async function PrivacyPolicyContent() {
     <div className="space-y-6">
       <LegalBlock id="who-we-are" title={t('whoWeAre.title')}>
         <p>
-          {t('whoWeAre.content')}{' '}
-          <a className={linkClass} href={`mailto:${email}`}>
-            {email}
-          </a>
-          .
+          {t('whoWeAre.content')} <LegalEmailLink email={email} />.
         </p>
       </LegalBlock>
 
       <LegalBlock id="data-we-collect" title={t('dataWeCollect.title')}>
-        <ul className="list-disc space-y-2 pl-5">
+        <LegalList>
           <li>
             <strong>{t('dataWeCollect.accountData')}</strong>{' '}
             {t('dataWeCollect.accountDataDesc')}
@@ -39,15 +34,15 @@ export default async function PrivacyPolicyContent() {
             <strong>{t('dataWeCollect.technicalData')}</strong>{' '}
             {t('dataWeCollect.technicalDataDesc')}
           </li>
-        </ul>
+        </LegalList>
       </LegalBlock>
 
       <LegalBlock id="why-we-collect" title={t('whyWeCollect.title')}>
-        <ul className="list-disc space-y-2 pl-5">
+        <LegalList>
           <li>{t('whyWeCollect.reason1')}</li>
           <li>{t('whyWeCollect.reason2')}</li>
           <li>{t('whyWeCollect.reason3')}</li>
-        </ul>
+        </LegalList>
       </LegalBlock>
 
       <LegalBlock id="cookies" title={t('cookies.title')}>
@@ -64,17 +59,13 @@ export default async function PrivacyPolicyContent() {
 
       <LegalBlock id="rights" title={t('rights.title')}>
         <p>
-          {t('rights.content')}{' '}
-          <a className={linkClass} href={`mailto:${email}`}>
-            {email}
-          </a>
-          .
+          {t('rights.content')} <LegalEmailLink email={email} />.
         </p>
       </LegalBlock>
 
       <LegalBlock id="gdpr" title={t('gdpr.title')}>
         <p className="mb-4">{t('gdpr.intro')}</p>
-        <ul className="list-disc space-y-2 pl-5">
+        <LegalList>
           <li>
             <strong>{t('gdpr.rightAccess')}</strong> {t('gdpr.rightAccessDesc')}
           </li>
@@ -97,13 +88,10 @@ export default async function PrivacyPolicyContent() {
           <li>
             <strong>{t('gdpr.rightObject')}</strong> {t('gdpr.rightObjectDesc')}
           </li>
-        </ul>
+        </LegalList>
         <p className="mt-4">
-          {t('gdpr.exerciseRights')}{' '}
-          <a className={linkClass} href={`mailto:${email}`}>
-            {email}
-          </a>
-          . {t('gdpr.response')}
+          {t('gdpr.exerciseRights')} <LegalEmailLink email={email} />.{' '}
+          {t('gdpr.response')}
         </p>
       </LegalBlock>
 

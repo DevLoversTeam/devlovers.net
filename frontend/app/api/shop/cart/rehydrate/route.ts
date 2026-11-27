@@ -1,8 +1,7 @@
-import crypto from 'node:crypto';
-
 import { NextRequest, NextResponse } from 'next/server';
 
 import { MoneyValueError } from '@/db/queries/shop/orders';
+import { getRequestId } from '@/lib/http/getRequestId';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { InvalidPayloadError, PriceConfigError } from '@/lib/services/errors';
 import { rehydrateCartItems } from '@/lib/services/products';
@@ -51,8 +50,7 @@ function jsonError(
 export async function POST(request: NextRequest) {
   const startedAtMs = Date.now();
 
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
 
   const baseMeta = {
     requestId,

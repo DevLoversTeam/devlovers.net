@@ -1,7 +1,7 @@
-import crypto from 'node:crypto';
+import { NextRequest } from 'next/server';
 
-import { NextRequest, NextResponse } from 'next/server';
-
+import { getRequestId } from '@/lib/http/getRequestId';
+import { noStoreJson } from '@/lib/http/noStoreJson';
 import { logError, logWarn } from '@/lib/logging';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import {
@@ -22,12 +22,6 @@ import {
 
 export const runtime = 'nodejs';
 
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
-
 function mapInitErrorStatus(code: string): number {
   if (
     code === 'QUOTE_NOT_ACCEPTED' ||
@@ -47,8 +41,7 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId = getRequestId(request.headers);
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,

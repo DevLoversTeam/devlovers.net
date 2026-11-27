@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema';
+import { isShopFlagEnabled } from '@/lib/env/shop-flag';
 import { toDbMoney } from '@/lib/shop/money';
 import type { PaymentMethod } from '@/lib/shop/payments';
 
@@ -25,10 +26,7 @@ export function noStoreJson(body: unknown, status = 200) {
 }
 
 export function isMonobankGooglePayEnabled(): boolean {
-  const raw = (process.env.SHOP_MONOBANK_GPAY_ENABLED ?? '')
-    .trim()
-    .toLowerCase();
-  return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';
+  return isShopFlagEnabled(process.env.SHOP_MONOBANK_GPAY_ENABLED);
 }
 
 export function getMonobankGooglePayMaxBodyBytes(): number {

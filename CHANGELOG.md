@@ -1204,3 +1204,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Required HTTPS with certificate verification for janitor credentials; added tests rejecting plaintext HTTP and untrusted certificates
 - Disabled checkout credential persistence in the security workflow
+
+## [1.0.18] - 2026-11-27
+
+### Changed
+
+- Consolidated duplicated frontend logic across authentication, admin, blog, Q&A, quizzes, and Shop flows (#463).
+- Extracted shared admin layouts, form helpers, and Shop checkout and order components, and reorganized shared UI primitives (#464).
+- Centralized common translation, API response, and order-status helpers.
+- Bumped the frontend package and lockfile version to `1.0.18`.
+
+### Tests
+
+- Expanded coverage for shared UI, translations, quiz question handling, and Shop checkout and order behavior.
+
+No database migrations are included.

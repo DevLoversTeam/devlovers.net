@@ -3,13 +3,14 @@
 import type { JSONContent } from '@tiptap/core';
 import { useRef,useState } from 'react';
 
+import { useAutoSlug } from '@/components/admin/useAutoSlug';
 import type {
   AdminBlogAuthorOption,
   AdminBlogCategoryOption,
   AdminBlogPostFull,
 } from '@/db/queries/blog/admin-blog';
+import { locales } from '@/i18n/config';
 import { useRouter } from '@/i18n/routing';
-import { slugify } from '@/lib/shop/slug';
 
 import { type AdminLocale, LocaleTabs } from '../quiz/LocaleTabs';
 import { BlogImageUpload } from './BlogImageUpload';
@@ -17,8 +18,6 @@ import { BlogPublishControls, type PublishMode } from './BlogPublishControls';
 import { BlogTiptapEditor } from './BlogTiptapEditor';
 import { InlineBlogAuthorForm } from './InlineBlogAuthorForm';
 import { InlineBlogCategoryForm } from './InlineBlogCategoryForm';
-
-const LOCALES: AdminLocale[] = ['en', 'uk', 'pl'];
 
 interface BlogTranslation {
   title: string;
@@ -72,8 +71,9 @@ export function BlogPostForm({
     };
   });
 
-  const [slug, setSlug] = useState(initialData?.slug ?? '');
-  const [slugTouched, setSlugTouched] = useState(!!initialData);
+  const { slug, updateFromTitle, setManualSlug } = useAutoSlug(
+    initialData ? (initialData.slug ?? '') : undefined
+  );
 
   const [authors, setAuthors] = useState(initialAuthors);
   const [authorId, setAuthorId] = useState(initialData?.authorId ?? '');
@@ -111,12 +111,11 @@ export function BlogPostForm({
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Dirty tracking (edit mode only)
   const initialSnapshot = useRef(() => {
     if (!initialData) return null;
     return JSON.stringify({
       translations: Object.fromEntries(
-        LOCALES.map(l => [
+        locales.map(l => [
           l,
           {
             title: initialData.translations[l]?.title ?? '',
@@ -147,7 +146,7 @@ export function BlogPostForm({
     if (!snap) return true;
     const current = JSON.stringify({
       translations: Object.fromEntries(
-        LOCALES.map(l => [
+        locales.map(l => [
           l,
           {
             title: translations[l].title,
@@ -173,9 +172,7 @@ export function BlogPostForm({
       [activeLocale]: { ...prev[activeLocale], title: value },
     }));
 
-    if (activeLocale === 'en' && !slugTouched) {
-      setSlug(slugify(value));
-    }
+    updateFromTitle(activeLocale, value);
   }
 
   function handleBodyChange(locale: AdminLocale, json: JSONContent) {
@@ -210,11 +207,11 @@ export function BlogPostForm({
   }
 
   function getMissingTitles() {
-  return LOCALES.filter(l => !translations[l].title.trim());
+  return locales.filter(l => !translations[l].title.trim());
 }
 
   function getMissingBodies() {
-  return LOCALES.filter(l => {
+  return locales.filter(l => {
     const body = translations[l].body;
     if (!body) return true;
     const content = body.content;
@@ -330,7 +327,6 @@ export function BlogPostForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Title + Locale tabs */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="text-foreground text-sm font-medium">Title</label>
@@ -345,7 +341,6 @@ export function BlogPostForm({
         />
       </div>
 
-      {/* Slug */}
       <div>
         <label className="text-foreground mb-1 block text-sm font-medium">
           Slug
@@ -353,10 +348,7 @@ export function BlogPostForm({
         <input
           type="text"
           value={slug}
-          onChange={e => {
-            setSlug(e.target.value);
-            setSlugTouched(true);
-          }}
+          onChange={e => setManualSlug(e.target.value)}
           placeholder="post-slug"
           className="border-border bg-background text-foreground w-full max-w-sm rounded-md border px-3 py-2 text-sm"
         />
@@ -365,7 +357,6 @@ export function BlogPostForm({
         </p>
       </div>
 
-      {/* Author */}
       <div className="space-y-2">
         <label className="text-foreground text-sm font-medium">Author</label>
         <div className="flex items-center gap-3">
@@ -399,7 +390,6 @@ export function BlogPostForm({
         )}
       </div>
 
-      {/* Categories */}
       <div className="space-y-2">
         <label className="text-foreground text-sm font-medium">
           Categories
@@ -434,7 +424,6 @@ export function BlogPostForm({
         )}
       </div>
 
-      {/* Main image */}
       <div className="space-y-2">
         <label className="text-foreground text-sm font-medium">
           Main Image
@@ -446,12 +435,11 @@ export function BlogPostForm({
         />
       </div>
 
-      {/* Body editor (per locale, only active visible) */}
       <div className="space-y-2">
         <label className="text-foreground text-sm font-medium">
           Body ({activeLocale.toUpperCase()})
         </label>
-        {LOCALES.map(locale => (
+        {locales.map(locale => (
           <div
             key={locale}
             className={locale === activeLocale ? '' : 'hidden'}
@@ -465,7 +453,6 @@ export function BlogPostForm({
         ))}
       </div>
 
-      {/* Tags */}
       <div>
         <label className="text-foreground mb-1 block text-sm font-medium">
           Tags
@@ -479,7 +466,6 @@ export function BlogPostForm({
         />
       </div>
 
-      {/* Resource link */}
       <div>
         <label className="text-foreground mb-1 block text-sm font-medium">
           Resource Link
@@ -511,7 +497,6 @@ export function BlogPostForm({
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {/* Submit */}
       <button
         type="submit"
         disabled={submitting || !isFormValid() || (isEditMode && !isDirty())}

@@ -1,17 +1,13 @@
+import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
 import { Link } from '@/i18n/routing';
+import { SHOP_CTA_BASE, SHOP_FOCUS } from '@/lib/shop/ui-classes';
+
 interface HeroProps {
   headline: string;
   subheadline: string;
   ctaText: string;
   ctaLink: string;
 }
-import {
-  SHOP_CTA_BASE,
-  SHOP_CTA_INSET,
-  SHOP_CTA_WAVE,
-  SHOP_FOCUS,
-  shopCtaGradient,
-} from '@/lib/shop/ui-classes';
 
 export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
   return (
@@ -46,27 +42,7 @@ export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
               href={ctaLink}
               className={` ${SHOP_CTA_BASE} ${SHOP_FOCUS} px-8 py-3 text-white shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)] sm:px-10 md:px-12 md:py-3.5 lg:py-4`}
             >
-              <span
-                className="absolute inset-0"
-                style={shopCtaGradient(
-                  '--shop-hero-btn-bg',
-                  '--shop-hero-btn-bg-hover'
-                )}
-                aria-hidden="true"
-              />
-
-              <span
-                className={SHOP_CTA_WAVE}
-                style={shopCtaGradient(
-                  '--shop-hero-btn-bg-hover',
-                  '--shop-hero-btn-bg'
-                )}
-                aria-hidden="true"
-              />
-
-              <span className={SHOP_CTA_INSET} aria-hidden="true" />
-
-              <span className="relative z-10 flex items-center gap-2">
+              <ShopCtaContent className="relative z-10 flex items-center gap-2">
                 <span>{ctaText}</span>
                 <span
                   aria-hidden="true"
@@ -74,7 +50,7 @@ export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
                 >
                   →
                 </span>
-              </span>
+              </ShopCtaContent>
             </Link>
           </div>
         </div>

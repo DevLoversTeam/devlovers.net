@@ -4,6 +4,7 @@ import { Check, Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 
+import { ShopCtaContent } from '@/components/shop/ShopCtaContent';
 import { SizeGuideAccordion } from '@/components/shop/SizeGuideAccordion';
 import type { ApparelSizeGuide } from '@/lib/shop/size-guide';
 import {
@@ -11,14 +12,11 @@ import {
   SHOP_CHIP_INTERACTIVE,
   SHOP_CHIP_SELECTED,
   SHOP_CTA_BASE,
-  SHOP_CTA_INSET,
-  SHOP_CTA_WAVE,
   SHOP_DISABLED,
   SHOP_FOCUS,
   SHOP_SIZE_CHIP_BASE,
   SHOP_STEPPER_BUTTON_BASE,
   SHOP_SWATCH_BASE,
-  shopCtaGradient,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
 import type { ShopProduct } from '@/lib/validation/shop';
@@ -90,13 +88,6 @@ export function AddToCartButton({ product, sizeGuide }: AddToCartButtonProps) {
   const colorGroupId = useId();
   const sizeGroupId = useId();
   const quantityGroupId = useId();
-
-  const ctaBaseVar = added
-    ? '--shop-hero-btn-success-bg'
-    : '--shop-hero-btn-bg';
-  const ctaHoverVar = added
-    ? '--shop-hero-btn-success-bg-hover'
-    : '--shop-hero-btn-bg-hover';
 
   const decDisabled = quantity <= 1;
   const incDisabled = maxQty !== null ? quantity >= maxQty : false;
@@ -267,23 +258,10 @@ export function AddToCartButton({ product, sizeGuide }: AddToCartButtonProps) {
               : 'text-white shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]')
         )}
       >
-        {product.inStock ? (
-          <>
-            <span
-              className="absolute inset-0"
-              style={shopCtaGradient(ctaBaseVar, ctaHoverVar)}
-              aria-hidden="true"
-            />
-            <span
-              className={SHOP_CTA_WAVE}
-              style={shopCtaGradient(ctaHoverVar, ctaBaseVar)}
-              aria-hidden="true"
-            />
-            <span className={SHOP_CTA_INSET} aria-hidden="true" />
-          </>
-        ) : null}
-
-        <span className="relative z-10 flex items-center gap-2">
+        <ShopCtaContent
+          className="relative z-10 flex items-center gap-2"
+          variant={product.inStock ? (added ? 'success' : 'hero') : 'plain'}
+        >
           {!product.inStock ? (
             t('availability.currentlyUnavailable')
           ) : added ? (
@@ -294,7 +272,7 @@ export function AddToCartButton({ product, sizeGuide }: AddToCartButtonProps) {
           ) : (
             t('addToCart')
           )}
-        </span>
+        </ShopCtaContent>
       </button>
     </section>
   );

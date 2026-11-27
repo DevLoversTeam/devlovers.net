@@ -12,11 +12,14 @@ import {
 } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readOptionalDbRows } from '@/db/readDbRows';
 import { orders } from '@/db/schema/shop';
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 import { logDebug, logError } from '@/lib/logging';
 import { retrieveRefund } from '@/lib/psp/stripe';
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { insertPaymentEventFromUpdatedOrderSql } from '@/lib/services/shop/events/insert-payment-event-from-updated-order-sql';
+import { trimToNull } from '@/lib/utils/trim-to-null';
 
 import {
   normalizeRefundsFromMeta,
@@ -72,23 +75,10 @@ function compactConditions(conds: Array<SQLWrapper | undefined>): SQLWrapper[] {
   return conds.filter((c): c is SQLWrapper => Boolean(c));
 }
 
-function readRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const anyRes = res as { rows?: unknown };
-  if (Array.isArray(anyRes?.rows)) return anyRes.rows as T[];
-  return [];
-}
-
 function readMetaObject(meta: unknown): Record<string, unknown> {
   return meta && typeof meta === 'object' && !Array.isArray(meta)
     ? (meta as Record<string, unknown>)
     : {};
-}
-
-function asTrimmedString(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
 }
 
 function toBoolean(value: unknown): boolean {
@@ -100,17 +90,17 @@ function parseContainmentSnapshot(meta: unknown): RefundContainmentSnapshot {
   const raw = readMetaObject(root.refundContainment);
 
   return {
-    requestedAt: asTrimmedString(raw.requestedAt),
-    refundId: asTrimmedString(raw.refundId),
-    orderShippingStatusBefore: asTrimmedString(raw.orderShippingStatusBefore),
-    latestShipmentIdBefore: asTrimmedString(raw.latestShipmentIdBefore),
-    latestShipmentStatusBefore: asTrimmedString(raw.latestShipmentStatusBefore),
+    requestedAt: trimToNull(raw.requestedAt),
+    refundId: trimToNull(raw.refundId),
+    orderShippingStatusBefore: trimToNull(raw.orderShippingStatusBefore),
+    latestShipmentIdBefore: trimToNull(raw.latestShipmentIdBefore),
+    latestShipmentStatusBefore: trimToNull(raw.latestShipmentStatusBefore),
     hadShipmentRowBefore: toBoolean(raw.hadShipmentRowBefore),
     shippingRequiredBefore: toBoolean(raw.shippingRequiredBefore),
-    shippingProviderBefore: asTrimmedString(raw.shippingProviderBefore),
-    shippingMethodCodeBefore: asTrimmedString(raw.shippingMethodCodeBefore),
-    trackingNumberBefore: asTrimmedString(raw.trackingNumberBefore),
-    shippingProviderRefBefore: asTrimmedString(raw.shippingProviderRefBefore),
+    shippingProviderBefore: trimToNull(raw.shippingProviderBefore),
+    shippingMethodCodeBefore: trimToNull(raw.shippingMethodCodeBefore),
+    trackingNumberBefore: trimToNull(raw.trackingNumberBefore),
+    shippingProviderRefBefore: trimToNull(raw.shippingProviderRefBefore),
   };
 }
 
@@ -252,52 +242,29 @@ export async function finalizeStripeRefundSuccess(args: {
         currency
     ),
     inserted_payment_event as (
-      insert into payment_events (
-        order_id,
-        provider,
-        event_name,
-        event_source,
-        event_ref,
-        attempt_id,
-        provider_payment_intent_id,
-        provider_charge_id,
-        amount_minor,
-        currency,
-        payload,
-        dedupe_key,
-        occurred_at,
-        created_at
-      )
-      select
-        uo.id,
-        'stripe',
-        'refund_applied',
-        ${args.source},
-        ${args.eventRef},
-        null,
-        ${args.paymentIntentId},
-        ${args.chargeId},
-        uo.total_amount_minor::bigint,
-        uo.currency,
-        ${JSON.stringify({
+      ${insertPaymentEventFromUpdatedOrderSql({
+        provider: sql`'stripe'`,
+        eventName: sql`'refund_applied'`,
+        eventSource: sql`${args.source}`,
+        eventRef: args.eventRef,
+        providerPaymentIntentId: args.paymentIntentId,
+        providerChargeId: args.chargeId,
+        payload: {
           eventRef: args.eventRef,
           refundId: args.refundId,
           paymentIntentId: args.paymentIntentId,
           chargeId: args.chargeId,
-        })}::jsonb,
-        ${canonicalEventDedupeKey},
-        ${args.now},
-        ${args.now}
-      from updated_order uo
-      where ${canonicalDualWriteEnabled} = true
-      on conflict (dedupe_key) do nothing
-      returning id
+        },
+        dedupeKey: canonicalEventDedupeKey,
+        now: args.now,
+        dualWriteEnabled: canonicalDualWriteEnabled,
+      })}
     )
     select (select count(*)::int from updated_order) as updated_count
   `);
 
   const updatedCount =
-    Number(readRows<{ updated_count?: number }>(res)[0]?.updated_count ?? 0) >
+    Number(readOptionalDbRows<{ updated_count?: number }>(res)[0]?.updated_count ?? 0) >
     0;
 
   if (updatedCount || args.order.paymentStatus === 'refunded') {
@@ -428,7 +395,7 @@ export async function restoreStripeRefundFailure(args: {
     returning id
   `);
 
-  const restored = readRows<{ id: string }>(res).length > 0;
+  const restored = readOptionalDbRows<{ id: string }>(res).length > 0;
   if (restored) {
     await restoreShippingAfterRefundFailure({
       orderId: args.order.id,

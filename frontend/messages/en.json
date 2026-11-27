@@ -7,7 +7,12 @@
     "delete": "Delete",
     "edit": "Edit",
     "close": "Close",
-    "submit": "Submit"
+    "submit": "Submit",
+    "pagination": {
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "page": "Page {page}"
+    }
   },
   "aria": {
     "primaryNav": "Primary navigation",
@@ -142,8 +147,7 @@
     "reset": {
       "title": "Reset {category} progress?",
       "description": "Viewed status for {viewed} questions will be cleared. Your {bookmarks} bookmarks will remain saved. This action cannot be undone.",
-      "confirm": "Reset progress",
-      "cancel": "Cancel"
+      "confirm": "Reset progress"
     },
     "guestProgress": {
       "title": "Save your learning progress",
@@ -176,14 +180,14 @@
       "label": "Pagination",
       "previous": "Previous",
       "next": "Next",
-      "previousPage": "Previous page",
-      "nextPage": "Next page",
-      "page": "Page {page}",
       "itemsPerPage": "Per page",
       "itemsPerPageAria": "Questions per page"
     }
   },
   "quiz": {
+    "status": {
+      "mastered": "Mastered"
+    },
     "metaTitle": "Quizzes | DevLovers",
     "metaDescription": "Test your knowledge with interactive quizzes",
     "page": {
@@ -198,7 +202,6 @@
     "list": {
       "metaTitle": "Quizzes | DevLovers",
       "metaDescription": "Test your knowledge with interactive quizzes on React, Angular, Vue, Node.js and more.",
-      "title": "Quizzes",
       "practice": "Practice",
       "subtitle": "Choose a quiz to test your knowledge",
       "noQuizzes": "No quizzes available yet. Please check back soon."
@@ -287,7 +290,6 @@
     },
     "card": {
       "uncategorized": "Uncategorized",
-      "mastered": "Mastered",
       "needsReview": "Review",
       "study": "Study",
       "questions": "questions",
@@ -349,10 +351,7 @@
     "pagination": {
       "label": "Pagination",
       "previous": "Previous",
-      "next": "Next",
-      "previousPage": "Previous page",
-      "nextPage": "Next page",
-      "page": "Page {page}"
+      "next": "Next"
     }
   },
   "footer": {
@@ -366,6 +365,9 @@
     "termsOfService": "Terms of Service"
   },
   "shop": {
+    "total": "Total",
+    "items": "Items",
+    "orderSummary": "Order summary",
     "page": {
       "newArrivals": "New Arrivals",
       "shopByCategory": "Shop by Category",
@@ -382,6 +384,8 @@
       }
     },
     "product": {
+      "category": "Category",
+      "type": "Type",
       "soldOut": "Sold out",
       "maxStock": "Max {stock} in stock",
       "color": "Color",
@@ -407,8 +411,6 @@
       "shopCategory": "Shop category: {name}"
     },
     "filters": {
-      "category": "Category",
-      "type": "Type",
       "color": "Color",
       "size": "Size",
       "label": "Product filters"
@@ -420,7 +422,6 @@
     "toolbar": {
       "filters": "Filters",
       "openFilters": "Open filters",
-      "close": "Close",
       "label": "Product listing controls"
     },
     "cart": {
@@ -431,11 +432,9 @@
       "startShopping": "Start shopping",
       "itemsLabel": "Cart items",
       "summary": {
-        "heading": "Order summary",
         "subtotal": "Subtotal",
         "shipping": "Shipping",
         "shippingCalc": "Calculated at checkout",
-        "total": "Total",
         "shippingInformationalOnly": "Shown before confirmation",
         "shippingPayOnDeliveryNote": "When applicable, the shipping cost is included in the total shown before order confirmation. Additional carrier charges for extra services may still apply separately under the carrier's rules."
       },
@@ -559,7 +558,6 @@
         "title": "Shop Admin",
         "description": "Administrative tools for the merch shop",
         "productsSection": {
-          "title": "Products",
           "description": "Create, edit, activate, feature"
         },
         "ordersSection": {
@@ -570,7 +568,6 @@
       "topbar": {
         "label": "Shop admin",
         "admin": "Admin",
-        "products": "Products",
         "orders": "Orders",
         "backToShop": "Back to shop"
       },
@@ -587,15 +584,12 @@
           "title": "Title",
           "slug": "Slug",
           "price": "Price",
-          "category": "Category",
-          "type": "Type",
           "stock": "Qty",
           "badge": "Badge",
           "active": "Active",
           "featured": "Featured",
           "status": "Status",
           "date": "Date",
-          "created": "Created",
           "actions": "Actions"
         },
         "actions": {
@@ -633,9 +627,7 @@
             "originalPrice": "Original price ({currency})",
             "stock": "Stock",
             "sku": "SKU",
-            "category": "Category",
             "selectCategory": "Select category",
-            "type": "Type",
             "selectType": "Select type",
             "colors": "Colors",
             "sizes": "Sizes",
@@ -713,10 +705,7 @@
       "pagination": {
         "label": "Pagination",
         "previous": "Previous",
-        "next": "Next",
-        "page": "Page {page}",
-        "previousPage": "Previous page",
-        "nextPage": "Next page"
+        "next": "Next"
       },
       "orders": {
         "title": "Admin · Orders",
@@ -727,7 +716,6 @@
         "viewOrder": "View order {id}",
         "filters": {
           "label": "Order filters",
-          "status": "Payment status",
           "allStatuses": "All statuses",
           "dateFrom": "From date",
           "dateTo": "To date",
@@ -735,10 +723,7 @@
           "reset": "Reset"
         },
         "table": {
-          "created": "Created",
-          "status": "Payment status",
           "total": "Total",
-          "items": "Items",
           "provider": "Provider",
           "orderId": "Order ID",
           "actions": "Actions"
@@ -764,13 +749,11 @@
       },
       "navigation": {
         "shopNav": "Shop navigation",
-        "home": "Home",
-        "shop": "Shop"
+        "home": "Home"
       }
     },
     "catalog": {
       "results": "Catalog results",
-      "products": "Products",
       "pagination": "Catalog pagination",
       "loadMoreFailed": "Failed to load more",
       "loadMoreFailedHttp": "Failed to load more (HTTP {status})",
@@ -804,6 +787,7 @@
       }
     },
     "products": {
+      "label": "Products",
       "title": "All Products",
       "noProductsFound": "No products found",
       "adjustFilters": "Try adjusting your filters to find what you're looking for",
@@ -813,6 +797,7 @@
       "shopNow": "Shop now"
     },
     "checkout": {
+      "paymentStatusLabel": "Status",
       "errors": {
         "missingOrderId": "Missing order id",
         "missingOrderIdDescription": "We couldn't identify your order. Please return to your cart or browse products",
@@ -832,16 +817,11 @@
       },
       "success": {
         "title": "Thank you for your order",
-        "orderLabel": "Order",
         "received": "We've received your order",
         "paymentConfirmed": "Payment has been confirmed",
         "paymentProcessing": "Payment is still being processed. This page will update automatically",
         "paymentsDisabled": "Payments are disabled in this environment. You were not charged for this order",
-        "orderSummary": "Order summary",
         "totalAmount": "Total amount",
-        "items": "Items",
-        "status": "Status",
-        "continueShopping": "Continue shopping",
         "viewCart": "View cart",
         "refreshStatus": "Refresh status",
         "refreshingStatus": "Refreshing...",
@@ -878,16 +858,8 @@
         "paymentUnclearDescription": "We could not confirm a payment failure for this order",
         "notCompleted": "The payment for this order was not completed. You can try again or contact support",
         "couldNotConfirm": "We could not confirm a payment failure for this order",
-        "orderDetails": "Order details",
-        "order": "Order",
-        "orderLabel": "Order",
-        "total": "Total",
-        "totalLabel": "Total",
-        "status": "Status",
-        "statusLabel": "Status",
         "backToCart": "Back to cart",
-        "retryPayment": "Retry payment",
-        "continueShopping": "Continue shopping"
+        "retryPayment": "Retry payment"
       },
       "payment": {
         "title": "Secure checkout",
@@ -895,12 +867,8 @@
         "paymentDetails": "Payment details",
         "completePayment": "Complete payment to place your order",
         "amountDue": "Amount due",
-        "orderSummary": "Order summary",
-        "items": "Items",
         "totalAmount": "Total amount",
-        "status": "Status",
         "viewConfirmation": "View confirmation",
-        "continueShopping": "Continue shopping",
         "statusMessages": {
           "alreadyPaid": "This order is already paid",
           "previousFailed": "The previous payment attempt failed. Please try again",
@@ -938,7 +906,6 @@
         "metaTitle": "Checkout Error | DevLovers",
         "metaDescription": "We couldn't complete the checkout. Try again or contact support.",
         "checkoutNavigation": "Checkout navigation",
-        "orderDetails": "Order details",
         "nextSteps": "Next steps"
       },
       "monobankGooglePay": {
@@ -966,6 +933,11 @@
       }
     },
     "orders": {
+      "created": "Created",
+      "orderLabel": "Order",
+      "orderNumber": "Order {id}",
+      "orderDetails": "Order details",
+      "paymentStatusLabel": "Payment status",
       "title": "My orders",
       "subtitle": "Your most recent orders (up to 50)",
       "backToShop": "Back to shop",
@@ -975,22 +947,16 @@
       },
       "table": {
         "caption": "Your orders",
-        "items": "Items",
-        "date": "Date",
-        "status": "Status",
-        "total": "Total",
         "openOrder": "Open order {id}",
         "orderId": "Order ID"
       },
       "card": {
-        "orderNumber": "Order {id}",
         "placedOn": "Placed on {date}",
         "itemsCount": "{count, plural, one {# item} other {# items}}"
       },
       "orderHeadline": {
         "incomplete": "Order {id} (incomplete)",
-        "withMore": "{item} +{count} more",
-        "default": "Order {id}"
+        "withMore": "{item} +{count} more"
       },
       "paymentStatus": {
         "paid": "Paid",
@@ -1001,14 +967,10 @@
         "needsReview": "Needs review"
       },
       "detail": {
-        "title": "Order",
+        "actionSecurityError": "Security check failed. Refresh the page and try again.",
         "myOrders": "My orders",
-        "shop": "Shop",
-        "orderReference": "Order details",
-        "orderNumber": "Order {id}",
         "orderNumberLabel": "Reference: {id}",
         "placedOn": "Placed on {date}",
-        "orderSummary": "Order summary",
         "customerSummary": "Customer summary",
         "lifecycle": {
           "eyebrow": "Order state",
@@ -1044,7 +1006,6 @@
           "markDelivered": "Mark delivered",
           "errors": {
             "network": "Shipping action failed to send. Try again.",
-            "security": "Security check failed. Refresh the page and try again.",
             "recoverNotAvailable": "Shipment recovery is no longer available for this order.",
             "shipmentMissing": "There is no shipment record to update yet.",
             "retryNotAvailable": "Label retry is not available in the current shipment state.",
@@ -1066,7 +1027,6 @@
           "saving": "Saving...",
           "errors": {
             "network": "Shipping edit failed to send. Try again.",
-            "security": "Security check failed. Refresh the page and try again.",
             "invalid": "Shipping details are invalid. Check the form and try again.",
             "notAllowed": "Shipping details can no longer be edited for this order.",
             "adminDisabled": "Admin shipping edits are currently unavailable.",
@@ -1085,7 +1045,6 @@
           "onlyForUnpaidMonobank": "This action is only available for unpaid Monobank orders",
           "errors": {
             "network": "Payment action failed to send. Try again.",
-            "security": "Security check failed. Refresh the page and try again.",
             "refundNotAvailable": "Refund is no longer available for this order.",
             "cancelPaymentDisabled": "Payment cancel is currently unavailable.",
             "cancelPaymentNotAvailable": "Unpaid cancel is no longer available for this order.",
@@ -1100,11 +1059,8 @@
         "customerAccount": "Customer account",
         "accountUnavailable": "Registered account",
         "guest": "Guest checkout",
-        "total": "Total",
-        "paymentStatus": "Payment status",
         "fulfillmentStage": "Fulfillment stage",
         "delivery": "Delivery",
-        "created": "Created",
         "provider": "Provider",
         "shippingProviderLabel": "Shipping provider",
         "shippingMethod": "Shipping method",
@@ -1119,7 +1075,6 @@
         "idempotencyKey": "Idempotency key",
         "stockRestored": "Stock restored",
         "restockedAt": "Restocked at",
-        "items": "Items",
         "sku": "SKU: {sku}",
         "product": "Product: {productId}",
         "quantity": "Quantity",
@@ -1264,11 +1219,9 @@
         "description": "No fluff. Just a massive library of real interview questions with precise, recruiter-approved answers."
       },
       "quiz": {
-        "title": "Quizzes",
         "description": "Validate your confidence. Fast-paced interactive quizzes to spot your weak points before the interviewer does."
       },
       "leaderboard": {
-        "title": "Leaderboard",
         "description": "Gamify your prep. Earn points for every correct answer, keep your streak alive, and rank up against others."
       },
       "blog": {
@@ -1280,7 +1233,6 @@
         "description": "Don't fly blind. Visualize your progress with detailed charts to see exactly which topics you've mastered."
       },
       "shop": {
-        "title": "Shop",
         "description": "Upgrade your setup. High-quality developer apparel, desk accessories, and digital assets available for purchase."
       },
       "bubbles": {
@@ -1477,7 +1429,6 @@
     "decline": "Close"
   },
   "leaderboard": {
-    "title": "Leaderboard",
     "subtitle": "Top performers of all time. Compete, learn, and rise to the top!",
     "noResults": "No results yet",
     "beFirst": "Be the first to complete a quiz and claim the top spot!",
@@ -1495,11 +1446,8 @@
   },
   "auth": {
     "login": {
-      "title": "Log in",
-      "submit": "Log in",
       "submitting": "Logging in...",
       "noAccount": "Don't have an account?",
-      "signupLink": "Sign up",
       "forgotPassword": "Forgot password?",
       "errors": {
         "invalidCredentials": "Invalid email or password",
@@ -1513,10 +1461,8 @@
     },
     "signup": {
       "title": "Sign up",
-      "submit": "Sign up",
       "submitting": "Signing up...",
       "hasAccount": "Already have an account?",
-      "loginLink": "Log in",
       "errors": {
         "signupFailed": "Failed to sign up. Please try again.",
         "emailAlreadyInUse": "An account with this email already exists. Try logging in.",
@@ -1617,7 +1563,6 @@
       "activityHeatmap": "Activity Heatmap",
       "attempts": "Attempts",
       "avgScore": "Average Score",
-      "mastered": "Mastered",
       "review": "Review",
       "study": "Study",
       "totalAttempts": "Quizzes",
@@ -1659,7 +1604,6 @@
       "integrityHint": "Fair play score (no violations detected)",
       "pointsHint": "Points earned for improving your previous result",
       "timeAgo": "{value} ago",
-      "mastered": "Mastered",
       "needsReview": "Review",
       "study": "Study",
       "date": "Date",
@@ -1873,7 +1817,6 @@
     "loading": "Generating explanation...",
     "error": "Failed to generate explanation",
     "retry": "Try again",
-    "close": "Close",
     "cachedTooltip": "Click to see explanation (cached)",
     "languages": {
       "uk": "UA",

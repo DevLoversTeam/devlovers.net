@@ -3,6 +3,7 @@ import 'server-only';
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { readOptionalDbRows } from '@/db/readDbRows';
 import { logInfo, logWarn } from '@/lib/logging';
 import {
   renderShopNotificationTemplate,
@@ -76,13 +77,6 @@ export class NotificationSendError extends Error {
   }
 }
 
-function readRows<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
-  const anyRes = res as { rows?: unknown };
-  if (Array.isArray(anyRes?.rows)) return anyRes.rows as T[];
-  return [];
-}
-
 function asObject(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return value as Record<string, unknown>;
@@ -154,7 +148,7 @@ async function loadNotificationRecipient(
     limit 1
   `);
 
-  const row = readRows<NotificationRecipientLookupRow>(res)[0];
+  const row = readOptionalDbRows<NotificationRecipientLookupRow>(res)[0];
   if (!row) return null;
 
   const shippingEmail = normalizeEmailOrNull(row.shipping_email);
@@ -283,7 +277,7 @@ export async function countRunnableNotificationOutboxRows(): Promise<number> {
       )
     )
   `);
-  return Number(readRows<PreviewCountRow>(res)[0]?.total ?? 0);
+  return Number(readOptionalDbRows<PreviewCountRow>(res)[0]?.total ?? 0);
 }
 
 export async function claimNotificationOutboxBatch(args: {
@@ -333,7 +327,7 @@ export async function claimNotificationOutboxBatch(args: {
     select * from claimed
   `);
 
-  return readRows<OutboxClaimedRow>(res);
+  return readOptionalDbRows<OutboxClaimedRow>(res);
 }
 
 async function markSent(args: {
@@ -355,7 +349,7 @@ async function markSent(args: {
       and n.lease_owner = ${args.runId}
     returning n.id
   `);
-  return readRows<{ id: string }>(res).length > 0;
+  return readOptionalDbRows<{ id: string }>(res).length > 0;
 }
 
 async function markFailedOrDeadLetter(args: {
@@ -404,7 +398,7 @@ async function markFailedOrDeadLetter(args: {
   returning n.id
 `);
 
-  if (readRows<{ id: string }>(res).length === 0) return 'lease_lost';
+  if (readOptionalDbRows<{ id: string }>(res).length === 0) return 'lease_lost';
   return toDeadLetter ? 'dead_letter' : 'failed';
 }
 

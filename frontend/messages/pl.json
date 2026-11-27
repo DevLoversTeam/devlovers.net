@@ -7,7 +7,12 @@
     "delete": "Usuń",
     "edit": "Edytuj",
     "close": "Zamknij",
-    "submit": "Wyślij"
+    "submit": "Wyślij",
+    "pagination": {
+      "previousPage": "Poprzednia strona",
+      "nextPage": "Następna strona",
+      "page": "Strona {page}"
+    }
   },
   "aria": {
     "primaryNav": "Nawigacja główna",
@@ -142,8 +147,7 @@
     "reset": {
       "title": "Zresetować postęp w temacie {category}?",
       "description": "Status wyświetlenia dla {viewed} pytań zostanie wyczyszczony. Twoje zakładki ({bookmarks}) pozostaną zapisane. Tej operacji nie można cofnąć.",
-      "confirm": "Resetuj postęp",
-      "cancel": "Anuluj"
+      "confirm": "Resetuj postęp"
     },
     "guestProgress": {
       "title": "Zapisuj swoje postępy w nauce",
@@ -176,14 +180,14 @@
       "label": "Stronicowanie",
       "previous": "Poprzednia",
       "next": "Następna",
-      "previousPage": "Poprzednia strona",
-      "nextPage": "Następna strona",
-      "page": "Strona {page}",
       "itemsPerPage": "Na stronę",
       "itemsPerPageAria": "Liczba pytań na stronie"
     }
   },
   "quiz": {
+    "status": {
+      "mastered": "Opanowane"
+    },
     "metaTitle": "Quizy | DevLovers",
     "metaDescription": "Sprawdź swoją wiedzę dzięki interaktywnym quizom",
     "page": {
@@ -198,7 +202,6 @@
     "list": {
       "metaTitle": "Quizy | DevLovers",
       "metaDescription": "Sprawdź swoją wiedzę z React, Angular, Vue, Node.js i innych technologii.",
-      "title": "Quizy",
       "practice": "Ćwicz",
       "subtitle": "Wybierz quiz, aby sprawdzić swoją wiedzę",
       "noQuizzes": "Brak dostępnych quizów. Sprawdź wkrótce."
@@ -287,7 +290,6 @@
     },
     "card": {
       "uncategorized": "Nieskategoryzowane",
-      "mastered": "Opanowane",
       "needsReview": "Powtórka",
       "study": "Nauka",
       "questions": "pytań",
@@ -349,10 +351,7 @@
     "pagination": {
       "label": "Paginacja",
       "previous": "Wstecz",
-      "next": "Dalej",
-      "previousPage": "Poprzednia strona",
-      "nextPage": "Następna strona",
-      "page": "Strona {page}"
+      "next": "Dalej"
     }
   },
   "footer": {
@@ -366,6 +365,9 @@
     "termsOfService": "Warunki Świadczenia Usług"
   },
   "shop": {
+    "total": "Razem",
+    "items": "Produkty",
+    "orderSummary": "Podsumowanie zamówienia",
     "page": {
       "newArrivals": "Nowości",
       "shopByCategory": "Sklep według kategorii",
@@ -382,6 +384,8 @@
       }
     },
     "product": {
+      "category": "Kategoria",
+      "type": "Typ",
       "soldOut": "Wyprzedane",
       "maxStock": "Maksymalnie {stock} w magazynie",
       "color": "Kolor",
@@ -407,8 +411,6 @@
       "shopCategory": "Kategoria: {name}"
     },
     "filters": {
-      "category": "Kategoria",
-      "type": "Typ",
       "color": "Kolor",
       "size": "Rozmiar",
       "label": "Filtry produktów"
@@ -420,7 +422,6 @@
     "toolbar": {
       "filters": "Filtry",
       "openFilters": "Otwórz filtry",
-      "close": "Zamknij",
       "label": "Kontrolki listy produktów"
     },
     "cart": {
@@ -431,11 +432,9 @@
       "startShopping": "Rozpocznij zakupy",
       "itemsLabel": "Produkty w koszyku",
       "summary": {
-        "heading": "Podsumowanie zamówienia",
         "subtotal": "Suma częściowa",
         "shipping": "Wysyłka",
         "shippingCalc": "Obliczone przy kasie",
-        "total": "Razem",
         "shippingInformationalOnly": "Pokazywane przed potwierdzeniem",
         "shippingPayOnDeliveryNote": "Koszt dostawy, jeśli ma zastosowanie, jest doliczany podczas składania zamówienia i pokazywany w sumie przed potwierdzeniem zamówienia."
       },
@@ -559,7 +558,6 @@
         "title": "Panel administracyjny sklepu",
         "description": "Narzędzia administracyjne dla sklepu z gadżetami",
         "productsSection": {
-          "title": "Produkty",
           "description": "Twórz, edytuj, aktywuj, promuj"
         },
         "ordersSection": {
@@ -570,7 +568,6 @@
       "topbar": {
         "label": "Panel administracyjny sklepu",
         "admin": "Admin",
-        "products": "Produkty",
         "orders": "Zamówienia",
         "backToShop": "Wróć do sklepu"
       },
@@ -587,15 +584,12 @@
           "title": "Tytuł",
           "slug": "Slug",
           "price": "Cena",
-          "category": "Kategoria",
-          "type": "Typ",
           "stock": "Stan",
           "badge": "Odznaka",
           "active": "Aktywny",
           "featured": "Polecany",
           "status": "Status",
           "date": "Data",
-          "created": "Utworzono",
           "actions": "Akcje"
         },
         "actions": {
@@ -633,9 +627,7 @@
             "originalPrice": "Cena pierwotna ({currency})",
             "stock": "Stan",
             "sku": "SKU",
-            "category": "Kategoria",
             "selectCategory": "Wybierz kategorię",
-            "type": "Typ",
             "selectType": "Wybierz typ",
             "colors": "Kolory",
             "sizes": "Rozmiary",
@@ -713,10 +705,7 @@
       "pagination": {
         "label": "Stronicowanie",
         "previous": "Poprzednia",
-        "next": "Następna",
-        "page": "Strona {page}",
-        "previousPage": "Poprzednia strona",
-        "nextPage": "Następna strona"
+        "next": "Następna"
       },
       "orders": {
         "title": "Admin · Zamówienia",
@@ -727,7 +716,6 @@
         "viewOrder": "Zobacz zamówienie {id}",
         "filters": {
           "label": "Filtry zamówień",
-          "status": "Status płatności",
           "allStatuses": "Wszystkie statusy",
           "dateFrom": "Od daty",
           "dateTo": "Do daty",
@@ -735,10 +723,7 @@
           "reset": "Resetuj"
         },
         "table": {
-          "created": "Utworzono",
-          "status": "Status płatności",
           "total": "Suma",
-          "items": "Produkty",
           "provider": "Dostawca",
           "orderId": "ID zamówienia",
           "actions": "Akcje"
@@ -764,13 +749,11 @@
       },
       "navigation": {
         "shopNav": "Nawigacja sklepu",
-        "home": "Strona główna",
-        "shop": "Sklep"
+        "home": "Strona główna"
       }
     },
     "catalog": {
       "results": "Wyniki katalogu",
-      "products": "Produkty",
       "pagination": "Stronicowanie katalogu",
       "loadMoreFailed": "Nie udało się załadować więcej",
       "loadMoreFailedHttp": "Nie udało się załadować więcej (HTTP {status})",
@@ -804,6 +787,7 @@
       }
     },
     "products": {
+      "label": "Produkty",
       "title": "Wszystkie produkty",
       "noProductsFound": "Nie znaleziono produktów",
       "adjustFilters": "Spróbuj dostosować filtry, aby znaleźć to, czego szukasz",
@@ -813,6 +797,7 @@
       "shopNow": "Kup teraz"
     },
     "checkout": {
+      "paymentStatusLabel": "Status",
       "errors": {
         "missingOrderId": "Brak identyfikatora zamówienia",
         "missingOrderIdDescription": "Nie mogliśmy zidentyfikować twojego zamówienia. Wróć do koszyka lub przeglądaj produkty",
@@ -832,16 +817,11 @@
       },
       "success": {
         "title": "Dziękujemy za zamówienie",
-        "orderLabel": "Zamówienie",
         "received": "Otrzymaliśmy twoje zamówienie",
         "paymentConfirmed": "Płatność została potwierdzona",
         "paymentProcessing": "Płatność jest nadal przetwarzana. Ta strona zaktualizuje się automatycznie",
         "paymentsDisabled": "Płatności są wyłączone w tym środowisku. Nie zostałeś obciążony za to zamówienie",
-        "orderSummary": "Podsumowanie zamówienia",
         "totalAmount": "Łączna kwota",
-        "items": "Produkty",
-        "status": "Status",
-        "continueShopping": "Kontynuuj zakupy",
         "viewCart": "Zobacz koszyk",
         "refreshStatus": "Odśwież status",
         "refreshingStatus": "Odświeżanie...",
@@ -878,16 +858,8 @@
         "paymentUnclearDescription": "Nie mogliśmy potwierdzić błędu płatności dla tego zamówienia",
         "notCompleted": "Płatność za to zamówienie nie została zakończona. Możesz spróbować ponownie lub skontaktować się z pomocą",
         "couldNotConfirm": "Nie mogliśmy potwierdzić błędu płatności dla tego zamówienia",
-        "orderDetails": "Szczegóły zamówienia",
-        "order": "Zamówienie",
-        "orderLabel": "Zamówienie",
-        "total": "Razem",
-        "totalLabel": "Razem",
-        "status": "Status",
-        "statusLabel": "Status",
         "backToCart": "Wróć do koszyka",
-        "retryPayment": "Spróbuj ponownie",
-        "continueShopping": "Kontynuuj zakupy"
+        "retryPayment": "Spróbuj ponownie"
       },
       "payment": {
         "title": "Bezpieczna płatność",
@@ -895,12 +867,8 @@
         "paymentDetails": "Szczegóły płatności",
         "completePayment": "Dokończ płatność, aby złożyć zamówienie",
         "amountDue": "Do zapłaty",
-        "orderSummary": "Podsumowanie zamówienia",
-        "items": "Produkty",
         "totalAmount": "Łączna kwota",
-        "status": "Status",
         "viewConfirmation": "Zobacz potwierdzenie",
-        "continueShopping": "Kontynuuj zakupy",
         "statusMessages": {
           "alreadyPaid": "To zamówienie jest już opłacone",
           "previousFailed": "Poprzednia próba płatności nie powiodła się. Spróbuj ponownie",
@@ -938,7 +906,6 @@
         "metaTitle": "Błąd realizacji zamówienia | DevLovers",
         "metaDescription": "Nie udało się dokończyć składania zamówienia. Spróbuj ponownie lub skontaktuj się z pomocą.",
         "checkoutNavigation": "Nawigacja realizacji zamówienia",
-        "orderDetails": "Szczegóły zamówienia",
         "nextSteps": "Dalsze kroki"
       },
       "actions": {
@@ -966,6 +933,11 @@
       }
     },
     "orders": {
+      "created": "Utworzono",
+      "orderLabel": "Zamówienie",
+      "orderNumber": "Zamówienie {id}",
+      "orderDetails": "Szczegóły zamówienia",
+      "paymentStatusLabel": "Status płatności",
       "title": "Moje zamówienia",
       "subtitle": "Twoje najnowsze zamówienia (do 50)",
       "backToShop": "Wróć do sklepu",
@@ -975,22 +947,16 @@
       },
       "table": {
         "caption": "Twoje zamówienia",
-        "items": "Produkty",
-        "date": "Data",
-        "status": "Status",
-        "total": "Razem",
         "openOrder": "Otwórz zamówienie {id}",
         "orderId": "ID zamówienia"
       },
       "card": {
-        "orderNumber": "Zamówienie {id}",
         "placedOn": "Złożono {date}",
         "itemsCount": "{count, plural, one {# produkt} few {# produkty} many {# produktów} other {# produktu}}"
       },
       "orderHeadline": {
         "incomplete": "Zamówienie {id} (niekompletne)",
-        "withMore": "{item} +{count} więcej",
-        "default": "Zamówienie {id}"
+        "withMore": "{item} +{count} więcej"
       },
       "paymentStatus": {
         "paid": "Opłacone",
@@ -1001,14 +967,10 @@
         "needsReview": "Wymaga weryfikacji"
       },
       "detail": {
-        "title": "Zamówienie",
+        "actionSecurityError": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
         "myOrders": "Moje zamówienia",
-        "shop": "Sklep",
-        "orderReference": "Szczegóły zamówienia",
-        "orderNumber": "Zamówienie {id}",
         "orderNumberLabel": "Numer do kontaktu: {id}",
         "placedOn": "Złożono {date}",
-        "orderSummary": "Podsumowanie zamówienia",
         "customerSummary": "Podsumowanie klienta",
         "lifecycle": {
           "eyebrow": "Stan zamówienia",
@@ -1044,7 +1006,6 @@
           "markDelivered": "Oznacz jako dostarczone",
           "errors": {
             "network": "Nie udało się wysłać akcji wysyłki. Spróbuj ponownie.",
-            "security": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
             "recoverNotAvailable": "Odzyskanie przesyłki nie jest już dostępne dla tego zamówienia.",
             "shipmentMissing": "Nie ma jeszcze rekordu przesyłki, który można zaktualizować.",
             "retryNotAvailable": "Ponowienie etykiety nie jest teraz dostępne dla tego stanu przesyłki.",
@@ -1066,7 +1027,6 @@
           "saving": "Zapisywanie...",
           "errors": {
             "network": "Nie uda\u0142o si\u0119 wys\u0142a\u0107 edycji dostawy. Spr\u00f3buj ponownie.",
-            "security": "Weryfikacja bezpiecze\u0144stwa nie powiod\u0142a si\u0119. Od\u015bwie\u017c stron\u0119 i spr\u00f3buj ponownie.",
             "invalid": "Dane dostawy s\u0105 nieprawid\u0142owe. Sprawd\u017a formularz i spr\u00f3buj ponownie.",
             "notAllowed": "Danych dostawy nie mo\u017cna ju\u017c edytowa\u0107 dla tego zam\u00f3wienia.",
             "adminDisabled": "Edycja dostawy administratora jest obecnie niedost\u0119pna.",
@@ -1085,7 +1045,6 @@
           "onlyForUnpaidMonobank": "Ta akcja jest dostępna tylko dla nieopłaconych zamówień Monobank",
           "errors": {
             "network": "Nie udało się wysłać akcji płatności. Spróbuj ponownie.",
-            "security": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
             "refundNotAvailable": "Zwrot nie jest już dostępny dla tego zamówienia.",
             "cancelPaymentDisabled": "Anulowanie płatności jest obecnie niedostępne.",
             "cancelPaymentNotAvailable": "Anulowanie nieopłaconej płatności nie jest już dostępne dla tego zamówienia.",
@@ -1100,11 +1059,8 @@
         "customerAccount": "Konto klienta",
         "accountUnavailable": "Zarejestrowane konto",
         "guest": "Zamówienie gościa",
-        "total": "Razem",
-        "paymentStatus": "Status płatności",
         "fulfillmentStage": "Etap realizacji",
         "delivery": "Dostawa",
-        "created": "Utworzono",
         "provider": "Dostawca",
         "shippingProviderLabel": "Przewoźnik",
         "shippingMethod": "Metoda dostawy",
@@ -1119,7 +1075,6 @@
         "idempotencyKey": "Klucz idempotencji",
         "stockRestored": "Stan przywrócony",
         "restockedAt": "Przywrócono o",
-        "items": "Produkty",
         "sku": "SKU: {sku}",
         "product": "Produkt: {productId}",
         "quantity": "Ilość",
@@ -1265,11 +1220,9 @@
         "description": "Bez lania wody. Ogromna biblioteka prawdziwych pytań z rozmów z precyzyjnymi odpowiedziami zatwierdzonymi przez rekruterów."
       },
       "quiz": {
-        "title": "Quizy",
         "description": "Zweryfikuj swoją pewność. Dynamiczne interaktywne quizy, które wykryją twoje słabe punkty przed rekruterem."
       },
       "leaderboard": {
-        "title": "Ranking",
         "description": "Zgamifikuj przygotowania. Zdobywaj punkty za każdą poprawną odpowiedź, utrzymuj passę i rywalizuj z innymi."
       },
       "blog": {
@@ -1281,7 +1234,6 @@
         "description": "Nie działaj po omacku. Wizualizuj swój postęp dzięki szczegółowym wykresom i zobacz, które tematy opanowałeś."
       },
       "shop": {
-        "title": "Sklep",
         "description": "Ulepsz swój setup. Wysokiej jakości odzież dla programistów, akcesoria biurowe i zasoby cyfrowe."
       },
       "bubbles": {
@@ -1478,7 +1430,6 @@
     "decline": "Zamknij"
   },
   "leaderboard": {
-    "title": "Ranking",
     "subtitle": "Najlepsi uczestnicy wszech czasów. Rywalizuj, ucz się i zwyciężaj!",
     "noResults": "Brak wyników",
     "beFirst": "Bądź pierwszy, który ukończy quiz i zajmie pierwsze miejsce!",
@@ -1496,11 +1447,8 @@
   },
   "auth": {
     "login": {
-      "title": "Zaloguj się",
-      "submit": "Zaloguj się",
       "submitting": "Logowanie...",
       "noAccount": "Nie masz konta?",
-      "signupLink": "Zarejestruj się",
       "forgotPassword": "Zapomniałeś hasła?",
       "errors": {
         "invalidCredentials": "Nieprawidłowy email lub hasło",
@@ -1514,10 +1462,8 @@
     },
     "signup": {
       "title": "Rejestracja",
-      "submit": "Zarejestruj się",
       "submitting": "Rejestrowanie...",
       "hasAccount": "Masz już konto?",
-      "loginLink": "Zaloguj się",
       "errors": {
         "signupFailed": "Nie udało się zarejestrować. Spróbuj ponownie.",
         "emailAlreadyInUse": "Konto z tym adresem email już istnieje. Spróbuj się zalogować.",
@@ -1620,7 +1566,6 @@
       "activityHeatmap": "Wykres aktywności",
       "attempts": "Próby",
       "avgScore": "Średni wynik",
-      "mastered": "Opanowane",
       "review": "Wymaga powtórki",
       "study": "Nauka",
       "totalAttempts": "Wszystkie próby",
@@ -1662,7 +1607,6 @@
       "integrityHint": "Wskaźnik uczciwego przejścia (bez naruszeń)",
       "pointsHint": "Punkty przyznane za poprawę wyniku",
       "timeAgo": "{value} temu",
-      "mastered": "Opanowane",
       "needsReview": "Powtórka",
       "study": "Nauka",
       "date": "Data",
@@ -1876,7 +1820,6 @@
     "loading": "Generowanie wyjaśnienia…",
     "error": "Nie udało się wygenerować wyjaśnienia",
     "retry": "Spróbuj ponownie",
-    "close": "Zamknij",
     "cachedTooltip": "Kliknij, aby zobaczyć wyjaśnienie (zapisane w pamięci podręcznej)",
     "languages": {
       "uk": "UA",

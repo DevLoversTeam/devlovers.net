@@ -1,6 +1,7 @@
 import { FileQuestion, MessageSquare, ShoppingBag } from 'lucide-react';
 import { Metadata } from 'next';
 
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Link } from '@/i18n/routing';
 
 export const metadata: Metadata = {
@@ -31,7 +32,7 @@ const SECTIONS = [
 
 export default function AdminHomePage() {
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <AdminPageContainer>
       <h1 className="text-foreground text-2xl font-bold">Admin Dashboard</h1>
       <p className="text-muted-foreground mt-1 text-sm">
         Manage content across the platform
@@ -56,6 +57,6 @@ export default function AdminHomePage() {
           </Link>
         ))}
       </div>
-    </div>
+    </AdminPageContainer>
   );
 }

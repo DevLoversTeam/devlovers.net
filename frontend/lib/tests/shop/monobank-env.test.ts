@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resetEnvCache } from '@/lib/env';
 import { getMonobankConfig, requireMonobankToken } from '@/lib/env/monobank';
@@ -17,22 +17,15 @@ const ENV_KEYS = [
   'APP_ORIGIN',
 ];
 
-const previousEnv: Record<string, string | undefined> = {};
-
 beforeEach(() => {
   for (const key of ENV_KEYS) {
-    previousEnv[key] = process.env[key];
-    delete process.env[key];
+    vi.stubEnv(key, undefined);
   }
   resetEnvCache();
 });
 
 afterEach(() => {
-  for (const key of ENV_KEYS) {
-    const value = previousEnv[key];
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
-  }
+  vi.unstubAllEnvs();
   resetEnvCache();
 });
 
@@ -48,7 +41,7 @@ describe('monobank env config', () => {
   });
 
   it('reports baseUrlSource when SHOP_BASE_URL is set', () => {
-    process.env.SHOP_BASE_URL = 'https://shop.example.test';
+    vi.stubEnv('SHOP_BASE_URL', 'https://shop.example.test');
     resetEnvCache();
 
     const config = getMonobankConfig();
@@ -62,7 +55,7 @@ describe('monobank env config', () => {
   });
 
   it('returns token when MONO_MERCHANT_TOKEN is set', () => {
-    process.env.MONO_MERCHANT_TOKEN = 'mono_token';
+    vi.stubEnv('MONO_MERCHANT_TOKEN', 'mono_token');
     resetEnvCache();
 
     expect(requireMonobankToken()).toBe('mono_token');

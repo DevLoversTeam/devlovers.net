@@ -98,12 +98,10 @@ export function AchievementPips({ achievements }: AchievementPipsProps) {
 
   if (!achievements.length) return null;
 
-  // Text pill: golden_patron > silver_patron only
   const sponsorBadge =
     achievements.find(a => a.id === 'golden_patron') ||
     achievements.find(a => a.id === 'silver_patron');
 
-  // Hex pips: supporter + star_gazer — icon-only, clickable
   const hexPips = [
     achievements.find(a => a.id === 'supporter'),
     achievements.find(a => a.id === 'star_gazer'),
@@ -111,7 +109,6 @@ export function AchievementPips({ achievements }: AchievementPipsProps) {
 
   const SponsorIcon = sponsorBadge ? ICON_MAP[sponsorBadge.icon] : null;
 
-  // Nothing to show
   if (!sponsorBadge && hexPips.length === 0) return null;
 
   const handleMouseEnter = (
@@ -144,7 +141,6 @@ export function AchievementPips({ achievements }: AchievementPipsProps) {
   return (
     <>
       <span className="ml-1 flex shrink-0 items-center gap-1">
-        {/* ── Sponsor tier text badge (Golden Patron / Silver Patron) ── */}
         {sponsorBadge && SponsorIcon && (
           <span
             className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold ${getSponsorBadgeClasses(sponsorBadge.id)}`}
@@ -154,7 +150,6 @@ export function AchievementPips({ achievements }: AchievementPipsProps) {
           </span>
         )}
 
-        {/* ── Hex pips: supporter + star_gazer ── */}
         {hexPips.length > 0 && (
           <span className="flex -space-x-1.5">
             {hexPips.map(achievement => {
@@ -201,7 +196,6 @@ export function AchievementPips({ achievements }: AchievementPipsProps) {
         )}
       </span>
 
-      {/* ── Portal: hover tooltip ── */}
       {mounted &&
         tooltip &&
         createPortal(

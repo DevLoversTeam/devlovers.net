@@ -1,6 +1,7 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { productPriceJoin } from '@/db/queries/shop/product-price-join';
 import { productPrices, products } from '@/db/schema';
 import { logWarn } from '@/lib/logging';
 import { createCartItemKey } from '@/lib/shop/cart-item-key';
@@ -124,13 +125,7 @@ export async function rehydrateCartItems(
       priceCurrency: productPrices.currency,
     })
     .from(products)
-    .leftJoin(
-      productPrices,
-      and(
-        eq(productPrices.productId, products.id),
-        eq(productPrices.currency, currency)
-      )
-    )
+    .leftJoin(productPrices, productPriceJoin(currency))
     .where(inArray(products.id, uniqueProductIds));
 
   const productMap = new Map(rows.map(r => [r.id, r]));
